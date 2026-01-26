@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useAuth } from '../../lib/AuthContext'
+import { loadHistory, loadUserSettings } from '../../lib/dataSync'
 
 export default function ReportsPage() {
+  const { user, isConfigured } = useAuth()
   const [history, setHistory] = useState([])
   const [metrics, setMetrics] = useState([])
   const [viewMode, setViewMode] = useState('weekly') // weekly, monthly
@@ -11,20 +14,36 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load history from localStorage
-    const storedHistory = localStorage.getItem('nutrition-history')
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory))
+    const loadData = async () => {
+      // If user is logged in, load from cloud
+      if (user && isConfigured) {
+        const cloudHistory = await loadHistory(user.uid)
+        if (cloudHistory && cloudHistory.length > 0) {
+          setHistory(cloudHistory)
+        }
+
+        const cloudSettings = await loadUserSettings(user.uid)
+        if (cloudSettings?.nutritionMetrics) {
+          setMetrics(cloudSettings.nutritionMetrics)
+        }
+      } else {
+        // Fallback to localStorage
+        const storedHistory = localStorage.getItem('nutrition-history')
+        if (storedHistory) {
+          setHistory(JSON.parse(storedHistory))
+        }
+
+        const storedMetrics = localStorage.getItem('nutrition-metrics')
+        if (storedMetrics) {
+          setMetrics(JSON.parse(storedMetrics))
+        }
+      }
+
+      setLoading(false)
     }
 
-    // Load metrics configuration
-    const storedMetrics = localStorage.getItem('nutrition-metrics')
-    if (storedMetrics) {
-      setMetrics(JSON.parse(storedMetrics))
-    }
-
-    setLoading(false)
-  }, [])
+    loadData()
+  }, [user, isConfigured])
 
   // Get date range based on view mode
   const getDateRange = () => {
@@ -113,7 +132,7 @@ export default function ReportsPage() {
     const options = { month: 'short', day: 'numeric' }
 
     if (viewMode === 'weekly') {
-      return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}, ${end.getFullYear()}`
+      return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`
     } else {
       return start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     }
@@ -140,20 +159,21 @@ export default function ReportsPage() {
     <div style={{
       minHeight: '100vh',
       backgroundColor: '#fafafa',
-      padding: '40px 20px'
+      padding: '16px 12px',
+      paddingBottom: '32px'
     }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
-          marginBottom: '32px',
+          marginBottom: '20px',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start'
+          alignItems: 'center'
         }}>
           <div>
             <h1 style={{
-              margin: '0 0 8px 0',
-              fontSize: '32px',
+              margin: '0 0 4px 0',
+              fontSize: '22px',
               fontWeight: '600',
               color: '#1a1a1a',
               letterSpacing: '-0.5px'
@@ -162,45 +182,46 @@ export default function ReportsPage() {
             </h1>
             <div style={{
               color: '#666',
-              fontSize: '15px'
+              fontSize: '13px'
             }}>
-              Track your nutrition progress over time
+              Track your progress
             </div>
           </div>
           <Link
             href="/"
             style={{
-              padding: '10px 20px',
+              padding: '8px 14px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               color: '#1a1a1a',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
               textDecoration: 'none',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }}
           >
-            ← Back to Tracker
+            ← Back
           </Link>
         </div>
 
         {/* View Mode Toggle */}
         <div style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
           gap: '8px',
-          marginBottom: '24px'
+          marginBottom: '16px'
         }}>
           <button
             onClick={() => setViewMode('weekly')}
             style={{
-              padding: '10px 24px',
+              padding: '10px 16px',
               backgroundColor: viewMode === 'weekly' ? '#1a1a1a' : '#fff',
               border: '1px solid',
               borderColor: viewMode === 'weekly' ? '#1a1a1a' : '#e0e0e0',
               borderRadius: '8px',
               color: viewMode === 'weekly' ? '#fff' : '#666',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
@@ -210,13 +231,13 @@ export default function ReportsPage() {
           <button
             onClick={() => setViewMode('monthly')}
             style={{
-              padding: '10px 24px',
+              padding: '10px 16px',
               backgroundColor: viewMode === 'monthly' ? '#1a1a1a' : '#fff',
               border: '1px solid',
               borderColor: viewMode === 'monthly' ? '#1a1a1a' : '#e0e0e0',
               borderRadius: '8px',
               color: viewMode === 'monthly' ? '#fff' : '#666',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
@@ -229,33 +250,31 @@ export default function ReportsPage() {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: '24px',
-          marginBottom: '32px',
-          padding: '20px',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          padding: '14px 16px',
           backgroundColor: '#fff',
-          borderRadius: '12px',
+          borderRadius: '10px',
           border: '1px solid #e0e0e0'
         }}>
           <button
             onClick={() => navigate(-1)}
             style={{
-              padding: '8px 16px',
+              padding: '8px 12px',
               backgroundColor: '#f5f5f5',
               border: 'none',
               borderRadius: '6px',
               color: '#666',
-              fontSize: '18px',
+              fontSize: '16px',
               cursor: 'pointer'
             }}
           >
             ←
           </button>
           <div style={{
-            fontSize: '18px',
+            fontSize: '14px',
             fontWeight: '600',
             color: '#1a1a1a',
-            minWidth: '200px',
             textAlign: 'center'
           }}>
             {formatDateRange()}
@@ -263,12 +282,12 @@ export default function ReportsPage() {
           <button
             onClick={() => navigate(1)}
             style={{
-              padding: '8px 16px',
+              padding: '8px 12px',
               backgroundColor: '#f5f5f5',
               border: 'none',
               borderRadius: '6px',
               color: '#666',
-              fontSize: '18px',
+              fontSize: '16px',
               cursor: 'pointer'
             }}
           >
@@ -278,63 +297,63 @@ export default function ReportsPage() {
 
         {/* Summary Stats */}
         {metrics.length > 0 && (
-          <div style={{ marginBottom: '32px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <h2 style={{
-              margin: '0 0 16px 0',
-              fontSize: '13px',
+              margin: '0 0 12px 0',
+              fontSize: '12px',
               fontWeight: '600',
               color: '#999',
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              Summary ({stats.days} days tracked)
+              Summary ({stats.days} days)
             </h2>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '12px'
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '8px'
             }}>
               {metrics.map(metric => (
                 <div key={metric.key} style={{
-                  padding: '24px',
+                  padding: '16px',
                   backgroundColor: '#fff',
                   border: '1px solid #e0e0e0',
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                 }}>
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '12px'
+                    gap: '6px',
+                    marginBottom: '8px'
                   }}>
-                    {metric.icon && <span style={{ fontSize: '18px' }}>{metric.icon}</span>}
-                    <span style={{ fontSize: '14px', color: '#666', fontWeight: '500' }}>
+                    {metric.icon && <span style={{ fontSize: '14px' }}>{metric.icon}</span>}
+                    <span style={{ fontSize: '12px', color: '#666', fontWeight: '500' }}>
                       {metric.name}
                     </span>
                   </div>
                   <div style={{
-                    fontSize: '32px',
+                    fontSize: '24px',
                     fontWeight: '600',
                     color: '#1a1a1a',
-                    marginBottom: '4px'
+                    marginBottom: '2px'
                   }}>
                     {stats.averages[metric.key] || 0}
-                    <span style={{ fontSize: '16px', color: '#999', fontWeight: '500' }}> {metric.unit}/day</span>
+                    <span style={{ fontSize: '12px', color: '#999', fontWeight: '500' }}> /day</span>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#999' }}>
+                  <div style={{ fontSize: '11px', color: '#999' }}>
                     Total: {stats.totals[metric.key] || 0} {metric.unit}
                   </div>
                   {metric.goal > 0 && stats.days > 0 && (
                     <div style={{
-                      marginTop: '12px',
-                      padding: '8px 12px',
+                      marginTop: '8px',
+                      padding: '6px 8px',
                       backgroundColor: '#f0fdf4',
-                      borderRadius: '6px',
-                      fontSize: '13px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
                       color: '#166534'
                     }}>
-                      Goal met {stats.goalAchievement[metric.key] || 0}/{stats.days} days
+                      Goal: {stats.goalAchievement[metric.key] || 0}/{stats.days} days
                     </div>
                   )}
                 </div>
@@ -343,11 +362,106 @@ export default function ReportsPage() {
           </div>
         )}
 
+        {/* Chart visualization */}
+        {filteredHistory.length > 0 && metrics.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <h2 style={{
+              margin: '0 0 12px 0',
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#999',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              {metrics[0]?.name || 'Calories'} Trend
+            </h2>
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#fff',
+              borderRadius: '10px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: '3px',
+                height: '100px',
+                marginBottom: '8px'
+              }}>
+                {filteredHistory.map((day, i) => {
+                  const metric = metrics[0]
+                  const dayMetric = day.nutritionMetrics?.find(m => m.key === metric?.key)
+                  const value = dayMetric?.value || 0
+                  const maxValue = Math.max(...filteredHistory.map(d => {
+                    const m = d.nutritionMetrics?.find(m => m.key === metric?.key)
+                    return m?.value || 0
+                  }), metric?.goal || 1)
+                  const height = maxValue > 0 ? (value / maxValue) * 100 : 0
+                  const metGoal = metric?.goal && value >= metric.goal
+
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '100%',
+                          maxWidth: '30px',
+                          height: `${Math.max(height, 4)}%`,
+                          backgroundColor: metGoal ? '#10b981' : '#60a5fa',
+                          borderRadius: '3px 3px 0 0',
+                          transition: 'height 0.3s ease',
+                          minHeight: '4px'
+                        }}
+                        title={`${value} ${metric?.unit || ''}`}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '10px',
+                color: '#999'
+              }}>
+                <span>{new Date(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span>{new Date(filteredHistory[filteredHistory.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              </div>
+              {metrics[0]?.goal && (
+                <div style={{
+                  marginTop: '10px',
+                  fontSize: '11px',
+                  color: '#999',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '2px' }}></span>
+                    Goal met
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ width: '10px', height: '10px', backgroundColor: '#60a5fa', borderRadius: '2px' }}></span>
+                    Under
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Daily Breakdown */}
-        <div style={{ marginBottom: '32px' }}>
+        <div style={{ marginBottom: '20px' }}>
           <h2 style={{
-            margin: '0 0 16px 0',
-            fontSize: '13px',
+            margin: '0 0 12px 0',
+            fontSize: '12px',
             fontWeight: '600',
             color: '#999',
             textTransform: 'uppercase',
@@ -358,209 +472,102 @@ export default function ReportsPage() {
 
           {filteredHistory.length === 0 ? (
             <div style={{
-              padding: '60px 20px',
+              padding: '48px 20px',
               backgroundColor: '#fff',
-              borderRadius: '12px',
+              borderRadius: '10px',
               border: '1px solid #e0e0e0',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>📊</div>
-              <div style={{ fontSize: '16px', fontWeight: '500', color: '#666', marginBottom: '8px' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px', opacity: 0.3 }}>📊</div>
+              <div style={{ fontSize: '14px', fontWeight: '500', color: '#666', marginBottom: '4px' }}>
                 No data for this period
               </div>
-              <div style={{ fontSize: '14px', color: '#999' }}>
-                Start tracking your nutrition to see reports here
+              <div style={{ fontSize: '12px', color: '#999' }}>
+                Start tracking to see reports
               </div>
             </div>
           ) : (
             <div style={{
               backgroundColor: '#fff',
-              borderRadius: '12px',
+              borderRadius: '10px',
               border: '1px solid #e0e0e0',
               overflow: 'hidden'
             }}>
-              {/* Chart visualization */}
-              {metrics.length > 0 && (
-                <div style={{ padding: '24px', borderBottom: '1px solid #e0e0e0' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#666', marginBottom: '16px' }}>
-                    {metrics[0]?.name || 'Calories'} Trend
+              {/* Mobile-friendly daily cards */}
+              {filteredHistory.map((day, i) => (
+                <div key={i} style={{
+                  padding: '14px 16px',
+                  borderBottom: i < filteredHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa'
+                }}>
+                  <div style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#1a1a1a',
+                    marginBottom: '8px'
+                  }}>
+                    {new Date(day.date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
                   </div>
                   <div style={{
                     display: 'flex',
-                    alignItems: 'flex-end',
-                    gap: '4px',
-                    height: '120px'
+                    flexWrap: 'wrap',
+                    gap: '8px'
                   }}>
-                    {filteredHistory.map((day, i) => {
-                      const metric = metrics[0]
-                      const dayMetric = day.nutritionMetrics?.find(m => m.key === metric?.key)
+                    {metrics.map(metric => {
+                      const dayMetric = day.nutritionMetrics?.find(m => m.key === metric.key)
                       const value = dayMetric?.value || 0
-                      const maxValue = Math.max(...filteredHistory.map(d => {
-                        const m = d.nutritionMetrics?.find(m => m.key === metric?.key)
-                        return m?.value || 0
-                      }), metric?.goal || 1)
-                      const height = maxValue > 0 ? (value / maxValue) * 100 : 0
-                      const metGoal = metric?.goal && value >= metric.goal
-
+                      const metGoal = metric.goal && value >= metric.goal
                       return (
-                        <div
-                          key={i}
-                          style={{
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: '100%',
-                              maxWidth: '40px',
-                              height: `${Math.max(height, 4)}%`,
-                              backgroundColor: metGoal ? '#10b981' : '#60a5fa',
-                              borderRadius: '4px 4px 0 0',
-                              transition: 'height 0.3s ease',
-                              minHeight: '4px'
-                            }}
-                            title={`${new Date(day.date).toLocaleDateString()}: ${value} ${metric?.unit || ''}`}
-                          />
-                          <div style={{
-                            fontSize: '10px',
-                            color: '#999',
-                            transform: 'rotate(-45deg)',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </div>
+                        <div key={metric.key} style={{
+                          padding: '4px 8px',
+                          backgroundColor: metGoal ? '#f0fdf4' : '#f5f5f5',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          color: metGoal ? '#166534' : '#666',
+                          fontWeight: metGoal ? '600' : '400'
+                        }}>
+                          {metric.icon && <span style={{ marginRight: '4px' }}>{metric.icon}</span>}
+                          {value} {metric.unit}
                         </div>
                       )
                     })}
-                  </div>
-                  {metrics[0]?.goal && (
                     <div style={{
-                      marginTop: '8px',
+                      padding: '4px 8px',
+                      backgroundColor: '#f5f5f5',
+                      borderRadius: '4px',
                       fontSize: '12px',
-                      color: '#999',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px'
+                      color: '#666'
                     }}>
-                      <span><span style={{ display: 'inline-block', width: '12px', height: '12px', backgroundColor: '#10b981', borderRadius: '2px', marginRight: '4px' }}></span> Goal met</span>
-                      <span><span style={{ display: 'inline-block', width: '12px', height: '12px', backgroundColor: '#60a5fa', borderRadius: '2px', marginRight: '4px' }}></span> Under goal</span>
+                      💧 {day.water || 0} oz
                     </div>
-                  )}
+                  </div>
                 </div>
-              )}
-
-              {/* Daily entries table */}
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#fafafa' }}>
-                      <th style={{
-                        padding: '12px 16px',
-                        textAlign: 'left',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#666',
-                        borderBottom: '1px solid #e0e0e0'
-                      }}>
-                        Date
-                      </th>
-                      {metrics.map(metric => (
-                        <th key={metric.key} style={{
-                          padding: '12px 16px',
-                          textAlign: 'right',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#666',
-                          borderBottom: '1px solid #e0e0e0'
-                        }}>
-                          {metric.name}
-                        </th>
-                      ))}
-                      <th style={{
-                        padding: '12px 16px',
-                        textAlign: 'right',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#666',
-                        borderBottom: '1px solid #e0e0e0'
-                      }}>
-                        Water
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredHistory.map((day, i) => (
-                      <tr key={i} style={{
-                        backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa'
-                      }}>
-                        <td style={{
-                          padding: '12px 16px',
-                          fontSize: '14px',
-                          color: '#1a1a1a',
-                          borderBottom: '1px solid #f0f0f0'
-                        }}>
-                          {new Date(day.date).toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </td>
-                        {metrics.map(metric => {
-                          const dayMetric = day.nutritionMetrics?.find(m => m.key === metric.key)
-                          const value = dayMetric?.value || 0
-                          const metGoal = metric.goal && value >= metric.goal
-                          return (
-                            <td key={metric.key} style={{
-                              padding: '12px 16px',
-                              textAlign: 'right',
-                              fontSize: '14px',
-                              color: metGoal ? '#10b981' : '#1a1a1a',
-                              fontWeight: metGoal ? '600' : '400',
-                              borderBottom: '1px solid #f0f0f0'
-                            }}>
-                              {value} {metric.unit}
-                            </td>
-                          )
-                        })}
-                        <td style={{
-                          padding: '12px 16px',
-                          textAlign: 'right',
-                          fontSize: '14px',
-                          color: '#1a1a1a',
-                          borderBottom: '1px solid #f0f0f0'
-                        }}>
-                          {day.water || 0} oz
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              ))}
             </div>
           )}
         </div>
 
         {/* Water Summary */}
         {filteredHistory.length > 0 && (
-          <div style={{ marginBottom: '32px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <h2 style={{
-              margin: '0 0 16px 0',
-              fontSize: '13px',
+              margin: '0 0 12px 0',
+              fontSize: '12px',
               fontWeight: '600',
               color: '#999',
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              Hydration Summary
+              Hydration
             </h2>
             <div style={{
-              padding: '24px',
+              padding: '16px',
               backgroundColor: '#fff',
-              borderRadius: '12px',
+              borderRadius: '10px',
               border: '1px solid #e0e0e0'
             }}>
               {(() => {
@@ -570,19 +577,24 @@ export default function ReportsPage() {
                 const daysMetGoal = waterGoal > 0 ? filteredHistory.filter(d => (d.water || 0) >= waterGoal).length : 0
 
                 return (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', textAlign: 'center' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: waterGoal > 0 ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+                    gap: '16px',
+                    textAlign: 'center'
+                  }}>
                     <div>
-                      <div style={{ fontSize: '32px', fontWeight: '600', color: '#1a1a1a' }}>{totalWater}</div>
-                      <div style={{ fontSize: '13px', color: '#999' }}>Total oz</div>
+                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a' }}>{totalWater}</div>
+                      <div style={{ fontSize: '11px', color: '#999' }}>Total oz</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '32px', fontWeight: '600', color: '#1a1a1a' }}>{avgWater}</div>
-                      <div style={{ fontSize: '13px', color: '#999' }}>Avg oz/day</div>
+                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a' }}>{avgWater}</div>
+                      <div style={{ fontSize: '11px', color: '#999' }}>Avg/day</div>
                     </div>
                     {waterGoal > 0 && (
                       <div>
-                        <div style={{ fontSize: '32px', fontWeight: '600', color: '#10b981' }}>{daysMetGoal}/{stats.days}</div>
-                        <div style={{ fontSize: '13px', color: '#999' }}>Days at goal</div>
+                        <div style={{ fontSize: '24px', fontWeight: '600', color: '#10b981' }}>{daysMetGoal}/{stats.days}</div>
+                        <div style={{ fontSize: '11px', color: '#999' }}>At goal</div>
                       </div>
                     )}
                   </div>

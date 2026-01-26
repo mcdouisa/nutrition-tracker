@@ -1,4 +1,4 @@
-// AI Chat Modal Component
+// AI Chat Modal Component (mobile optimized)
 export function AIChatModal({ messages, input, isThinking, onInputChange, onSend, onAddEstimates, onClose }) {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -17,26 +17,25 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
       backgroundColor: 'rgba(0, 0, 0, 0.4)',
       backdropFilter: 'blur(4px)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-end',
       justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
+      zIndex: 1000
     }}>
       <div style={{
         backgroundColor: '#fff',
-        borderRadius: '12px',
-        maxWidth: '600px',
+        borderRadius: '16px 16px 0 0',
         width: '100%',
-        height: '600px',
-        maxHeight: '85vh',
+        maxWidth: '600px',
+        height: '85vh',
+        maxHeight: '600px',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+        boxShadow: '0 -4px 30px rgba(0,0,0,0.2)'
       }}>
         {/* Header */}
         <div style={{
-          padding: '20px 24px',
+          padding: '16px 20px',
           borderBottom: '1px solid #e0e0e0',
           display: 'flex',
           justifyContent: 'space-between',
@@ -46,30 +45,30 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
           <div>
             <h2 style={{
               margin: 0,
-              fontSize: '18px',
+              fontSize: '16px',
               fontWeight: '600',
               color: '#1a1a1a',
               letterSpacing: '-0.3px'
             }}>
-              🤖 AI Nutrition Assistant
+              🤖 AI Assistant
             </h2>
             <div style={{
-              fontSize: '13px',
+              fontSize: '12px',
               color: '#999',
-              marginTop: '4px'
+              marginTop: '2px'
             }}>
-              Describe your meal and get nutrition estimates
+              Describe your meal for estimates
             </div>
           </div>
           <button
             onClick={onClose}
             style={{
-              padding: '8px 16px',
+              padding: '6px 14px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '6px',
               color: '#666',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
@@ -82,42 +81,42 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
         <div style={{
           flex: 1,
           overflow: 'auto',
-          padding: '24px',
+          padding: '16px',
           backgroundColor: '#fafafa'
         }}>
           {messages.length === 0 && (
             <div style={{
               textAlign: 'center',
-              padding: '40px 20px',
+              padding: '32px 16px',
               color: '#999'
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
-              <div style={{ fontSize: '15px', marginBottom: '8px', fontWeight: '500', color: '#666' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>💬</div>
+              <div style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '500', color: '#666' }}>
                 Ask me about your meals!
               </div>
-              <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
+              <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
                 Examples:<br />
-                "I just ate a chicken breast with rice and broccoli"<br />
-                "How many calories in a large pizza slice?"<br />
-                "I had oatmeal with banana and peanut butter"
+                "Chicken breast with rice"<br />
+                "Large pizza slice"<br />
+                "Oatmeal with banana"
               </div>
             </div>
           )}
 
           {messages.map((msg, i) => (
             <div key={i} style={{
-              marginBottom: '16px',
+              marginBottom: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start'
             }}>
               <div style={{
-                maxWidth: '80%',
-                padding: '12px 16px',
+                maxWidth: '85%',
+                padding: '10px 14px',
                 backgroundColor: msg.role === 'user' ? '#1a1a1a' : '#fff',
                 color: msg.role === 'user' ? '#fff' : '#1a1a1a',
                 borderRadius: '12px',
-                fontSize: '14px',
+                fontSize: '13px',
                 lineHeight: '1.5',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 whiteSpace: 'pre-wrap'
@@ -129,19 +128,19 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
                 <button
                   onClick={() => onAddEstimates(msg.estimates)}
                   style={{
-                    marginTop: '8px',
-                    padding: '8px 16px',
+                    marginTop: '6px',
+                    padding: '8px 14px',
                     backgroundColor: '#10b981',
                     border: 'none',
                     borderRadius: '6px',
                     color: '#fff',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                   }}
                 >
-                  ✓ Add to Today's Nutrition
+                  ✓ Add to Today
                 </button>
               )}
             </div>
@@ -152,14 +151,14 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '12px 16px',
+              padding: '10px 14px',
               backgroundColor: '#fff',
               borderRadius: '12px',
-              maxWidth: '80%',
+              maxWidth: '85%',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
               <div style={{
-                fontSize: '13px',
+                fontSize: '12px',
                 color: '#999',
                 fontStyle: 'italic'
               }}>
@@ -171,7 +170,8 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
 
         {/* Input */}
         <div style={{
-          padding: '16px 24px',
+          padding: '12px 16px',
+          paddingBottom: '24px',
           borderTop: '1px solid #e0e0e0',
           backgroundColor: '#fff'
         }}>
@@ -184,7 +184,7 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
               disabled={isThinking}
               style={{
                 flex: 1,
-                padding: '12px 16px',
+                padding: '10px 14px',
                 backgroundColor: '#fafafa',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
@@ -193,7 +193,7 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
                 fontFamily: 'inherit',
                 resize: 'none',
                 minHeight: '44px',
-                maxHeight: '120px'
+                maxHeight: '100px'
               }}
               rows={1}
             />
@@ -201,12 +201,12 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
               onClick={onSend}
               disabled={!input.trim() || isThinking}
               style={{
-                padding: '12px 24px',
+                padding: '10px 18px',
                 backgroundColor: input.trim() && !isThinking ? '#1a1a1a' : '#e0e0e0',
                 border: 'none',
                 borderRadius: '8px',
                 color: input.trim() && !isThinking ? '#fff' : '#999',
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: '500',
                 cursor: input.trim() && !isThinking ? 'pointer' : 'not-allowed'
               }}

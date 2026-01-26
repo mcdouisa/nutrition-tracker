@@ -1,10 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AIChatModal } from './ai-chat-modal'
+import { useAuth } from '../lib/AuthContext'
+import {
+  saveTodayData,
+  loadTodayData,
+  saveUserSettings,
+  loadUserSettings,
+  saveHistoryEntry,
+  migrateLocalStorageToFirestore,
+  needsMigration
+} from '../lib/dataSync'
 
 export default function NutritionTracker() {
+  const { user, loading: authLoading, signOut, isConfigured } = useAuth()
+  const router = useRouter()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [syncStatus, setSyncStatus] = useState('') // 'syncing', 'synced', 'error', ''
+  const [migrating, setMigrating] = useState(false)
   // Customizable checklist items (empty by default)
   const [checklistItems, setChecklistItems] = useState([])
 
@@ -38,58 +54,113 @@ export default function NutritionTracker() {
 
   // Current date for tracking
   const [currentDate, setCurrentDate] = useState('')
+  const [dataLoaded, setDataLoaded] = useState(false)
 
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const today = new Date().toDateString()
-    setCurrentDate(today)
+  // Sync data to cloud when user is logged in
+  const syncToCloud = useCallback(async (data, settings = null) => {
+    if (!user) return
 
-    // Load checklist items
-    const storedChecklist = localStorage.getItem('checklist-items')
-    if (storedChecklist) {
-      setChecklistItems(JSON.parse(storedChecklist))
-    }
-
-    // Load nutrition metrics
-    const storedMetrics = localStorage.getItem('nutrition-metrics')
-    if (storedMetrics) {
-      setNutritionMetrics(JSON.parse(storedMetrics))
-    }
-
-    // Load water buttons
-    const storedWaterButtons = localStorage.getItem('water-buttons')
-    if (storedWaterButtons) {
-      setWaterButtons(JSON.parse(storedWaterButtons))
-    }
-
-    // Load water goal
-    const storedWaterGoal = localStorage.getItem('water-goal')
-    if (storedWaterGoal) {
-      setWaterGoal(Number(storedWaterGoal))
-    }
-
-    // Load meals
-    const storedMeals = localStorage.getItem('custom-meals')
-    if (storedMeals) {
-      setMeals(JSON.parse(storedMeals))
-    }
-
-    // Load today's data
-    const stored = localStorage.getItem('nutrition-data')
-    if (stored) {
-      const data = JSON.parse(stored)
-      if (data.date === today) {
-        setChecklistItems(data.checklistItems || [])
-        setNutritionMetrics(data.nutritionMetrics || [])
-        setWater(data.water || 0)
-        setWaterHistory(data.waterHistory || [])
-        setNutritionHistory(data.nutritionHistory || [])
-      } else {
-        // It's a new day - save yesterday's data to history before resetting
-        saveToHistory(data)
+    setSyncStatus('syncing')
+    try {
+      await saveTodayData(user.uid, data)
+      if (settings) {
+        await saveUserSettings(user.uid, settings)
       }
+      setSyncStatus('synced')
+      setTimeout(() => setSyncStatus(''), 2000)
+    } catch (error) {
+      console.error('Sync error:', error)
+      setSyncStatus('error')
+      setTimeout(() => setSyncStatus(''), 3000)
     }
-  }, [])
+  }, [user])
+
+  // Load data - from cloud if logged in, otherwise from localStorage
+  useEffect(() => {
+    const loadData = async () => {
+      const today = new Date().toDateString()
+      setCurrentDate(today)
+
+      // If user is logged in, try to load from cloud first
+      if (user && isConfigured) {
+        // Check if we need to migrate localStorage data
+        if (needsMigration()) {
+          setMigrating(true)
+          await migrateLocalStorageToFirestore(user.uid)
+          setMigrating(false)
+        }
+
+        // Load settings from cloud
+        const cloudSettings = await loadUserSettings(user.uid)
+        if (cloudSettings) {
+          if (cloudSettings.checklistItems) setChecklistItems(cloudSettings.checklistItems)
+          if (cloudSettings.nutritionMetrics) setNutritionMetrics(cloudSettings.nutritionMetrics)
+          if (cloudSettings.waterButtons) setWaterButtons(cloudSettings.waterButtons)
+          if (cloudSettings.waterGoal) setWaterGoal(cloudSettings.waterGoal)
+          if (cloudSettings.meals) setMeals(cloudSettings.meals)
+        }
+
+        // Load today's data from cloud
+        const cloudData = await loadTodayData(user.uid)
+        if (cloudData && cloudData.date === today) {
+          if (cloudData.checklistItems) setChecklistItems(cloudData.checklistItems)
+          if (cloudData.nutritionMetrics) setNutritionMetrics(cloudData.nutritionMetrics)
+          if (cloudData.water !== undefined) setWater(cloudData.water)
+          if (cloudData.waterHistory) setWaterHistory(cloudData.waterHistory)
+          if (cloudData.nutritionHistory) setNutritionHistory(cloudData.nutritionHistory)
+        }
+
+        setDataLoaded(true)
+        return
+      }
+
+      // Fallback to localStorage
+      const storedChecklist = localStorage.getItem('checklist-items')
+      if (storedChecklist) {
+        setChecklistItems(JSON.parse(storedChecklist))
+      }
+
+      const storedMetrics = localStorage.getItem('nutrition-metrics')
+      if (storedMetrics) {
+        setNutritionMetrics(JSON.parse(storedMetrics))
+      }
+
+      const storedWaterButtons = localStorage.getItem('water-buttons')
+      if (storedWaterButtons) {
+        setWaterButtons(JSON.parse(storedWaterButtons))
+      }
+
+      const storedWaterGoal = localStorage.getItem('water-goal')
+      if (storedWaterGoal) {
+        setWaterGoal(Number(storedWaterGoal))
+      }
+
+      const storedMeals = localStorage.getItem('custom-meals')
+      if (storedMeals) {
+        setMeals(JSON.parse(storedMeals))
+      }
+
+      const stored = localStorage.getItem('nutrition-data')
+      if (stored) {
+        const data = JSON.parse(stored)
+        if (data.date === today) {
+          setChecklistItems(data.checklistItems || [])
+          setNutritionMetrics(data.nutritionMetrics || [])
+          setWater(data.water || 0)
+          setWaterHistory(data.waterHistory || [])
+          setNutritionHistory(data.nutritionHistory || [])
+        } else {
+          saveToHistory(data)
+        }
+      }
+
+      setDataLoaded(true)
+    }
+
+    if (!authLoading) {
+      loadData()
+    }
+  }, [user, authLoading, isConfigured])
 
   // Save to history function
   const saveToHistory = (dayData) => {
@@ -134,9 +205,9 @@ export default function NutritionTracker() {
     localStorage.setItem('nutrition-history', JSON.stringify(history))
   }
 
-  // Save data to localStorage whenever it changes
+  // Save data whenever it changes
   useEffect(() => {
-    if (!currentDate) return // Don't save until we've loaded
+    if (!currentDate || !dataLoaded) return // Don't save until we've loaded
 
     const today = new Date().toDateString()
     const data = {
@@ -147,11 +218,16 @@ export default function NutritionTracker() {
       waterHistory,
       nutritionHistory
     }
-    localStorage.setItem('nutrition-data', JSON.stringify(data))
 
-    // Also save to history for today (so reports show current day)
+    // Always save to localStorage as backup
+    localStorage.setItem('nutrition-data', JSON.stringify(data))
     saveToHistory(data)
-  }, [checklistItems, nutritionMetrics, water, waterHistory, nutritionHistory, currentDate])
+
+    // Sync to cloud if user is logged in
+    if (user) {
+      syncToCloud(data)
+    }
+  }, [checklistItems, nutritionMetrics, water, waterHistory, nutritionHistory, currentDate, dataLoaded, user, syncToCloud])
 
   // Toggle checklist item
   const toggleChecklistItem = (index) => {
@@ -248,30 +324,45 @@ export default function NutritionTracker() {
     setNutritionHistory([])
   }
 
-  // Settings functions
+  // Settings functions - save to localStorage and sync to cloud
   const saveChecklistItems = (items) => {
     localStorage.setItem('checklist-items', JSON.stringify(items))
     setChecklistItems(items)
+    if (user) {
+      saveUserSettings(user.uid, { checklistItems: items })
+    }
   }
 
   const saveNutritionMetrics = (metrics) => {
     localStorage.setItem('nutrition-metrics', JSON.stringify(metrics))
     setNutritionMetrics(metrics)
+    if (user) {
+      saveUserSettings(user.uid, { nutritionMetrics: metrics })
+    }
   }
 
   const saveWaterButtons = (buttons) => {
     localStorage.setItem('water-buttons', JSON.stringify(buttons))
     setWaterButtons(buttons)
+    if (user) {
+      saveUserSettings(user.uid, { waterButtons: buttons })
+    }
   }
 
   const saveWaterGoal = (goal) => {
     localStorage.setItem('water-goal', String(goal))
     setWaterGoal(goal)
+    if (user) {
+      saveUserSettings(user.uid, { waterGoal: goal })
+    }
   }
 
   const saveMeals = (mealsData) => {
     localStorage.setItem('custom-meals', JSON.stringify(mealsData))
     setMeals(mealsData)
+    if (user) {
+      saveUserSettings(user.uid, { meals: mealsData })
+    }
   }
 
   // AI Chat functions using Groq API (free tier)
@@ -370,74 +461,299 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
     setNutritionMetrics(updated)
   }
 
+  // Show loading state
+  if (authLoading || migrating) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#fafafa',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <div style={{ fontSize: '32px' }}>{migrating ? '📦' : '🍎'}</div>
+        <div style={{ fontSize: '14px', color: '#666' }}>
+          {migrating ? 'Migrating your data...' : 'Loading...'}
+        </div>
+      </div>
+    )
+  }
+
+  // If not logged in and Firebase is configured, show login prompt (unless skipped)
+  const skipAuth = typeof window !== 'undefined' && localStorage.getItem('skip-auth') === 'true'
+  if (!user && isConfigured && !skipAuth) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#fafafa',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '16px',
+          padding: '32px 24px',
+          maxWidth: '400px',
+          width: '100%',
+          textAlign: 'center',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🍎</div>
+          <h1 style={{
+            margin: '0 0 8px 0',
+            fontSize: '24px',
+            fontWeight: '600',
+            color: '#1a1a1a',
+            letterSpacing: '-0.5px'
+          }}>
+            Nutrition Tracker
+          </h1>
+          <p style={{
+            margin: '0 0 24px 0',
+            fontSize: '14px',
+            color: '#666',
+            lineHeight: '1.5'
+          }}>
+            Track your daily nutrition, water intake, and healthy habits with cloud sync across all your devices.
+          </p>
+          <button
+            onClick={() => router.push('/login')}
+            style={{
+              width: '100%',
+              padding: '14px',
+              backgroundColor: '#1a1a1a',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginBottom: '12px'
+            }}
+          >
+            Sign In / Create Account
+          </button>
+          <button
+            onClick={() => {
+              // Allow using without account by setting a flag
+              localStorage.setItem('skip-auth', 'true')
+              window.location.reload()
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: 'transparent',
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
+              color: '#666',
+              fontSize: '13px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            Continue without account
+          </button>
+          <p style={{
+            margin: '16px 0 0 0',
+            fontSize: '12px',
+            color: '#999'
+          }}>
+            Data saved locally only without an account
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
       backgroundColor: '#fafafa',
-      padding: '40px 20px'
+      padding: '16px 12px',
+      paddingBottom: '32px'
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
-          marginBottom: '48px',
-          paddingBottom: '24px',
-          borderBottom: '1px solid #e0e0e0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start'
+          marginBottom: '24px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid #e0e0e0'
         }}>
-          <div>
-            <h1 style={{
-              margin: '0 0 8px 0',
-              fontSize: '32px',
-              fontWeight: '600',
-              color: '#1a1a1a',
-              letterSpacing: '-0.5px'
-            }}>
-              Daily Tracker
-            </h1>
-            <div style={{
-              color: '#666',
-              fontSize: '15px',
-              fontWeight: '400',
-              letterSpacing: '0'
-            }}>
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '12px'
+          }}>
+            <div>
+              <h1 style={{
+                margin: '0 0 4px 0',
+                fontSize: '22px',
+                fontWeight: '600',
+                color: '#1a1a1a',
+                letterSpacing: '-0.5px'
+              }}>
+                Daily Tracker
+              </h1>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{
+                  color: '#666',
+                  fontSize: '13px',
+                  fontWeight: '400',
+                  letterSpacing: '0'
+                }}>
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </span>
+                {syncStatus && (
+                  <span style={{
+                    fontSize: '11px',
+                    color: syncStatus === 'synced' ? '#10b981' : syncStatus === 'error' ? '#ef4444' : '#666',
+                    fontWeight: '500'
+                  }}>
+                    {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'synced' ? 'Synced' : 'Sync error'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* User Account Button */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => user ? setShowUserMenu(!showUserMenu) : router.push('/login')}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: user ? '#f0fdf4' : '#fff',
+                  border: '1px solid',
+                  borderColor: user ? '#86efac' : '#e0e0e0',
+                  borderRadius: '8px',
+                  color: user ? '#166534' : '#666',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {user ? (
+                  <>
+                    <span style={{ fontSize: '14px' }}>{'☁️'}</span>
+                    <span>Synced</span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '14px' }}>{'👤'}</span>
+                    <span>Sign In</span>
+                  </>
+                )}
+              </button>
+
+              {/* User Menu Dropdown */}
+              {showUserMenu && user && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '4px',
+                  backgroundColor: '#fff',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  minWidth: '180px',
+                  zIndex: 100,
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    padding: '12px 14px',
+                    borderBottom: '1px solid #e0e0e0',
+                    backgroundColor: '#fafafa'
+                  }}>
+                    <div style={{ fontSize: '11px', color: '#999', marginBottom: '2px' }}>
+                      Signed in as
+                    </div>
+                    <div style={{
+                      fontSize: '13px',
+                      color: '#1a1a1a',
+                      fontWeight: '500',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {user.email}
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await signOut()
+                      setShowUserMenu(false)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: '#ef4444',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px'
+          }}>
             <button
               onClick={() => setShowChat(true)}
               style={{
-                padding: '10px 20px',
+                padding: '10px 8px',
                 backgroundColor: '#1a1a1a',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
-                fontSize: '14px',
+                fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                whiteSpace: 'nowrap'
               }}
             >
-              🤖 AI Assistant
+              🤖 AI
             </button>
             <Link
               href="/reports"
               style={{
-                padding: '10px 20px',
+                padding: '10px 8px',
                 backgroundColor: '#fff',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '14px',
+                fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 textDecoration: 'none',
-                display: 'inline-block'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
               Reports
@@ -445,12 +761,12 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
             <button
               onClick={() => setShowSettings(true)}
               style={{
-                padding: '10px 20px',
+                padding: '10px 8px',
                 backgroundColor: '#fff',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '14px',
+                fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
@@ -464,10 +780,10 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
 
         {/* Daily Checklist */}
         {checklistItems.length > 0 && (
-          <div style={{ marginBottom: '40px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <h2 style={{
-              margin: '0 0 16px 0',
-              fontSize: '13px',
+              margin: '0 0 12px 0',
+              fontSize: '12px',
               fontWeight: '600',
               color: '#999',
               textTransform: 'uppercase',
@@ -477,34 +793,34 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
             </h2>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: checklistItems.length <= 2 ? `repeat(${checklistItems.length}, 1fr)` : 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '12px'
+              gridTemplateColumns: checklistItems.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+              gap: '8px'
             }}>
               {checklistItems.map((item, i) => (
                 <button
                   key={i}
                   onClick={() => toggleChecklistItem(i)}
                   style={{
-                    padding: '16px 20px',
+                    padding: '12px 14px',
                     backgroundColor: '#fff',
                     border: '1px solid',
                     borderColor: item.checked ? '#1a1a1a' : '#e0e0e0',
                     borderRadius: '10px',
                     color: item.checked ? '#1a1a1a' : '#666',
-                    fontSize: '15px',
+                    fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                     textAlign: 'left',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '8px',
                     boxShadow: item.checked ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.04)'
                   }}
                 >
                   <div style={{
-                    width: '20px',
-                    height: '20px',
+                    width: '18px',
+                    height: '18px',
                     borderRadius: '50%',
                     border: item.checked ? 'none' : '2px solid #d0d0d0',
                     backgroundColor: item.checked ? '#1a1a1a' : 'transparent',
@@ -512,12 +828,14 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#fff',
-                    fontSize: '12px',
+                    fontSize: '10px',
                     flexShrink: 0
                   }}>
                     {item.checked && '✓'}
                   </div>
-                  {item.name}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.name}
+                  </span>
                 </button>
               ))}
             </div>
@@ -526,10 +844,10 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
 
         {/* Water Tracker */}
         {waterButtons.length > 0 && (
-          <div style={{ marginBottom: '40px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <h2 style={{
-              margin: '0 0 16px 0',
-              fontSize: '13px',
+              margin: '0 0 12px 0',
+              fontSize: '12px',
               fontWeight: '600',
               color: '#999',
               textTransform: 'uppercase',
@@ -540,22 +858,22 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
             <div style={{
               backgroundColor: '#fff',
               borderRadius: '12px',
-              padding: '32px',
+              padding: '20px 16px',
               border: '1px solid #e0e0e0',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }}>
               <div style={{
                 display: 'flex',
-                gap: '48px',
+                gap: '24px',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '32px'
+                marginBottom: '20px'
               }}>
-{/* Water Bottle Visualization */}
+                {/* Water Bottle Visualization */}
                 {waterGoal > 0 && (() => {
                   const fillPercent = Math.min(water / waterGoal, 1)
-                  const waterHeight = fillPercent * 160
-                  const waterTop = 190 - waterHeight
+                  const waterHeight = fillPercent * 120
+                  const waterTop = 145 - waterHeight
                   const isFull = fillPercent >= 1
                   return (
                     <WaterBottle
@@ -571,26 +889,26 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                 {/* Stats */}
                 <div style={{ textAlign: 'center' }}>
                   <div style={{
-                    fontSize: '64px',
+                    fontSize: '48px',
                     fontWeight: '600',
                     color: '#1a1a1a',
-                    marginBottom: '4px',
+                    marginBottom: '2px',
                     letterSpacing: '-2px'
                   }}>
                     {water}
                   </div>
                   <div style={{
-                    fontSize: '14px',
+                    fontSize: '12px',
                     color: '#999',
                     fontWeight: '500',
                     letterSpacing: '0.5px',
-                    marginBottom: waterGoal > 0 ? '8px' : '0'
+                    marginBottom: waterGoal > 0 ? '4px' : '0'
                   }}>
                     oz consumed
                   </div>
                   {waterGoal > 0 && (
                     <div style={{
-                      fontSize: '13px',
+                      fontSize: '12px',
                       color: '#666',
                       fontWeight: '500'
                     }}>
@@ -602,24 +920,26 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
 
               <div style={{
                 display: 'flex',
-                gap: '8px',
+                gap: '6px',
                 justifyContent: 'center',
-                marginBottom: '16px'
+                flexWrap: 'wrap',
+                marginBottom: '12px'
               }}>
                 {waterButtons.map((amount, i) => (
                   <button
                     key={i}
                     onClick={() => addWater(amount)}
                     style={{
-                      padding: '12px 24px',
+                      padding: '10px 16px',
                       backgroundColor: '#f5f5f5',
                       border: '1px solid #e0e0e0',
                       borderRadius: '8px',
                       color: '#1a1a1a',
-                      fontSize: '15px',
+                      fontSize: '14px',
                       fontWeight: '500',
                       cursor: 'pointer',
-                      transition: 'all 0.15s'
+                      transition: 'all 0.15s',
+                      minWidth: '60px'
                     }}
                   >
                     +{amount}
@@ -629,11 +949,11 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
               {waterHistory.length > 0 && (
                 <div style={{ textAlign: 'center' }}>
                   <button onClick={undoWater} style={{
-                    padding: '8px 16px',
+                    padding: '6px 12px',
                     backgroundColor: 'transparent',
                     border: 'none',
                     color: '#999',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
                     textDecoration: 'underline'
@@ -648,16 +968,16 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
 
         {/* Nutrition Totals */}
         {nutritionMetrics.length > 0 && (
-          <div style={{ marginBottom: '40px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '16px'
+              marginBottom: '12px'
             }}>
               <h2 style={{
                 margin: '0',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: '600',
                 color: '#999',
                 textTransform: 'uppercase',
@@ -667,11 +987,11 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
               </h2>
               {nutritionHistory.length > 0 && (
                 <button onClick={undoNutrition} style={{
-                  padding: '6px 12px',
+                  padding: '4px 10px',
                   backgroundColor: 'transparent',
                   border: 'none',
                   color: '#999',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: '500',
                   cursor: 'pointer',
                   textDecoration: 'underline'
@@ -682,18 +1002,14 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
             </div>
             <div style={{
               display: 'grid',
-              gridTemplateColumns:
-                nutritionMetrics.length === 1 ? '1fr' :
-                nutritionMetrics.length === 2 ? 'repeat(2, 1fr)' :
-                nutritionMetrics.length === 3 ? 'repeat(3, 1fr)' :
-                'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '12px'
+              gridTemplateColumns: nutritionMetrics.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+              gap: '8px'
             }}>
               {nutritionMetrics.map((metric, i) => {
                 const progress = metric.goal > 0 ? Math.min((metric.value || 0) / metric.goal * 100, 100) : 0
                 return (
                   <div key={i} style={{
-                    padding: '24px',
+                    padding: '16px',
                     backgroundColor: '#fff',
                     border: '1px solid #e0e0e0',
                     borderRadius: '10px',
@@ -719,14 +1035,14 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '12px'
+                        gap: '6px',
+                        marginBottom: '8px'
                       }}>
                         {metric.icon && (
-                          <span style={{ fontSize: '16px' }}>{metric.icon}</span>
+                          <span style={{ fontSize: '14px' }}>{metric.icon}</span>
                         )}
                         <div style={{
-                          fontSize: '13px',
+                          fontSize: '11px',
                           color: '#999',
                           fontWeight: '500',
                           letterSpacing: '0.5px'
@@ -735,24 +1051,24 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                         </div>
                       </div>
                       <div style={{
-                        fontSize: '36px',
+                        fontSize: '28px',
                         fontWeight: '600',
                         color: '#1a1a1a',
                         letterSpacing: '-1px'
                       }}>
                         {metric.value || 0}
-                        {metric.unit && <span style={{ fontSize: '18px', color: '#999', fontWeight: '500' }}> {metric.unit}</span>}
+                        {metric.unit && <span style={{ fontSize: '14px', color: '#999', fontWeight: '500' }}> {metric.unit}</span>}
                       </div>
                       {metric.goal > 0 && (
                         <div style={{
-                          marginTop: '8px',
-                          fontSize: '13px',
+                          marginTop: '4px',
+                          fontSize: '11px',
                           color: '#666',
                           fontWeight: '500'
                         }}>
-                          Goal: {metric.goal} {metric.unit}
+                          Goal: {metric.goal}
                           <span style={{
-                            marginLeft: '8px',
+                            marginLeft: '6px',
                             color: progress >= 100 ? '#10b981' : '#999',
                             fontWeight: '600'
                           }}>
@@ -769,10 +1085,10 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
         )}
 
         {/* Quick Add Meals */}
-        <div style={{ marginBottom: '40px' }}>
+        <div style={{ marginBottom: '24px' }}>
           <h2 style={{
-            margin: '0 0 16px 0',
-            fontSize: '13px',
+            margin: '0 0 12px 0',
+            fontSize: '12px',
             fontWeight: '600',
             color: '#999',
             textTransform: 'uppercase',
@@ -782,9 +1098,9 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '12px',
-            marginBottom: '16px'
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '8px',
+            marginBottom: '12px'
           }}>
             {meals.map((meal, i) => (
               meal ? (
@@ -792,12 +1108,12 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                   key={i}
                   onClick={() => addMeal(meal)}
                   style={{
-                    padding: '20px',
+                    padding: '14px 12px',
                     backgroundColor: '#fff',
                     border: '1px solid #e0e0e0',
                     borderRadius: '10px',
                     color: '#1a1a1a',
-                    fontSize: '15px',
+                    fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -808,19 +1124,33 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '8px'
+                    gap: '6px',
+                    marginBottom: '4px'
                   }}>
                     {meal.icon && (
-                      <span style={{ fontSize: '20px' }}>{meal.icon}</span>
+                      <span style={{ fontSize: '16px' }}>{meal.icon}</span>
                     )}
-                    <div style={{ fontSize: '15px', fontWeight: '500', color: '#1a1a1a' }}>
+                    <div style={{
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: '#1a1a1a',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
                       {meal.name}
                     </div>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#999', lineHeight: '1.5' }}>
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#999',
+                    lineHeight: '1.4',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
                     {nutritionMetrics.map((metric, idx) =>
-                      meal[metric.key] ? `${meal[metric.key]}${metric.unit || ''} ${metric.name}` : ''
+                      meal[metric.key] ? `${meal[metric.key]}${metric.unit || ''}` : ''
                     ).filter(Boolean).join(' • ')}
                   </div>
                 </button>
@@ -828,12 +1158,12 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                 <div
                   key={i}
                   style={{
-                    padding: '20px',
+                    padding: '14px 12px',
                     backgroundColor: '#fafafa',
                     border: '1px dashed #d0d0d0',
                     borderRadius: '10px',
                     color: '#ccc',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     textAlign: 'center',
                     display: 'flex',
                     alignItems: 'center',
@@ -850,16 +1180,16 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
           {/* Custom Entry */}
           {nutritionMetrics.length > 0 && (
             <div style={{
-              padding: '24px',
+              padding: '16px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '10px',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }}>
               <div style={{
-                fontSize: '13px',
+                fontSize: '12px',
                 color: '#999',
-                marginBottom: '16px',
+                marginBottom: '12px',
                 fontWeight: '500',
                 letterSpacing: '0.5px'
               }}>
@@ -867,9 +1197,9 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
               </div>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: `repeat(${Math.min(nutritionMetrics.length, 2)}, 1fr)`,
-                gap: '12px',
-                marginBottom: '16px'
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '8px',
+                marginBottom: '12px'
               }}>
                 {nutritionMetrics.map((metric, i) => (
                   <input
@@ -879,25 +1209,27 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                     value={customValues[metric.key] || ''}
                     onChange={(e) => setCustomValues({ ...customValues, [metric.key]: e.target.value })}
                     style={{
-                      padding: '12px 16px',
+                      padding: '10px 12px',
                       backgroundColor: '#fafafa',
                       border: '1px solid #e0e0e0',
                       borderRadius: '8px',
                       color: '#1a1a1a',
-                      fontSize: '15px',
-                      fontWeight: '500'
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}
                   />
                 ))}
               </div>
               <button onClick={addCustomEntry} style={{
                 width: '100%',
-                padding: '12px',
+                padding: '10px',
                 backgroundColor: '#1a1a1a',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500',
                 cursor: 'pointer',
                 transition: 'all 0.15s'
@@ -912,42 +1244,42 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
         {checklistItems.length === 0 && nutritionMetrics.length === 0 && waterButtons.length === 0 && (
           <div style={{
             textAlign: 'center',
-            padding: '80px 40px',
+            padding: '60px 24px',
             backgroundColor: '#fff',
             borderRadius: '12px',
             border: '1px solid #e0e0e0'
           }}>
             <div style={{
-              fontSize: '56px',
-              marginBottom: '24px',
+              fontSize: '48px',
+              marginBottom: '20px',
               opacity: 0.2
             }}>
               📊
             </div>
             <div style={{
-              fontSize: '20px',
+              fontSize: '18px',
               fontWeight: '600',
               color: '#1a1a1a',
-              marginBottom: '8px'
+              marginBottom: '6px'
             }}>
               Ready to Track
             </div>
             <div style={{
-              fontSize: '15px',
+              fontSize: '14px',
               color: '#999',
-              marginBottom: '24px'
+              marginBottom: '20px'
             }}>
               Configure your tracker to get started
             </div>
             <button
               onClick={() => setShowSettings(true)}
               style={{
-                padding: '12px 24px',
+                padding: '10px 20px',
                 backgroundColor: '#1a1a1a',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500',
                 cursor: 'pointer'
               }}
@@ -994,7 +1326,7 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
   )
 }
 
-// Water Bottle Component with delayed wave animation
+// Water Bottle Component with delayed wave animation (smaller for mobile)
 function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
   const [showWaves, setShowWaves] = useState(true)
   const [displayedWaterTop, setDisplayedWaterTop] = useState(waterTop)
@@ -1021,8 +1353,8 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
         }
       `}</style>
       <svg
-        width="120"
-        height="200"
+        width="80"
+        height="150"
         viewBox="0 0 120 200"
         style={{ display: 'block', overflow: 'hidden' }}
       >
@@ -1093,18 +1425,18 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
         <rect x="40" y="10" width="40" height="10" fill="#e0e0e0" rx="2" />
       </svg>
       <div style={{
-        marginTop: '12px',
-        fontSize: '13px',
+        marginTop: '8px',
+        fontSize: '11px',
         color: isFull ? '#10b981' : '#666',
         fontWeight: '500'
       }}>
-        {Math.round(fillPercent * 100)}% of goal {isFull && '🎉'}
+        {Math.round(fillPercent * 100)}% {isFull && '🎉'}
       </div>
     </div>
   )
 }
 
-// Settings Modal Component
+// Settings Modal Component (mobile optimized)
 function SettingsModal({
   checklistItems,
   nutritionMetrics,
@@ -1216,25 +1548,24 @@ function SettingsModal({
       backgroundColor: 'rgba(0, 0, 0, 0.4)',
       backdropFilter: 'blur(4px)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-end',
       justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
+      zIndex: 1000
     }}>
       <div style={{
         backgroundColor: '#fff',
-        borderRadius: '12px',
-        maxWidth: '700px',
+        borderRadius: '16px 16px 0 0',
         width: '100%',
-        maxHeight: '85vh',
+        maxWidth: '700px',
+        maxHeight: '90vh',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+        boxShadow: '0 -4px 30px rgba(0,0,0,0.2)'
       }}>
         {/* Header */}
         <div style={{
-          padding: '24px 28px',
+          padding: '16px 20px',
           borderBottom: '1px solid #e0e0e0',
           display: 'flex',
           justifyContent: 'space-between',
@@ -1242,7 +1573,7 @@ function SettingsModal({
         }}>
           <h2 style={{
             margin: 0,
-            fontSize: '20px',
+            fontSize: '18px',
             fontWeight: '600',
             color: '#1a1a1a',
             letterSpacing: '-0.3px'
@@ -1252,12 +1583,12 @@ function SettingsModal({
           <button
             onClick={onClose}
             style={{
-              padding: '8px 16px',
+              padding: '6px 14px',
               backgroundColor: '#f5f5f5',
               border: 'none',
               borderRadius: '6px',
               color: '#666',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
@@ -1269,9 +1600,11 @@ function SettingsModal({
         {/* Tabs */}
         <div style={{
           display: 'flex',
-          gap: '4px',
-          padding: '16px 28px 0 28px',
-          borderBottom: '1px solid #e0e0e0'
+          gap: '2px',
+          padding: '12px 16px 0 16px',
+          borderBottom: '1px solid #e0e0e0',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch'
         }}>
           {[
             { id: 'checklist', label: 'Habits' },
@@ -1283,16 +1616,18 @@ function SettingsModal({
               key={tab.id}
               onClick={() => setSettingsTab(tab.id)}
               style={{
-                padding: '10px 20px',
+                padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
                 borderBottom: settingsTab === tab.id ? '2px solid #1a1a1a' : '2px solid transparent',
                 color: settingsTab === tab.id ? '#1a1a1a' : '#999',
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: '500',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                marginBottom: '-1px'
+                marginBottom: '-1px',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               {tab.label}
@@ -1304,7 +1639,7 @@ function SettingsModal({
         <div style={{
           flex: 1,
           overflow: 'auto',
-          padding: '28px',
+          padding: '20px 16px',
           backgroundColor: '#fafafa'
         }}>
           {settingsTab === 'checklist' && (
@@ -1348,12 +1683,12 @@ function SettingsModal({
 
         {/* Footer */}
         <div style={{
-          padding: '20px 28px',
+          padding: '16px 20px',
           borderTop: '1px solid #e0e0e0',
           backgroundColor: '#fff',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          gap: '8px',
+          paddingBottom: '24px'
         }}>
           <button
             onClick={() => {
@@ -1361,28 +1696,29 @@ function SettingsModal({
               onClose()
             }}
             style={{
-              padding: '10px 20px',
+              padding: '10px 14px',
               backgroundColor: 'transparent',
               border: '1px solid #ef4444',
               borderRadius: '8px',
               color: '#ef4444',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
             }}
           >
-            Reset Today
+            Reset
           </button>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={onClose}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#f5f5f5',
-                border: 'none',
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              backgroundColor: '#f5f5f5',
+              border: 'none',
               borderRadius: '8px',
               color: '#666',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
@@ -1392,19 +1728,19 @@ function SettingsModal({
           <button
             onClick={handleSave}
             style={{
-              padding: '10px 24px',
+              flex: 1,
+              padding: '10px 14px',
               backgroundColor: '#1a1a1a',
               border: 'none',
               borderRadius: '8px',
               color: '#fff',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
           >
-            Save Changes
+            Save
           </button>
-          </div>
         </div>
       </div>
     </div>
@@ -1415,12 +1751,12 @@ function SettingsModal({
 function ChecklistSettings({ items, onAdd, onUpdate, onRemove }) {
   return (
     <div>
-      <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
-        Add daily habits you want to track (vitamins, exercise, meditation, etc.)
+      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+        Add daily habits to track
       </div>
 
       {items.map((item, i) => (
-        <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
           <input
             type="text"
             value={item.name}
@@ -1428,29 +1764,29 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove }) {
             placeholder="Habit name"
             style={{
               flex: 1,
-              padding: '12px 16px',
+              padding: '10px 12px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               color: '#1a1a1a',
-              fontSize: '15px',
+              fontSize: '14px',
               fontWeight: '500'
             }}
           />
           <button
             onClick={() => onRemove(i)}
             style={{
-              padding: '12px 16px',
+              padding: '10px 12px',
               backgroundColor: '#f5f5f5',
               border: 'none',
               borderRadius: '8px',
               color: '#999',
-              fontSize: '14px',
+              fontSize: '13px',
               cursor: 'pointer',
               fontWeight: '500'
             }}
           >
-            Remove
+            ✕
           </button>
         </div>
       ))}
@@ -1459,13 +1795,13 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove }) {
         onClick={onAdd}
         style={{
           width: '100%',
-          padding: '12px',
-          marginTop: '12px',
+          padding: '10px',
+          marginTop: '8px',
           backgroundColor: '#fff',
           border: '1px dashed #d0d0d0',
           borderRadius: '8px',
           color: '#666',
-          fontSize: '14px',
+          fontSize: '13px',
           fontWeight: '500',
           cursor: 'pointer'
         }}
@@ -1483,30 +1819,30 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
-        Add nutrition metrics to track with optional daily goals
+      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+        Add nutrition metrics with optional goals
       </div>
 
       {metrics.map((metric, i) => (
         <div key={i} style={{
-          padding: '20px',
+          padding: '14px',
           backgroundColor: '#fff',
           border: '1px solid #e0e0e0',
           borderRadius: '10px',
-          marginBottom: '12px'
+          marginBottom: '10px'
         }}>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
             <select
               value={metric.icon || '📊'}
               onChange={(e) => onUpdate(i, 'icon', e.target.value)}
               style={{
-                padding: '10px',
+                padding: '8px',
                 backgroundColor: '#fafafa',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
-                fontSize: '18px',
+                fontSize: '16px',
                 cursor: 'pointer',
-                width: '60px'
+                width: '50px'
               }}
             >
               {iconOptions.map(icon => (
@@ -1517,37 +1853,37 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
               type="text"
               value={metric.name}
               onChange={(e) => onUpdate(i, 'name', e.target.value)}
-              placeholder="Metric name (e.g., Calories)"
+              placeholder="Name (e.g., Calories)"
               style={{
                 flex: 1,
-                padding: '12px 16px',
+                padding: '10px 12px',
                 backgroundColor: '#fafafa',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500'
               }}
             />
             <button
               onClick={() => onRemove(i)}
               style={{
-                padding: '12px 16px',
+                padding: '10px 12px',
                 backgroundColor: '#f5f5f5',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#999',
-                fontSize: '14px',
+                fontSize: '13px',
                 cursor: 'pointer',
                 fontWeight: '500'
               }}
             >
-              Remove
+              ✕
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
             <div>
-              <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+              <label style={{ fontSize: '10px', color: '#999', marginBottom: '2px', display: 'block' }}>
                 Unit
               </label>
               <input
@@ -1557,17 +1893,18 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 placeholder="g, cal, etc"
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
+                  padding: '8px 10px',
                   backgroundColor: '#fafafa',
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
                   color: '#1a1a1a',
-                  fontSize: '14px'
+                  fontSize: '13px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
             <div>
-              <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+              <label style={{ fontSize: '10px', color: '#999', marginBottom: '2px', display: 'block' }}>
                 Daily Goal
               </label>
               <input
@@ -1577,32 +1914,13 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 placeholder="Optional"
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
+                  padding: '8px 10px',
                   backgroundColor: '#fafafa',
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
                   color: '#1a1a1a',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
-                Key (optional)
-              </label>
-              <input
-                type="text"
-                value={metric.key}
-                onChange={(e) => onUpdate(i, 'key', e.target.value)}
-                placeholder="Auto"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '8px',
-                  color: '#1a1a1a',
-                  fontSize: '14px'
+                  fontSize: '13px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
@@ -1614,13 +1932,13 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
         onClick={onAdd}
         style={{
           width: '100%',
-          padding: '12px',
-          marginTop: '12px',
+          padding: '10px',
+          marginTop: '8px',
           backgroundColor: '#fff',
           border: '1px dashed #d0d0d0',
           borderRadius: '8px',
           color: '#666',
-          fontSize: '14px',
+          fontSize: '13px',
           fontWeight: '500',
           cursor: 'pointer'
         }}
@@ -1635,7 +1953,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove }) {
   return (
     <div>
-      <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px', fontWeight: '500' }}>
+      <div style={{ fontSize: '11px', color: '#666', marginBottom: '6px', fontWeight: '500' }}>
         Daily Water Goal
       </div>
       <input
@@ -1645,22 +1963,23 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove 
         placeholder="Enter daily goal in ounces"
         style={{
           width: '100%',
-          padding: '12px',
+          padding: '10px 12px',
           backgroundColor: '#fff',
           border: '1px solid #e0e0e0',
           borderRadius: '8px',
           color: '#1a1a1a',
           fontSize: '14px',
-          marginBottom: '24px'
+          marginBottom: '20px',
+          boxSizing: 'border-box'
         }}
       />
 
-      <div style={{ fontSize: '12px', color: '#666', marginBottom: '16px', fontWeight: '500' }}>
-        Water Bottle Sizes (in ounces)
+      <div style={{ fontSize: '11px', color: '#666', marginBottom: '12px', fontWeight: '500' }}>
+        Bottle Sizes (ounces)
       </div>
 
       {buttons.map((amount, i) => (
-        <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
           <input
             type="number"
             value={amount}
@@ -1668,7 +1987,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove 
             placeholder="Ounces"
             style={{
               flex: 1,
-              padding: '12px',
+              padding: '10px 12px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
@@ -1679,12 +1998,12 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove 
           <button
             onClick={() => onRemove(i)}
             style={{
-              padding: '12px 16px',
+              padding: '10px 14px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               color: '#ff3333',
-              fontSize: '14px',
+              fontSize: '13px',
               cursor: 'pointer'
             }}
           >
@@ -1697,7 +2016,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove 
         onClick={onAdd}
         style={{
           width: '100%',
-          padding: '12px',
+          padding: '10px',
           marginTop: '8px',
           backgroundColor: 'rgba(0, 217, 255, 0.05)',
           border: '1px dashed rgba(0, 217, 255, 0.3)',
@@ -1709,7 +2028,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove 
           letterSpacing: '1px'
         }}
       >
-        + ADD BOTTLE SIZE
+        + ADD SIZE
       </button>
     </div>
   )
@@ -1721,45 +2040,45 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
         Configure quick-add meal presets
       </div>
 
       {metrics.length === 0 && (
         <div style={{
-          padding: '40px 20px',
+          padding: '30px 16px',
           textAlign: 'center',
           color: '#999',
-          fontSize: '14px',
+          fontSize: '13px',
           backgroundColor: '#fff',
           borderRadius: '10px',
           border: '1px solid #e0e0e0'
         }}>
-          Add nutrition metrics first to configure meals
+          Add nutrition metrics first
         </div>
       )}
 
       {metrics.length > 0 && meals.map((meal, i) => (
         <div key={i} style={{
-          padding: '20px',
+          padding: '14px',
           backgroundColor: '#fff',
           border: '1px solid #e0e0e0',
           borderRadius: '10px',
-          marginBottom: '12px'
+          marginBottom: '10px'
         }}>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: meal ? '16px' : '0' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: meal ? '12px' : '0' }}>
             {meal && (
               <select
                 value={meal?.icon || '🍽️'}
                 onChange={(e) => onUpdate(i, 'icon', e.target.value)}
                 style={{
-                  padding: '10px',
+                  padding: '8px',
                   backgroundColor: '#fafafa',
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
-                  fontSize: '18px',
+                  fontSize: '16px',
                   cursor: 'pointer',
-                  width: '60px'
+                  width: '50px'
                 }}
               >
                 {mealIcons.map(icon => (
@@ -1771,15 +2090,15 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
               type="text"
               value={meal?.name || ''}
               onChange={(e) => onUpdate(i, 'name', e.target.value)}
-              placeholder={`Meal ${i + 1} (optional)`}
+              placeholder={`Meal ${i + 1}`}
               style={{
                 flex: 1,
-                padding: '12px 16px',
+                padding: '10px 12px',
                 backgroundColor: '#fafafa',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500'
               }}
             />
@@ -1787,32 +2106,32 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
               <button
                 onClick={() => onRemove(i)}
                 style={{
-                  padding: '12px 16px',
+                  padding: '10px 12px',
                   backgroundColor: '#f5f5f5',
                   border: 'none',
                   borderRadius: '8px',
                   color: '#999',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   cursor: 'pointer',
                   fontWeight: '500'
                 }}
               >
-                Remove
+                ✕
               </button>
             )}
           </div>
 
           {meal && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
               {metrics.map((metric) => (
                 <div key={metric.key}>
                   <label style={{
-                    fontSize: '11px',
+                    fontSize: '10px',
                     color: '#999',
-                    marginBottom: '4px',
+                    marginBottom: '2px',
                     display: 'block'
                   }}>
-                    {metric.name} {metric.unit && `(${metric.unit})`}
+                    {metric.name}
                   </label>
                   <input
                     type="number"
@@ -1821,12 +2140,13 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                     placeholder="0"
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
+                      padding: '8px 10px',
                       backgroundColor: '#fafafa',
                       border: '1px solid #e0e0e0',
                       borderRadius: '8px',
                       color: '#1a1a1a',
-                      fontSize: '14px'
+                      fontSize: '13px',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
