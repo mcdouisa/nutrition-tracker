@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AIChatModal } from './ai-chat-modal'
@@ -12,7 +12,9 @@ import {
   loadUserSettings,
   saveHistoryEntry,
   migrateLocalStorageToFirestore,
-  needsMigration
+  needsMigration,
+  subscribeTodayData,
+  subscribeUserSettings
 } from '../lib/dataSync'
 
 export default function NutritionTracker() {
@@ -21,6 +23,7 @@ export default function NutritionTracker() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [syncStatus, setSyncStatus] = useState('') // 'syncing', 'synced', 'error', ''
   const [migrating, setMigrating] = useState(false)
+  const isRemoteUpdate = useRef(false) // Track if update came from real-time listener
   // Customizable checklist items (empty by default)
   const [checklistItems, setChecklistItems] = useState([])
 
@@ -76,7 +79,11 @@ export default function NutritionTracker() {
   }, [user])
 
   // Load data - from cloud if logged in, otherwise from localStorage
+  // Also sets up real-time listeners for multi-device sync
   useEffect(() => {
+    let unsubscribeData = () => {}
+    let unsubscribeSettings = () => {}
+
     const loadData = async () => {
       const today = new Date().toDateString()
       setCurrentDate(today)
@@ -109,6 +116,32 @@ export default function NutritionTracker() {
           if (cloudData.waterHistory) setWaterHistory(cloudData.waterHistory)
           if (cloudData.nutritionHistory) setNutritionHistory(cloudData.nutritionHistory)
         }
+
+        // Set up real-time listeners for multi-device sync
+        unsubscribeData = subscribeTodayData(user.uid, (data) => {
+          if (data && data.date === today) {
+            isRemoteUpdate.current = true
+            if (data.checklistItems) setChecklistItems(data.checklistItems)
+            if (data.nutritionMetrics) setNutritionMetrics(data.nutritionMetrics)
+            if (data.water !== undefined) setWater(data.water)
+            if (data.waterHistory) setWaterHistory(data.waterHistory)
+            if (data.nutritionHistory) setNutritionHistory(data.nutritionHistory)
+            // Reset flag after state updates
+            setTimeout(() => { isRemoteUpdate.current = false }, 100)
+          }
+        })
+
+        unsubscribeSettings = subscribeUserSettings(user.uid, (settings) => {
+          if (settings) {
+            isRemoteUpdate.current = true
+            if (settings.checklistItems) setChecklistItems(settings.checklistItems)
+            if (settings.nutritionMetrics) setNutritionMetrics(settings.nutritionMetrics)
+            if (settings.waterButtons) setWaterButtons(settings.waterButtons)
+            if (settings.waterGoal) setWaterGoal(settings.waterGoal)
+            if (settings.meals) setMeals(settings.meals)
+            setTimeout(() => { isRemoteUpdate.current = false }, 100)
+          }
+        })
 
         setDataLoaded(true)
         return
@@ -160,6 +193,12 @@ export default function NutritionTracker() {
     if (!authLoading) {
       loadData()
     }
+
+    // Cleanup listeners on unmount or user change
+    return () => {
+      unsubscribeData()
+      unsubscribeSettings()
+    }
   }, [user, authLoading, isConfigured])
 
   // Save to history function
@@ -208,6 +247,9 @@ export default function NutritionTracker() {
   // Save data whenever it changes
   useEffect(() => {
     if (!currentDate || !dataLoaded) return // Don't save until we've loaded
+
+    // Skip syncing if this update came from a remote listener
+    if (isRemoteUpdate.current) return
 
     const today = new Date().toDateString()
     const data = {
