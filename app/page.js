@@ -85,9 +85,17 @@ export default function NutritionTracker() {
     let unsubscribeData = () => {}
     let unsubscribeSettings = () => {}
 
+    // Reset dataLoaded to prevent stale saves during user transitions
+    setDataLoaded(false)
+
     const loadData = async () => {
       const today = new Date().toDateString()
       setCurrentDate(today)
+
+      // Reset daily values first (prevents bleed between users or days)
+      setWater(0)
+      setWaterHistory([])
+      setNutritionHistory([])
 
       // If user is logged in, try to load from cloud first
       if (user && isConfigured) {
@@ -98,17 +106,21 @@ export default function NutritionTracker() {
           setMigrating(false)
         }
 
-        // Load settings from cloud
+        // Load settings from cloud (definitions only - strip daily values)
         const cloudSettings = await loadUserSettings(user.uid)
         if (cloudSettings) {
-          if (cloudSettings.checklistItems) setChecklistItems(cloudSettings.checklistItems)
-          if (cloudSettings.nutritionMetrics) setNutritionMetrics(cloudSettings.nutritionMetrics)
+          if (cloudSettings.checklistItems) {
+            setChecklistItems(cloudSettings.checklistItems.map(item => ({ ...item, checked: false })))
+          }
+          if (cloudSettings.nutritionMetrics) {
+            setNutritionMetrics(cloudSettings.nutritionMetrics.map(m => ({ ...m, value: 0 })))
+          }
           if (cloudSettings.waterButtons) setWaterButtons(cloudSettings.waterButtons)
           if (cloudSettings.waterGoal) setWaterGoal(cloudSettings.waterGoal)
           if (cloudSettings.meals) setMeals(cloudSettings.meals)
         }
 
-        // Load today's data from cloud
+        // Load today's data from cloud (this has the actual daily values)
         const cloudData = await loadTodayData(user.uid)
         if (cloudData && cloudData.date === today) {
           if (cloudData.checklistItems) setChecklistItems(cloudData.checklistItems)
@@ -116,6 +128,11 @@ export default function NutritionTracker() {
           if (cloudData.water !== undefined) setWater(cloudData.water)
           if (cloudData.waterHistory) setWaterHistory(cloudData.waterHistory)
           if (cloudData.nutritionHistory) setNutritionHistory(cloudData.nutritionHistory)
+        } else {
+          // New day - ensure values are reset to zero
+          setWater(0)
+          setWaterHistory([])
+          setNutritionHistory([])
         }
 
         // Set up real-time listeners for multi-device sync
@@ -147,7 +164,15 @@ export default function NutritionTracker() {
                 }))
               })
             }
-            if (settings.nutritionMetrics) setNutritionMetrics(settings.nutritionMetrics)
+            if (settings.nutritionMetrics) {
+              setNutritionMetrics(current => {
+                // Merge settings definitions with current daily values
+                return settings.nutritionMetrics.map((settingsMetric, index) => ({
+                  ...settingsMetric,
+                  value: current[index]?.key === settingsMetric.key ? (current[index].value || 0) : 0
+                }))
+              })
+            }
             if (settings.waterButtons) setWaterButtons(settings.waterButtons)
             if (settings.waterGoal) setWaterGoal(settings.waterGoal)
             if (settings.meals) setMeals(settings.meals)
@@ -160,14 +185,15 @@ export default function NutritionTracker() {
       }
 
       // Fallback to localStorage
+      // Load settings definitions (strip daily values)
       const storedChecklist = localStorage.getItem('checklist-items')
       if (storedChecklist) {
-        setChecklistItems(JSON.parse(storedChecklist))
+        setChecklistItems(JSON.parse(storedChecklist).map(item => ({ ...item, checked: false })))
       }
 
       const storedMetrics = localStorage.getItem('nutrition-metrics')
       if (storedMetrics) {
-        setNutritionMetrics(JSON.parse(storedMetrics))
+        setNutritionMetrics(JSON.parse(storedMetrics).map(m => ({ ...m, value: 0 })))
       }
 
       const storedWaterButtons = localStorage.getItem('water-buttons')
@@ -185,17 +211,21 @@ export default function NutritionTracker() {
         setMeals(JSON.parse(storedMeals))
       }
 
+      // Load today's daily data (this has the actual values)
       const stored = localStorage.getItem('nutrition-data')
       if (stored) {
         const data = JSON.parse(stored)
         if (data.date === today) {
-          setChecklistItems(data.checklistItems || [])
-          setNutritionMetrics(data.nutritionMetrics || [])
+          // Today's data - load with values
+          if (data.checklistItems) setChecklistItems(data.checklistItems)
+          if (data.nutritionMetrics) setNutritionMetrics(data.nutritionMetrics)
           setWater(data.water || 0)
           setWaterHistory(data.waterHistory || [])
           setNutritionHistory(data.nutritionHistory || [])
         } else {
+          // Previous day - save to history and clear stale data
           saveToHistory(data)
+          localStorage.removeItem('nutrition-data')
         }
       }
 
@@ -759,9 +789,13 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                       }
                       try {
                         await saveTodayData(user.uid, data)
+                        // Save settings with definitions only (no daily values)
                         await saveUserSettings(user.uid, {
-                          checklistItems,
-                          nutritionMetrics,
+                          checklistItems: checklistItems.map(item => ({ ...item, checked: false })),
+                          nutritionMetrics: nutritionMetrics.map(m => {
+                            const { value, ...rest } = m
+                            return rest
+                          }),
                           waterButtons,
                           waterGoal,
                           meals
@@ -769,6 +803,10 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                       } catch (e) {
                         console.error('Error saving before logout:', e)
                       }
+                      // Clear localStorage to prevent data bleed to next user
+                      localStorage.removeItem('nutrition-data')
+                      localStorage.removeItem('nutrition-history')
+                      localStorage.removeItem('firebase-migrated')
                       await signOut()
                       setSigningOut(false)
                       setShowUserMenu(false)
