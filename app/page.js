@@ -1448,7 +1448,7 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
               x="30"
               y={waterTop + 3}
               width="60"
-              height={waterHeight + 10}
+              height={200 - waterTop}
               fill="#fb923c"
               style={{ transition: 'y 1.5s ease-out, height 1.5s ease-out' }}
             />
