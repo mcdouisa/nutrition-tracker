@@ -3,15 +3,17 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
-import { loadHistory, loadUserSettings } from '../../lib/dataSync'
+import { loadHistory, loadUserSettings, saveTodayData, saveUserSettings } from '../../lib/dataSync'
 
 export default function ReportsPage() {
   const { user, isConfigured } = useAuth()
   const [history, setHistory] = useState([])
   const [metrics, setMetrics] = useState([])
-  const [viewMode, setViewMode] = useState('weekly') // weekly, monthly
+  const [viewMode, setViewMode] = useState('last7') // last7, weekly, monthly
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [loading, setLoading] = useState(true)
+  const [editingDay, setEditingDay] = useState(null)
+  const [editValues, setEditValues] = useState({})
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,17 +49,24 @@ export default function ReportsPage() {
 
   // Get date range based on view mode
   const getDateRange = () => {
-    const start = new Date(selectedDate)
-    const end = new Date(selectedDate)
+    const end = new Date()
+    const start = new Date()
 
-    if (viewMode === 'weekly') {
-      // Get start of week (Sunday)
-      const day = start.getDay()
+    if (viewMode === 'last7') {
+      // Last 7 days including today
+      start.setDate(end.getDate() - 6)
+    } else if (viewMode === 'weekly') {
+      // Calendar week (Sunday to Saturday)
+      const day = selectedDate.getDay()
+      start.setTime(selectedDate.getTime())
       start.setDate(start.getDate() - day)
+      end.setTime(start.getTime())
       end.setDate(start.getDate() + 6)
     } else {
-      // Get start and end of month
+      // Monthly
+      start.setTime(selectedDate.getTime())
       start.setDate(1)
+      end.setTime(selectedDate.getTime())
       end.setMonth(end.getMonth() + 1)
       end.setDate(0)
     }
@@ -74,7 +83,7 @@ export default function ReportsPage() {
     return history.filter(entry => {
       const entryDate = new Date(entry.date)
       return entryDate >= start && entryDate <= end
-    }).sort((a, b) => new Date(a.date) - new Date(b.date))
+    }).sort((a, b) => new Date(b.date) - new Date(a.date)) // Most recent first
   }
 
   // Calculate stats for the period
@@ -131,10 +140,92 @@ export default function ReportsPage() {
     const { start, end } = getDateRange()
     const options = { month: 'short', day: 'numeric' }
 
-    if (viewMode === 'weekly') {
+    if (viewMode === 'last7') {
+      return `Last 7 Days`
+    } else if (viewMode === 'weekly') {
       return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`
     } else {
       return start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    }
+  }
+
+  // Edit a past day
+  const startEditing = (day) => {
+    const values = { water: day.water || 0 }
+    metrics.forEach(metric => {
+      const dayMetric = day.nutritionMetrics?.find(m => m.key === metric.key)
+      values[metric.key] = dayMetric?.value || 0
+    })
+    setEditValues(values)
+    setEditingDay(day)
+  }
+
+  // Save edited day
+  const saveEditedDay = async () => {
+    if (!editingDay) return
+
+    const updatedMetrics = metrics.map(metric => ({
+      ...metric,
+      value: parseInt(editValues[metric.key]) || 0
+    }))
+
+    const updatedDay = {
+      ...editingDay,
+      water: parseInt(editValues.water) || 0,
+      nutritionMetrics: updatedMetrics
+    }
+
+    // Update in history
+    const updatedHistory = history.map(day =>
+      day.date === editingDay.date ? updatedDay : day
+    )
+
+    // Check if this day exists, if not add it
+    if (!history.find(day => day.date === editingDay.date)) {
+      updatedHistory.push(updatedDay)
+    }
+
+    setHistory(updatedHistory)
+
+    // Save to cloud or localStorage
+    if (user && isConfigured) {
+      // Convert date to YYYY-MM-DD format for Firestore
+      const dateStr = new Date(editingDay.date).toISOString().split('T')[0]
+      await saveTodayData(user.uid, {
+        ...updatedDay,
+        date: editingDay.date
+      })
+    } else {
+      localStorage.setItem('nutrition-history', JSON.stringify(updatedHistory))
+    }
+
+    setEditingDay(null)
+    setEditValues({})
+  }
+
+  // Add entry to a previous day (creates the day if it doesn't exist)
+  const addToPreviousDay = (daysAgo) => {
+    const targetDate = new Date()
+    targetDate.setDate(targetDate.getDate() - daysAgo)
+    const dateStr = targetDate.toDateString()
+
+    // Check if this day exists in history
+    const existingDay = history.find(day => {
+      const dayDate = new Date(day.date).toDateString()
+      return dayDate === dateStr
+    })
+
+    if (existingDay) {
+      startEditing(existingDay)
+    } else {
+      // Create a new day entry
+      const newDay = {
+        date: dateStr,
+        water: 0,
+        nutritionMetrics: metrics.map(m => ({ ...m, value: 0 })),
+        checklistItems: []
+      }
+      startEditing(newDay)
     }
   }
 
@@ -205,23 +296,39 @@ export default function ReportsPage() {
           </Link>
         </div>
 
-        {/* View Mode Toggle */}
+        {/* View Mode Toggle - 3 options */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '8px',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '6px',
           marginBottom: '16px'
         }}>
           <button
+            onClick={() => setViewMode('last7')}
+            style={{
+              padding: '10px 12px',
+              backgroundColor: viewMode === 'last7' ? '#1a1a1a' : '#fff',
+              border: '1px solid',
+              borderColor: viewMode === 'last7' ? '#1a1a1a' : '#e0e0e0',
+              borderRadius: '8px',
+              color: viewMode === 'last7' ? '#fff' : '#666',
+              fontSize: '12px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            Last 7 Days
+          </button>
+          <button
             onClick={() => setViewMode('weekly')}
             style={{
-              padding: '10px 16px',
+              padding: '10px 12px',
               backgroundColor: viewMode === 'weekly' ? '#1a1a1a' : '#fff',
               border: '1px solid',
               borderColor: viewMode === 'weekly' ? '#1a1a1a' : '#e0e0e0',
               borderRadius: '8px',
               color: viewMode === 'weekly' ? '#fff' : '#666',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
@@ -231,13 +338,13 @@ export default function ReportsPage() {
           <button
             onClick={() => setViewMode('monthly')}
             style={{
-              padding: '10px 16px',
+              padding: '10px 12px',
               backgroundColor: viewMode === 'monthly' ? '#1a1a1a' : '#fff',
               border: '1px solid',
               borderColor: viewMode === 'monthly' ? '#1a1a1a' : '#e0e0e0',
               borderRadius: '8px',
               color: viewMode === 'monthly' ? '#fff' : '#666',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '500',
               cursor: 'pointer'
             }}
@@ -246,54 +353,265 @@ export default function ReportsPage() {
           </button>
         </div>
 
-        {/* Date Navigation */}
+        {/* Date Navigation - only show for weekly/monthly */}
+        {viewMode !== 'last7' && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '20px',
+            padding: '14px 16px',
+            backgroundColor: '#fff',
+            borderRadius: '10px',
+            border: '1px solid #e0e0e0'
+          }}>
+            <button
+              onClick={() => navigate(-1)}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: '#f5f5f5',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#666',
+                fontSize: '16px',
+                cursor: 'pointer'
+              }}
+            >
+              ←
+            </button>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#1a1a1a',
+              textAlign: 'center'
+            }}>
+              {formatDateRange()}
+            </div>
+            <button
+              onClick={() => navigate(1)}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: '#f5f5f5',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#666',
+                fontSize: '16px',
+                cursor: 'pointer'
+              }}
+            >
+              →
+            </button>
+          </div>
+        )}
+
+        {/* Quick Add to Previous Days */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
           marginBottom: '20px',
           padding: '14px 16px',
           backgroundColor: '#fff',
           borderRadius: '10px',
           border: '1px solid #e0e0e0'
         }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: '#f5f5f5',
-              border: 'none',
-              borderRadius: '6px',
-              color: '#666',
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}
-          >
-            ←
-          </button>
           <div style={{
-            fontSize: '14px',
+            fontSize: '12px',
             fontWeight: '600',
-            color: '#1a1a1a',
-            textAlign: 'center'
+            color: '#999',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            marginBottom: '10px'
           }}>
-            {formatDateRange()}
+            Add to Previous Day
           </div>
-          <button
-            onClick={() => navigate(1)}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: '#f5f5f5',
-              border: 'none',
-              borderRadius: '6px',
-              color: '#666',
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}
-          >
-            →
-          </button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => addToPreviousDay(1)}
+              style={{
+                padding: '8px 14px',
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e0e0e0',
+                borderRadius: '6px',
+                color: '#1a1a1a',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Yesterday
+            </button>
+            <button
+              onClick={() => addToPreviousDay(2)}
+              style={{
+                padding: '8px 14px',
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e0e0e0',
+                borderRadius: '6px',
+                color: '#1a1a1a',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              2 days ago
+            </button>
+            <button
+              onClick={() => addToPreviousDay(3)}
+              style={{
+                padding: '8px 14px',
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e0e0e0',
+                borderRadius: '6px',
+                color: '#1a1a1a',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              3 days ago
+            </button>
+          </div>
         </div>
+
+        {/* Edit Modal */}
+        {editingDay && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflow: 'auto'
+            }}>
+              <h3 style={{
+                margin: '0 0 4px 0',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1a1a1a'
+              }}>
+                Edit Entry
+              </h3>
+              <div style={{
+                fontSize: '13px',
+                color: '#666',
+                marginBottom: '20px'
+              }}>
+                {new Date(editingDay.date).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+
+              {/* Water */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: '#666',
+                  marginBottom: '6px'
+                }}>
+                  💧 Water (oz)
+                </label>
+                <input
+                  type="number"
+                  value={editValues.water || ''}
+                  onChange={(e) => setEditValues({ ...editValues, water: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#fafafa',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Nutrition Metrics */}
+              {metrics.map(metric => (
+                <div key={metric.key} style={{ marginBottom: '16px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#666',
+                    marginBottom: '6px'
+                  }}>
+                    {metric.icon} {metric.name} ({metric.unit})
+                  </label>
+                  <input
+                    type="number"
+                    value={editValues[metric.key] || ''}
+                    onChange={(e) => setEditValues({ ...editValues, [metric.key]: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      backgroundColor: '#fafafa',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              ))}
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button
+                  onClick={() => {
+                    setEditingDay(null)
+                    setEditValues({})
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#f5f5f5',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#666',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEditedDay}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#1a1a1a',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Summary Stats */}
         {metrics.length > 0 && (
@@ -388,7 +706,7 @@ export default function ReportsPage() {
                 height: '100px',
                 marginBottom: '8px'
               }}>
-                {filteredHistory.map((day, i) => {
+                {[...filteredHistory].reverse().map((day, i) => {
                   const metric = metrics[0]
                   const dayMetric = day.nutritionMetrics?.find(m => m.key === metric?.key)
                   const value = dayMetric?.value || 0
@@ -431,8 +749,8 @@ export default function ReportsPage() {
                 fontSize: '10px',
                 color: '#999'
               }}>
-                <span>{new Date(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                 <span>{new Date(filteredHistory[filteredHistory.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span>{new Date(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
               </div>
               {metrics[0]?.goal && (
                 <div style={{
@@ -467,7 +785,7 @@ export default function ReportsPage() {
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
-            Daily Breakdown
+            Daily Breakdown (tap to edit)
           </h2>
 
           {filteredHistory.length === 0 ? (
@@ -495,22 +813,40 @@ export default function ReportsPage() {
             }}>
               {/* Mobile-friendly daily cards */}
               {filteredHistory.map((day, i) => (
-                <div key={i} style={{
-                  padding: '14px 16px',
-                  borderBottom: i < filteredHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
-                  backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa'
-                }}>
+                <div
+                  key={i}
+                  onClick={() => startEditing(day)}
+                  style={{
+                    padding: '14px 16px',
+                    borderBottom: i < filteredHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                    backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s'
+                  }}
+                >
                   <div style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#1a1a1a',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                     marginBottom: '8px'
                   }}>
-                    {new Date(day.date).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
+                    <div style={{
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: '#1a1a1a'
+                    }}>
+                      {new Date(day.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#999'
+                    }}>
+                      tap to edit ✏️
+                    </div>
                   </div>
                   <div style={{
                     display: 'flex',
