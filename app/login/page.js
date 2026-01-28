@@ -6,17 +6,20 @@ import { useAuth } from '../../lib/AuthContext'
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
+  const [isResetPassword, setIsResetPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn, signUp, isConfigured } = useAuth()
+  const { signIn, signUp, resetPassword, isConfigured } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
 
     if (!email || !password) {
       setError('Please fill in all fields')
@@ -52,6 +55,35 @@ export default function LoginPage() {
         setError('Invalid email or password')
       } else {
         setError(err.message || 'Something went wrong')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    if (!email) {
+      setError('Please enter your email address')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      await resetPassword(email)
+      setSuccess('Password reset email sent! Check your inbox.')
+    } catch (err) {
+      console.error('Reset password error:', err)
+      if (err.code === 'auth/user-not-found') {
+        setError('No account found with this email')
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address')
+      } else {
+        setError(err.message || 'Failed to send reset email')
       }
     } finally {
       setLoading(false)
@@ -127,6 +159,160 @@ export default function LoginPage() {
           >
             Continue Without Account
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Password Reset View
+  if (isResetPassword) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#fafafa',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '16px',
+          padding: '32px 24px',
+          maxWidth: '400px',
+          width: '100%',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+        }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔑</div>
+            <h1 style={{
+              margin: '0 0 4px 0',
+              fontSize: '24px',
+              fontWeight: '600',
+              color: '#1a1a1a',
+              letterSpacing: '-0.5px'
+            }}>
+              Reset Password
+            </h1>
+            <p style={{
+              margin: 0,
+              fontSize: '14px',
+              color: '#666'
+            }}>
+              Enter your email to receive a reset link
+            </p>
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+              color: '#dc2626',
+              fontSize: '13px',
+              fontWeight: '500'
+            }}>
+              {error}
+            </div>
+          )}
+
+          {/* Success message */}
+          {success && (
+            <div style={{
+              backgroundColor: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+              color: '#166534',
+              fontSize: '13px',
+              fontWeight: '500'
+            }}>
+              {success}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleResetPassword}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '12px',
+                fontWeight: '500',
+                color: '#666',
+                marginBottom: '6px'
+              }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  backgroundColor: '#fafafa',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  color: '#1a1a1a',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                backgroundColor: loading ? '#999' : '#1a1a1a',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                marginTop: '8px'
+              }}
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
+          </form>
+
+          {/* Back to sign in */}
+          <div style={{
+            textAlign: 'center',
+            marginTop: '24px',
+            paddingTop: '24px',
+            borderTop: '1px solid #e0e0e0'
+          }}>
+            <button
+              onClick={() => {
+                setIsResetPassword(false)
+                setError('')
+                setSuccess('')
+              }}
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: '#1a1a1a',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Back to Sign In
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -219,7 +405,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: isSignUp ? '16px' : '8px' }}>
             <label style={{
               display: 'block',
               fontSize: '12px',
@@ -247,6 +433,30 @@ export default function LoginPage() {
               }}
             />
           </div>
+
+          {/* Forgot Password Link */}
+          {!isSignUp && (
+            <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsResetPassword(true)
+                  setError('')
+                }}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: '#666',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           {isSignUp && (
             <div style={{ marginBottom: '16px' }}>
