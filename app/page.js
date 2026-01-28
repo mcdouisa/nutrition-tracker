@@ -1449,7 +1449,7 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
               y={waterTop + 3}
               width="60"
               height={waterHeight + 10}
-              fill="#c084fc"
+              fill="#fb923c"
               style={{ transition: 'y 1.5s ease-out, height 1.5s ease-out' }}
             />
 
@@ -1470,7 +1470,7 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
                       T 130 ${displayedWaterTop + 3}
                       L 130 ${displayedWaterTop + 10}
                       L 10 ${displayedWaterTop + 10} Z`}
-                  fill="#c084fc"
+                  fill="#fb923c"
                 />
               </g>
             )}
@@ -1481,7 +1481,7 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
               y={waterTop + 10}
               width="6"
               height={Math.max(waterHeight - 15, 0)}
-              fill="#d8b4fe"
+              fill="#fdba74"
               opacity="0.5"
               rx="3"
               style={{ transition: 'y 1.5s ease-out, height 1.5s ease-out' }}
