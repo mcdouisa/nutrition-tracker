@@ -47,14 +47,37 @@ export default function LoginPage() {
       router.push('/')
     } catch (err) {
       console.error('Auth error:', err)
-      if (err.code === 'auth/email-already-in-use') {
-        setError('Email already in use')
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email address')
-      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError('Invalid email or password')
-      } else {
-        setError(err.message || 'Something went wrong')
+      // Handle specific Firebase auth errors with clear messages
+      switch (err.code) {
+        case 'auth/email-already-in-use':
+          setError('This email is already registered. Try signing in instead.')
+          break
+        case 'auth/invalid-email':
+          setError('Please enter a valid email address.')
+          break
+        case 'auth/user-not-found':
+          setError('No account found with this email. Please sign up first.')
+          break
+        case 'auth/wrong-password':
+          setError('Incorrect password. Please try again or reset your password.')
+          break
+        case 'auth/invalid-credential':
+          setError('Incorrect email or password. Please check your credentials and try again.')
+          break
+        case 'auth/too-many-requests':
+          setError('Too many failed attempts. Please wait a few minutes and try again.')
+          break
+        case 'auth/user-disabled':
+          setError('This account has been disabled. Please contact support.')
+          break
+        case 'auth/weak-password':
+          setError('Password is too weak. Please use at least 6 characters.')
+          break
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your internet connection.')
+          break
+        default:
+          setError(err.message || 'Something went wrong. Please try again.')
       }
     } finally {
       setLoading(false)
@@ -78,12 +101,21 @@ export default function LoginPage() {
       setSuccess('Password reset email sent! Check your inbox.')
     } catch (err) {
       console.error('Reset password error:', err)
-      if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email')
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email address')
-      } else {
-        setError(err.message || 'Failed to send reset email')
+      switch (err.code) {
+        case 'auth/user-not-found':
+          setError('No account found with this email. Please check the email or sign up.')
+          break
+        case 'auth/invalid-email':
+          setError('Please enter a valid email address.')
+          break
+        case 'auth/too-many-requests':
+          setError('Too many requests. Please wait a few minutes and try again.')
+          break
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your internet connection.')
+          break
+        default:
+          setError(err.message || 'Failed to send reset email. Please try again.')
       }
     } finally {
       setLoading(false)
