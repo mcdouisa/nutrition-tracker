@@ -135,7 +135,18 @@ export default function NutritionTracker() {
         unsubscribeSettings = subscribeUserSettings(user.uid, (settings) => {
           if (settings) {
             isRemoteUpdate.current = true
-            if (settings.checklistItems) setChecklistItems(settings.checklistItems)
+            // For checklist items, only update the structure (names) not the checked state
+            // The checked state comes from daily data, not settings
+            if (settings.checklistItems) {
+              setChecklistItems(current => {
+                // Merge settings items with current checked states
+                return settings.checklistItems.map((settingsItem, index) => ({
+                  ...settingsItem,
+                  // Preserve checked state from current if same item exists
+                  checked: current[index]?.name === settingsItem.name ? current[index].checked : false
+                }))
+              })
+            }
             if (settings.nutritionMetrics) setNutritionMetrics(settings.nutritionMetrics)
             if (settings.waterButtons) setWaterButtons(settings.waterButtons)
             if (settings.waterGoal) setWaterGoal(settings.waterGoal)
