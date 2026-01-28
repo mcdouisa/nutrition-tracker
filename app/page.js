@@ -1764,13 +1764,15 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove }) {
             placeholder="Habit name"
             style={{
               flex: 1,
+              minWidth: 0,
               padding: '10px 12px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               color: '#1a1a1a',
               fontSize: '14px',
-              fontWeight: '500'
+              fontWeight: '500',
+              boxSizing: 'border-box'
             }}
           />
           <button
@@ -1856,13 +1858,15 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
               placeholder="Name (e.g., Calories)"
               style={{
                 flex: 1,
+                minWidth: 0,
                 padding: '10px 12px',
                 backgroundColor: '#fafafa',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
                 fontSize: '14px',
-                fontWeight: '500'
+                fontWeight: '500',
+                boxSizing: 'border-box'
               }}
             />
             <button
@@ -1987,12 +1991,14 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove 
             placeholder="Ounces"
             style={{
               flex: 1,
+              minWidth: 0,
               padding: '10px 12px',
               backgroundColor: '#fff',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               color: '#1a1a1a',
-              fontSize: '14px'
+              fontSize: '14px',
+              boxSizing: 'border-box'
             }}
           />
           <button
@@ -2093,13 +2099,15 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
               placeholder={`Meal ${i + 1}`}
               style={{
                 flex: 1,
+                minWidth: 0,
                 padding: '10px 12px',
                 backgroundColor: '#fafafa',
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
                 fontSize: '14px',
-                fontWeight: '500'
+                fontWeight: '500',
+                boxSizing: 'border-box'
               }}
             />
             {meal && (
