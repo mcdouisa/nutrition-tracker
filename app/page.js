@@ -23,6 +23,7 @@ export default function NutritionTracker() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [syncStatus, setSyncStatus] = useState('') // 'syncing', 'synced', 'error', ''
   const [migrating, setMigrating] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
   const isRemoteUpdate = useRef(false) // Track if update came from real-time listener
   // Customizable checklist items (empty by default)
   const [checklistItems, setChecklistItems] = useState([])
@@ -734,22 +735,47 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
                   </div>
                   <button
                     onClick={async () => {
+                      setSigningOut(true)
+                      // Save current data before signing out
+                      const today = new Date().toDateString()
+                      const data = {
+                        date: today,
+                        checklistItems,
+                        nutritionMetrics,
+                        water,
+                        waterHistory,
+                        nutritionHistory
+                      }
+                      try {
+                        await saveTodayData(user.uid, data)
+                        await saveUserSettings(user.uid, {
+                          checklistItems,
+                          nutritionMetrics,
+                          waterButtons,
+                          waterGoal,
+                          meals
+                        })
+                      } catch (e) {
+                        console.error('Error saving before logout:', e)
+                      }
                       await signOut()
+                      setSigningOut(false)
                       setShowUserMenu(false)
                     }}
+                    disabled={signingOut}
                     style={{
                       width: '100%',
                       padding: '12px 14px',
                       backgroundColor: 'transparent',
                       border: 'none',
-                      color: '#ef4444',
+                      color: signingOut ? '#999' : '#ef4444',
                       fontSize: '13px',
                       fontWeight: '500',
-                      cursor: 'pointer',
+                      cursor: signingOut ? 'not-allowed' : 'pointer',
                       textAlign: 'left'
                     }}
                   >
-                    Sign Out
+                    {signingOut ? 'Saving & signing out...' : 'Sign Out'}
                   </button>
                 </div>
               )}
