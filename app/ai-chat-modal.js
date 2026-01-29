@@ -1,5 +1,5 @@
 // AI Chat Modal Component (mobile optimized)
-export function AIChatModal({ messages, input, isThinking, onInputChange, onSend, onAddEstimates, onClose }) {
+export function AIChatModal({ messages, input, isThinking, metrics, onInputChange, onSend, onAddEstimates, onClose }) {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -125,23 +125,62 @@ export function AIChatModal({ messages, input, isThinking, onInputChange, onSend
               </div>
 
               {msg.estimates && (
-                <button
-                  onClick={() => onAddEstimates(msg.estimates)}
-                  style={{
-                    marginTop: '6px',
-                    padding: '8px 14px',
-                    backgroundColor: '#10b981',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  ✓ Add to Today
-                </button>
+                <div style={{
+                  marginTop: '6px',
+                  backgroundColor: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  maxWidth: '85%'
+                }}>
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: '#166534',
+                    marginBottom: '6px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Will add:
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '4px 10px',
+                    marginBottom: '8px'
+                  }}>
+                    {(metrics || []).map(m => {
+                      const val = msg.estimates[m.key]
+                      if (!val) return null
+                      return (
+                        <div key={m.key} style={{
+                          fontSize: '12px',
+                          color: '#1a1a1a',
+                          fontWeight: '500'
+                        }}>
+                          <span style={{ color: m.color || '#666' }}>{m.name}:</span>{' '}
+                          {val}{m.unit ? ` ${m.unit}` : ''}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <button
+                    onClick={() => onAddEstimates(msg.estimates)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 14px',
+                      backgroundColor: '#10b981',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ✓ Add to Today
+                  </button>
+                </div>
               )}
             </div>
           ))}

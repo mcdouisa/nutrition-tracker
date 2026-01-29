@@ -486,12 +486,14 @@ export default function NutritionTracker() {
 
 When the user describes a meal or food, provide:
 1. A brief, friendly response about the nutritional content
-2. Your estimates for the food described
+2. Your estimates for the EXACT amount they described
 
-IMPORTANT: Always end your response with nutrition data in this exact JSON format on its own line:
+CRITICAL: Calculate nutrition for the EXACT quantity the user specifies, NOT the standard serving size. If they say "4 skittles", calculate for exactly 4 individual skittles, not a full bag or standard serving. If they say "half a sandwich", calculate for half. Always match the user's described portion precisely.
+
+Always end your response with nutrition data in this exact JSON format on its own line:
 NUTRITION_DATA: ${JSON.stringify(metricsKeys)}
 
-Replace the 0s with your numerical estimates. Be accurate but reasonable with portion sizes.`
+Replace the 0s with your numerical estimates for the EXACT amount described.`
 
       // Build messages array for chat completion
       const messages = [
@@ -1449,6 +1451,7 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
           messages={chatMessages}
           input={chatInput}
           isThinking={isThinking}
+          metrics={nutritionMetrics}
           onInputChange={setChatInput}
           onSend={sendChatMessage}
           onAddEstimates={addEstimatedNutrition}
