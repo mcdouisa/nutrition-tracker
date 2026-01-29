@@ -50,6 +50,8 @@ export default function NutritionTracker() {
   const [showSettings, setShowSettings] = useState(false)
   const [settingsTab, setSettingsTab] = useState('checklist') // checklist, nutrition, water, meals
   const [showNutritionLog, setShowNutritionLog] = useState(false)
+  const [editingMetric, setEditingMetric] = useState(null) // index of metric being edited
+  const [editMetricValue, setEditMetricValue] = useState('')
 
   // AI Chat modal
   const [showChat, setShowChat] = useState(false)
@@ -376,8 +378,14 @@ export default function NutritionTracker() {
         ...updated[lastEntry.metricIndex],
         value: Math.max(0, (updated[lastEntry.metricIndex].value || 0) - (lastEntry.value || 0))
       }
+    } else if (lastEntry.metrics && Array.isArray(lastEntry.metrics)) {
+      // Old-format AI entry - restore the pre-addition snapshot values
+      lastEntry.metrics.forEach((oldMetric, i) => {
+        if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
+          updated[i] = { ...updated[i], value: oldMetric.value || 0 }
+        }
+      })
     }
-    // Old-format entries are just removed from history
 
     setNutritionMetrics(updated)
     setNutritionHistory(nutritionHistory.slice(0, -1))
@@ -406,11 +414,27 @@ export default function NutritionTracker() {
         ...updated[entry.metricIndex],
         value: Math.max(0, (updated[entry.metricIndex].value || 0) - (entry.value || 0))
       }
+    } else if (entry.metrics && Array.isArray(entry.metrics)) {
+      // Old-format AI entry - restore the pre-addition snapshot values
+      entry.metrics.forEach((oldMetric, i) => {
+        if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
+          updated[i] = { ...updated[i], value: oldMetric.value || 0 }
+        }
+      })
     }
-    // Old-format entries ({ metrics: [...] }) are removed from log without value adjustment
 
     setNutritionMetrics(updated)
     setNutritionHistory(nutritionHistory.filter((_, i) => i !== entryIndex))
+  }
+
+  // Save directly edited metric value
+  const saveMetricEdit = (metricIndex) => {
+    const newValue = parseInt(editMetricValue) || 0
+    const updated = [...nutritionMetrics]
+    updated[metricIndex] = { ...updated[metricIndex], value: Math.max(0, newValue) }
+    setNutritionMetrics(updated)
+    setEditingMetric(null)
+    setEditMetricValue('')
   }
 
   // Add meal
@@ -1289,15 +1313,22 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
             }}>
               {nutritionMetrics.map((metric, i) => {
                 const progress = metric.goal > 0 ? Math.min((metric.value || 0) / metric.goal * 100, 100) : 0
+                const isEditing = editingMetric === i
                 return (
-                  <div key={i} style={{
+                  <div key={i} onClick={() => {
+                    if (!isEditing) {
+                      setEditingMetric(i)
+                      setEditMetricValue(String(metric.value || 0))
+                    }
+                  }} style={{
                     padding: '16px',
                     backgroundColor: '#fff',
-                    border: '1px solid #e0e0e0',
+                    border: isEditing ? '1px solid #3b82f6' : '1px solid #e0e0e0',
                     borderRadius: '10px',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    cursor: isEditing ? 'default' : 'pointer'
                   }}>
                     {/* Progress background */}
                     {metric.goal > 0 && (
@@ -1332,31 +1363,71 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                           {metric.name}
                         </div>
                       </div>
-                      <div style={{
-                        fontSize: '28px',
-                        fontWeight: '600',
-                        color: '#1a1a1a',
-                        letterSpacing: '-1px'
-                      }}>
-                        {metric.value || 0}
-                        {metric.unit && <span style={{ fontSize: '14px', color: '#999', fontWeight: '500' }}> {metric.unit}</span>}
-                      </div>
-                      {metric.goal > 0 && (
-                        <div style={{
-                          marginTop: '4px',
-                          fontSize: '11px',
-                          color: '#666',
-                          fontWeight: '500'
-                        }}>
-                          Goal: {metric.goal}
-                          <span style={{
-                            marginLeft: '6px',
-                            color: progress >= 100 ? '#10b981' : '#999',
-                            fontWeight: '600'
-                          }}>
-                            {Math.round(progress)}%
-                          </span>
+                      {isEditing ? (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="number"
+                            value={editMetricValue}
+                            onChange={(e) => setEditMetricValue(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveMetricEdit(i)
+                              if (e.key === 'Escape') { setEditingMetric(null); setEditMetricValue('') }
+                            }}
+                            style={{
+                              width: '100%',
+                              fontSize: '24px',
+                              fontWeight: '600',
+                              color: '#1a1a1a',
+                              border: 'none',
+                              borderBottom: '2px solid #3b82f6',
+                              outline: 'none',
+                              padding: '2px 0',
+                              backgroundColor: 'transparent',
+                              boxSizing: 'border-box',
+                              minWidth: 0
+                            }}
+                          />
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                            <button onClick={() => saveMetricEdit(i)} style={{
+                              flex: 1, padding: '6px', backgroundColor: '#10b981', border: 'none',
+                              borderRadius: '4px', color: '#fff', fontSize: '11px', fontWeight: '600', cursor: 'pointer'
+                            }}>Save</button>
+                            <button onClick={() => { setEditingMetric(null); setEditMetricValue('') }} style={{
+                              flex: 1, padding: '6px', backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0',
+                              borderRadius: '4px', color: '#666', fontSize: '11px', fontWeight: '500', cursor: 'pointer'
+                            }}>Cancel</button>
+                          </div>
                         </div>
+                      ) : (
+                        <>
+                          <div style={{
+                            fontSize: '28px',
+                            fontWeight: '600',
+                            color: '#1a1a1a',
+                            letterSpacing: '-1px'
+                          }}>
+                            {metric.value || 0}
+                            {metric.unit && <span style={{ fontSize: '14px', color: '#999', fontWeight: '500' }}> {metric.unit}</span>}
+                          </div>
+                          {metric.goal > 0 && (
+                            <div style={{
+                              marginTop: '4px',
+                              fontSize: '11px',
+                              color: '#666',
+                              fontWeight: '500'
+                            }}>
+                              Goal: {metric.goal}
+                              <span style={{
+                                marginLeft: '6px',
+                                color: progress >= 100 ? '#10b981' : '#999',
+                                fontWeight: '600'
+                              }}>
+                                {Math.round(progress)}%
+                              </span>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
