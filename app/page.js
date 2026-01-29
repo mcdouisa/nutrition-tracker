@@ -352,16 +352,31 @@ export default function NutritionTracker() {
     ])
   }
 
-  // Undo last nutrition entry
+  // Undo last nutrition entry (supports both single and AI batch entries)
   const undoNutrition = () => {
     if (nutritionHistory.length === 0) return
 
     const lastEntry = nutritionHistory[nutritionHistory.length - 1]
     const updated = [...nutritionMetrics]
-    updated[lastEntry.metricIndex] = {
-      ...updated[lastEntry.metricIndex],
-      value: (updated[lastEntry.metricIndex].value || 0) - lastEntry.value
+
+    if (lastEntry.estimates) {
+      // Undo AI batch entry - reverse all metrics at once
+      updated.forEach((metric, index) => {
+        if (lastEntry.estimates[metric.key]) {
+          updated[index] = {
+            ...metric,
+            value: Math.max(0, (metric.value || 0) - lastEntry.estimates[metric.key])
+          }
+        }
+      })
+    } else {
+      // Undo single metric entry
+      updated[lastEntry.metricIndex] = {
+        ...updated[lastEntry.metricIndex],
+        value: Math.max(0, (updated[lastEntry.metricIndex].value || 0) - lastEntry.value)
+      }
     }
+
     setNutritionMetrics(updated)
     setNutritionHistory(nutritionHistory.slice(0, -1))
   }
@@ -541,7 +556,8 @@ Replace the 0s with your numerical estimates. Be accurate but reasonable with po
       value: (metric.value || 0) + (estimates[metric.key] || 0)
     }))
 
-    setNutritionHistory([...nutritionHistory, { metrics: nutritionMetrics, timestamp: Date.now() }])
+    // Store as batch entry so undo can reverse all metrics at once
+    setNutritionHistory([...nutritionHistory, { estimates, timestamp: Date.now() }])
     setNutritionMetrics(updated)
   }
 
