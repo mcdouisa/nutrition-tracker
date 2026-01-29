@@ -49,6 +49,7 @@ export default function NutritionTracker() {
   // Settings modal
   const [showSettings, setShowSettings] = useState(false)
   const [settingsTab, setSettingsTab] = useState('checklist') // checklist, nutrition, water, meals
+  const [showNutritionLog, setShowNutritionLog] = useState(false)
 
   // AI Chat modal
   const [showChat, setShowChat] = useState(false)
@@ -379,6 +380,35 @@ export default function NutritionTracker() {
 
     setNutritionMetrics(updated)
     setNutritionHistory(nutritionHistory.slice(0, -1))
+  }
+
+  // Remove a specific nutrition entry by index
+  const removeNutritionEntry = (entryIndex) => {
+    const entry = nutritionHistory[entryIndex]
+    if (!entry) return
+
+    const updated = [...nutritionMetrics]
+
+    if (entry.estimates) {
+      // Remove AI batch entry
+      updated.forEach((metric, i) => {
+        if (entry.estimates[metric.key]) {
+          updated[i] = {
+            ...metric,
+            value: Math.max(0, (metric.value || 0) - entry.estimates[metric.key])
+          }
+        }
+      })
+    } else {
+      // Remove single metric entry
+      updated[entry.metricIndex] = {
+        ...updated[entry.metricIndex],
+        value: Math.max(0, (updated[entry.metricIndex].value || 0) - entry.value)
+      }
+    }
+
+    setNutritionMetrics(updated)
+    setNutritionHistory(nutritionHistory.filter((_, i) => i !== entryIndex))
   }
 
   // Add meal
@@ -1121,20 +1151,129 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                 Nutrition
               </h2>
               {nutritionHistory.length > 0 && (
-                <button onClick={undoNutrition} style={{
-                  padding: '4px 10px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: '#999',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  textDecoration: 'underline'
-                }}>
-                  Undo
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={undoNutrition} style={{
+                    padding: '4px 10px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#999',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}>
+                    Undo
+                  </button>
+                  <button onClick={() => setShowNutritionLog(!showNutritionLog)} style={{
+                    padding: '4px 10px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: showNutritionLog ? '#1a1a1a' : '#999',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}>
+                    {showNutritionLog ? 'Hide Log' : 'Log'}
+                  </button>
+                </div>
               )}
             </div>
+
+            {/* Nutrition Entry Log */}
+            {showNutritionLog && nutritionHistory.length > 0 && (
+              <div style={{
+                marginBottom: '12px',
+                backgroundColor: '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '10px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  padding: '10px 14px',
+                  backgroundColor: '#fafafa',
+                  borderBottom: '1px solid #e0e0e0',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: '#666',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Today&apos;s Entries ({nutritionHistory.length})
+                </div>
+                {[...nutritionHistory].reverse().map((entry, reverseIdx) => {
+                  const entryIndex = nutritionHistory.length - 1 - reverseIdx
+                  const time = new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+
+                  let description = ''
+                  if (entry.estimates) {
+                    // AI batch entry
+                    const parts = nutritionMetrics
+                      .filter(m => entry.estimates[m.key])
+                      .map(m => `${m.name}: ${entry.estimates[m.key]}${m.unit ? ` ${m.unit}` : ''}`)
+                    description = parts.join(', ')
+                  } else {
+                    // Single metric entry
+                    const metric = nutritionMetrics[entry.metricIndex]
+                    if (metric) {
+                      description = `${metric.name}: +${entry.value}${metric.unit ? ` ${metric.unit}` : ''}`
+                    }
+                  }
+
+                  return (
+                    <div key={entryIndex} style={{
+                      padding: '10px 14px',
+                      borderBottom: reverseIdx < nutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '13px',
+                          color: '#1a1a1a',
+                          fontWeight: '500',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {entry.estimates ? 'AI Estimate' : 'Manual'}
+                          <span style={{ color: '#999', fontWeight: '400', marginLeft: '6px', fontSize: '11px' }}>{time}</span>
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#666',
+                          marginTop: '2px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {description}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeNutritionEntry(entryIndex)}
+                        style={{
+                          padding: '4px 10px',
+                          backgroundColor: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: '6px',
+                          color: '#ef4444',
+                          fontSize: '11px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: nutritionMetrics.length === 1 ? '1fr' : 'repeat(2, 1fr)',
