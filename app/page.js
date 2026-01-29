@@ -370,13 +370,14 @@ export default function NutritionTracker() {
           }
         }
       })
-    } else {
+    } else if (lastEntry.metricIndex !== undefined && updated[lastEntry.metricIndex]) {
       // Undo single metric entry
       updated[lastEntry.metricIndex] = {
         ...updated[lastEntry.metricIndex],
-        value: Math.max(0, (updated[lastEntry.metricIndex].value || 0) - lastEntry.value)
+        value: Math.max(0, (updated[lastEntry.metricIndex].value || 0) - (lastEntry.value || 0))
       }
     }
+    // Old-format entries are just removed from history
 
     setNutritionMetrics(updated)
     setNutritionHistory(nutritionHistory.slice(0, -1))
@@ -390,7 +391,7 @@ export default function NutritionTracker() {
     const updated = [...nutritionMetrics]
 
     if (entry.estimates) {
-      // Remove AI batch entry
+      // Remove AI batch entry (new format)
       updated.forEach((metric, i) => {
         if (entry.estimates[metric.key]) {
           updated[i] = {
@@ -399,13 +400,14 @@ export default function NutritionTracker() {
           }
         }
       })
-    } else {
+    } else if (entry.metricIndex !== undefined && updated[entry.metricIndex]) {
       // Remove single metric entry
       updated[entry.metricIndex] = {
         ...updated[entry.metricIndex],
-        value: Math.max(0, (updated[entry.metricIndex].value || 0) - entry.value)
+        value: Math.max(0, (updated[entry.metricIndex].value || 0) - (entry.value || 0))
       }
     }
+    // Old-format entries ({ metrics: [...] }) are removed from log without value adjustment
 
     setNutritionMetrics(updated)
     setNutritionHistory(nutritionHistory.filter((_, i) => i !== entryIndex))
@@ -1206,18 +1208,24 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                   const time = new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 
                   let description = ''
+                  let entryType = 'Manual'
                   if (entry.estimates) {
-                    // AI batch entry
+                    // AI batch entry (new format)
+                    entryType = 'AI Estimate'
                     const parts = nutritionMetrics
                       .filter(m => entry.estimates[m.key])
                       .map(m => `${m.name}: ${entry.estimates[m.key]}${m.unit ? ` ${m.unit}` : ''}`)
                     description = parts.join(', ')
-                  } else {
+                  } else if (entry.metricIndex !== undefined) {
                     // Single metric entry
                     const metric = nutritionMetrics[entry.metricIndex]
                     if (metric) {
                       description = `${metric.name}: +${entry.value}${metric.unit ? ` ${metric.unit}` : ''}`
                     }
+                  } else {
+                    // Old-format AI entry
+                    entryType = 'AI Estimate'
+                    description = 'Added via AI (legacy entry)'
                   }
 
                   return (
@@ -1238,7 +1246,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}>
-                          {entry.estimates ? 'AI Estimate' : 'Manual'}
+                          {entryType}
                           <span style={{ color: '#999', fontWeight: '400', marginLeft: '6px', fontSize: '11px' }}>{time}</span>
                         </div>
                         <div style={{
