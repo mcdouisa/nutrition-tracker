@@ -446,6 +446,71 @@ export default function ReportsPage() {
   const stats = calculateStats()
   const filteredHistory = getFilteredHistory()
 
+  // Calculate streaks (consecutive days from today)
+  const calculateStreaks = () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const getDateKey = (date) => {
+      const d = new Date(date)
+      d.setHours(0, 0, 0, 0)
+      return d.toISOString().split('T')[0]
+    }
+
+    // Build a map of date -> day data
+    const dateMap = {}
+    history.forEach(day => {
+      const key = parseLocalDate(day.date).toISOString().split('T')[0]
+      dateMap[key] = day
+    })
+
+    // Count consecutive days. If today doesn't qualify, start from yesterday
+    const countStreak = (checkFn) => {
+      const todayKey = getDateKey(today)
+      const todayQualifies = dateMap[todayKey] && checkFn(dateMap[todayKey])
+      const startDay = todayQualifies ? 0 : 1
+      let streak = 0
+
+      for (let i = startDay; i < 365; i++) {
+        const checkDate = new Date(today)
+        checkDate.setDate(today.getDate() - i)
+        const key = getDateKey(checkDate)
+        const day = dateMap[key]
+        if (day && checkFn(day)) streak++
+        else break
+      }
+      return streak
+    }
+
+    // Tracking streak: any data logged
+    const trackingStreak = countStreak(() => true)
+
+    // Metric goal streaks
+    const metricStreaks = {}
+    metrics.forEach(metric => {
+      if (metric.goal > 0) {
+        metricStreaks[metric.key] = countStreak(day => {
+          const dayMetric = day.nutritionMetrics?.find(m => m.key === metric.key)
+          return dayMetric && dayMetric.value >= metric.goal
+        })
+      }
+    })
+
+    // Water streak
+    const wGoal = typeof window !== 'undefined' ? (parseInt(localStorage.getItem('water-goal')) || 0) : 0
+    const waterStreak = wGoal > 0 ? countStreak(day => (day.water || 0) >= wGoal) : -1
+
+    // Checklist streak: all items checked
+    const checklistStreak = countStreak(day => {
+      if (!day.checklistItems || day.checklistItems.length === 0) return false
+      return day.checklistItems.every(item => item.checked)
+    })
+
+    return { trackingStreak, metricStreaks, waterStreak, checklistStreak }
+  }
+
+  const streaks = calculateStreaks()
+
   if (loading) {
     return (
       <div style={{
@@ -876,16 +941,16 @@ export default function ReportsPage() {
                   <div style={{ fontSize: '11px', color: '#999' }}>
                     Total: {stats.totals[metric.key] || 0} {metric.unit}
                   </div>
-                  {metric.goal > 0 && stats.days > 0 && (
+                  {metric.goal > 0 && (
                     <div style={{
                       marginTop: '8px',
                       padding: '6px 8px',
-                      backgroundColor: '#f0fdf4',
+                      backgroundColor: (streaks.metricStreaks[metric.key] || 0) > 0 ? '#f0fdf4' : '#f5f5f5',
                       borderRadius: '4px',
                       fontSize: '11px',
-                      color: '#166534'
+                      color: (streaks.metricStreaks[metric.key] || 0) > 0 ? '#166534' : '#999'
                     }}>
-                      Goal: {stats.goalAchievement[metric.key] || 0}/{stats.days} days
+                      🔥 {streaks.metricStreaks[metric.key] || 0} day{(streaks.metricStreaks[metric.key] || 0) !== 1 ? 's' : ''} in a row
                     </div>
                   )}
                 </div>
@@ -894,116 +959,127 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Chart visualization */}
-        {metrics.length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
-            {viewMode === 'weekly' ? (
-              <>
-                <h2 style={{
-                  margin: '0 0 12px 0',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: '#999',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Meal Timing Patterns
-                </h2>
-                <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
-              </>
-            ) : filteredHistory.length > 0 ? (
-              <>
-                <h2 style={{
-                  margin: '0 0 12px 0',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: '#999',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  {metrics[0]?.name || 'Calories'} Trend
-                </h2>
-                <div style={{
-                  padding: '16px',
-                  backgroundColor: '#fff',
-                  borderRadius: '10px',
-                  border: '1px solid #e0e0e0'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    gap: '3px',
-                    height: '100px',
-                    marginBottom: '8px'
-                  }}>
-                    {[...filteredHistory].reverse().map((day, i) => {
-                      const metric = metrics[0]
-                      const dayMetric = day.nutritionMetrics?.find(m => m.key === metric?.key)
-                      const value = dayMetric?.value || 0
-                      const maxValue = Math.max(...filteredHistory.map(d => {
-                        const m = d.nutritionMetrics?.find(m => m.key === metric?.key)
-                        return m?.value || 0
-                      }), metric?.goal || 1)
-                      const height = maxValue > 0 ? (value / maxValue) * 100 : 0
-                      const metGoal = metric?.goal && value >= metric.goal
+        {/* Streaks */}
+        <div style={{ marginBottom: '20px' }}>
+          <h2 style={{
+            margin: '0 0 12px 0',
+            fontSize: '12px',
+            fontWeight: '600',
+            color: '#999',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Streaks
+          </h2>
 
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center'
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: '100%',
-                              maxWidth: '30px',
-                              height: `${Math.max(height, 4)}%`,
-                              backgroundColor: metGoal ? '#10b981' : '#60a5fa',
-                              borderRadius: '3px 3px 0 0',
-                              transition: 'height 0.3s ease',
-                              minHeight: '4px'
-                            }}
-                            title={`${value} ${metric?.unit || ''}`}
-                          />
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '10px',
-                    color: '#999'
+          {/* Main tracking streak */}
+          <div style={{
+            padding: '20px 16px',
+            backgroundColor: '#fff',
+            borderRadius: '10px',
+            border: '1px solid #e0e0e0',
+            textAlign: 'center',
+            marginBottom: '8px'
+          }}>
+            <div style={{
+              fontSize: '36px',
+              fontWeight: '700',
+              color: streaks.trackingStreak > 0 ? '#f59e0b' : '#ccc',
+              lineHeight: '1'
+            }}>
+              {streaks.trackingStreak > 0 && '🔥 '}{streaks.trackingStreak}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>
+              day{streaks.trackingStreak !== 1 ? 's' : ''} tracking streak
+            </div>
+          </div>
+
+          {/* Goal streaks grid */}
+          {(() => {
+            const goalStreakItems = []
+
+            // Metric goal streaks
+            metrics.forEach(metric => {
+              if (metric.goal > 0) {
+                goalStreakItems.push({
+                  key: metric.key,
+                  value: streaks.metricStreaks[metric.key] || 0,
+                  label: metric.name,
+                  icon: metric.icon || '📊'
+                })
+              }
+            })
+
+            // Water goal streak
+            if (streaks.waterStreak >= 0) {
+              goalStreakItems.push({
+                key: '_water',
+                value: streaks.waterStreak,
+                label: 'Water goal',
+                icon: '💧'
+              })
+            }
+
+            // Checklist streak
+            goalStreakItems.push({
+              key: '_checklist',
+              value: streaks.checklistStreak,
+              label: 'All tasks done',
+              icon: '✅'
+            })
+
+            if (goalStreakItems.length === 0) return null
+
+            return (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${Math.min(goalStreakItems.length, 3)}, 1fr)`,
+                gap: '8px'
+              }}>
+                {goalStreakItems.map(item => (
+                  <div key={item.key} style={{
+                    padding: '14px 8px',
+                    backgroundColor: '#fff',
+                    borderRadius: '10px',
+                    border: '1px solid #e0e0e0',
+                    textAlign: 'center'
                   }}>
-                    <span>{parseLocalDate(filteredHistory[filteredHistory.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                    <span>{parseLocalDate(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                  </div>
-                  {metrics[0]?.goal && (
                     <div style={{
-                      marginTop: '10px',
-                      fontSize: '11px',
-                      color: '#999',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px'
+                      fontSize: '22px',
+                      fontWeight: '600',
+                      color: item.value > 0 ? '#10b981' : '#ccc'
                     }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '2px' }}></span>
-                        Goal met
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#60a5fa', borderRadius: '2px' }}></span>
-                        Under
-                      </span>
+                      {item.value}
                     </div>
-                  )}
-                </div>
-              </>
-            ) : null}
+                    <div style={{
+                      fontSize: '10px',
+                      color: '#666',
+                      marginTop: '4px',
+                      lineHeight: '1.3'
+                    }}>
+                      {item.icon} {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+        </div>
+
+        {/* Time of Day chart - only for weekly view */}
+        {viewMode === 'weekly' && metrics.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <h2 style={{
+              margin: '0 0 12px 0',
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#999',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Meal Timing Patterns
+            </h2>
+            <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
           </div>
         )}
 
@@ -1161,8 +1237,10 @@ export default function ReportsPage() {
                     </div>
                     {waterGoal > 0 && (
                       <div>
-                        <div style={{ fontSize: '24px', fontWeight: '600', color: '#10b981' }}>{daysMetGoal}/{stats.days}</div>
-                        <div style={{ fontSize: '11px', color: '#999' }}>At goal</div>
+                        <div style={{ fontSize: '24px', fontWeight: '600', color: streaks.waterStreak > 0 ? '#10b981' : '#ccc' }}>
+                          {streaks.waterStreak > 0 && '🔥 '}{streaks.waterStreak}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#999' }}>day{streaks.waterStreak !== 1 ? 's' : ''} in a row</div>
                       </div>
                     )}
                   </div>
