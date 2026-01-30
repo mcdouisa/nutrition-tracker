@@ -1848,12 +1848,12 @@ function SettingsModal({
   }
 
   const addWaterButton = () => {
-    setTempWater([...tempWater, 0])
+    setTempWater([...tempWater, ''])
   }
 
   const updateWaterButton = (index, value) => {
     const updated = [...tempWater]
-    updated[index] = parseInt(value) || 0
+    updated[index] = value === '' ? '' : (parseInt(value) || 0)
     setTempWater(updated)
   }
 
@@ -2391,7 +2391,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
           </div>
           <input
             type="number"
-            value={amount}
+            value={amount === 0 ? '' : amount}
             onChange={(e) => onUpdate(i, e.target.value)}
             placeholder="Ounces"
             style={{
