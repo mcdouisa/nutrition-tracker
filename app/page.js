@@ -1063,8 +1063,11 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                 {/* Water Bottle Visualization */}
                 {waterGoal > 0 && (() => {
                   const fillPercent = Math.min(water / waterGoal, 1)
-                  const waterHeight = fillPercent * 120
-                  const waterTop = 145 - waterHeight
+                  // Bottle body goes from y=30 (top) to y=190 (bottom) = 160 units
+                  const bottleBottom = 190
+                  const fillableHeight = 160
+                  const waterHeight = fillPercent * fillableHeight
+                  const waterTop = bottleBottom - waterHeight
                   const isFull = fillPercent >= 1
                   return (
                     <WaterBottle
