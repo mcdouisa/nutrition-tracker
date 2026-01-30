@@ -70,6 +70,8 @@ export default function NutritionTracker() {
     setSyncStatus('syncing')
     try {
       await saveTodayData(user.uid, data)
+      // Also save to history collection so reports page can find it
+      await saveHistoryEntry(user.uid, data.date, data)
       if (settings) {
         await saveUserSettings(user.uid, settings)
       }
@@ -863,6 +865,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                       }
                       try {
                         await saveTodayData(user.uid, data)
+                        await saveHistoryEntry(user.uid, data.date, data)
                         // Save settings with definitions only (no daily values)
                         await saveUserSettings(user.uid, {
                           checklistItems: checklistItems.map(item => ({ ...item, checked: false })),

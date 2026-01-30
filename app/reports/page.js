@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
-import { loadHistory, loadUserSettings, saveTodayData, saveUserSettings } from '../../lib/dataSync'
+import { loadHistory, loadUserSettings, saveHistoryEntry } from '../../lib/dataSync'
 
 export default function ReportsPage() {
   const { user, isConfigured } = useAuth()
@@ -77,13 +77,23 @@ export default function ReportsPage() {
     return { start, end }
   }
 
+  // Parse date string safely in local time (YYYY-MM-DD as local, not UTC)
+  const parseLocalDate = (dateStr) => {
+    if (!dateStr) return new Date(0)
+    // If YYYY-MM-DD format, append T00:00:00 to parse as local time
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return new Date(dateStr + 'T00:00:00')
+    }
+    return new Date(dateStr)
+  }
+
   // Filter history for selected range
   const getFilteredHistory = () => {
     const { start, end } = getDateRange()
     return history.filter(entry => {
-      const entryDate = new Date(entry.date)
+      const entryDate = parseLocalDate(entry.date)
       return entryDate >= start && entryDate <= end
-    }).sort((a, b) => new Date(b.date) - new Date(a.date)) // Most recent first
+    }).sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date)) // Most recent first
   }
 
   // Calculate stats for the period
@@ -189,12 +199,7 @@ export default function ReportsPage() {
 
     // Save to cloud or localStorage
     if (user && isConfigured) {
-      // Convert date to YYYY-MM-DD format for Firestore
-      const dateStr = new Date(editingDay.date).toISOString().split('T')[0]
-      await saveTodayData(user.uid, {
-        ...updatedDay,
-        date: editingDay.date
-      })
+      await saveHistoryEntry(user.uid, editingDay.date, updatedDay)
     } else {
       localStorage.setItem('nutrition-history', JSON.stringify(updatedHistory))
     }
@@ -207,12 +212,12 @@ export default function ReportsPage() {
   const addToPreviousDay = (daysAgo) => {
     const targetDate = new Date()
     targetDate.setDate(targetDate.getDate() - daysAgo)
-    const dateStr = targetDate.toDateString()
+    const targetKey = targetDate.toISOString().split('T')[0] // YYYY-MM-DD
 
     // Check if this day exists in history
     const existingDay = history.find(day => {
-      const dayDate = new Date(day.date).toDateString()
-      return dayDate === dateStr
+      const dayKey = parseLocalDate(day.date).toISOString().split('T')[0]
+      return dayKey === targetKey
     })
 
     if (existingDay) {
@@ -220,7 +225,7 @@ export default function ReportsPage() {
     } else {
       // Create a new day entry
       const newDay = {
-        date: dateStr,
+        date: targetKey,
         water: 0,
         nutritionMetrics: metrics.map(m => ({ ...m, value: 0 })),
         checklistItems: []
@@ -508,7 +513,7 @@ export default function ReportsPage() {
                 color: '#666',
                 marginBottom: '20px'
               }}>
-                {new Date(editingDay.date).toLocaleDateString('en-US', {
+                {parseLocalDate(editingDay.date).toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric'
@@ -749,8 +754,8 @@ export default function ReportsPage() {
                 fontSize: '10px',
                 color: '#999'
               }}>
-                <span>{new Date(filteredHistory[filteredHistory.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                <span>{new Date(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span>{parseLocalDate(filteredHistory[filteredHistory.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span>{parseLocalDate(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
               </div>
               {metrics[0]?.goal && (
                 <div style={{
@@ -835,7 +840,7 @@ export default function ReportsPage() {
                       fontWeight: '600',
                       color: '#1a1a1a'
                     }}>
-                      {new Date(day.date).toLocaleDateString('en-US', {
+                      {parseLocalDate(day.date).toLocaleDateString('en-US', {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric'
