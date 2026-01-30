@@ -1861,6 +1861,16 @@ function SettingsModal({
     setTempWater(tempWater.filter((_, i) => i !== index))
   }
 
+  const moveWaterButton = (index, direction) => {
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= tempWater.length) return
+    const updated = [...tempWater]
+    const temp = updated[index]
+    updated[index] = updated[newIndex]
+    updated[newIndex] = temp
+    setTempWater(updated)
+  }
+
   const updateMeal = (index, field, value) => {
     const updated = [...tempMeals]
     if (!updated[index]) updated[index] = { name: '' }
@@ -2028,6 +2038,7 @@ function SettingsModal({
               onAdd={addWaterButton}
               onUpdate={updateWaterButton}
               onRemove={removeWaterButton}
+              onMove={moveWaterButton}
             />
           )}
 
@@ -2314,7 +2325,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 }
 
 // Water Settings Component
-function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove }) {
+function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove, onMove }) {
   return (
     <div>
       <div style={{ fontSize: '11px', color: '#666', marginBottom: '6px', fontWeight: '500' }}>
@@ -2339,11 +2350,45 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove 
       />
 
       <div style={{ fontSize: '11px', color: '#666', marginBottom: '12px', fontWeight: '500' }}>
-        Bottle Sizes (ounces)
+        Bottle Sizes (ounces) — drag to reorder
       </div>
 
       {buttons.map((amount, i) => (
-        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <button
+              onClick={() => onMove(i, -1)}
+              disabled={i === 0}
+              style={{
+                padding: '2px 8px',
+                backgroundColor: i === 0 ? '#f5f5f5' : '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '4px',
+                color: i === 0 ? '#ccc' : '#666',
+                fontSize: '10px',
+                cursor: i === 0 ? 'default' : 'pointer',
+                lineHeight: '1'
+              }}
+            >
+              ▲
+            </button>
+            <button
+              onClick={() => onMove(i, 1)}
+              disabled={i === buttons.length - 1}
+              style={{
+                padding: '2px 8px',
+                backgroundColor: i === buttons.length - 1 ? '#f5f5f5' : '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '4px',
+                color: i === buttons.length - 1 ? '#ccc' : '#666',
+                fontSize: '10px',
+                cursor: i === buttons.length - 1 ? 'default' : 'pointer',
+                lineHeight: '1'
+              }}
+            >
+              ▼
+            </button>
+          </div>
           <input
             type="number"
             value={amount}
