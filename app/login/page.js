@@ -292,7 +292,7 @@ export default function LoginPage() {
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
                   color: '#1a1a1a',
-                  fontSize: '14px',
+                  fontSize: '16px',
                   boxSizing: 'border-box',
                   outline: 'none'
                 }}
@@ -430,7 +430,7 @@ export default function LoginPage() {
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '14px',
+                fontSize: '16px',
                 boxSizing: 'border-box',
                 outline: 'none'
               }}
@@ -459,7 +459,7 @@ export default function LoginPage() {
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '14px',
+                fontSize: '16px',
                 boxSizing: 'border-box',
                 outline: 'none'
               }}
@@ -513,7 +513,7 @@ export default function LoginPage() {
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
                   color: '#1a1a1a',
-                  fontSize: '14px',
+                  fontSize: '16px',
                   boxSizing: 'border-box',
                   outline: 'none'
                 }}

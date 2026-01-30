@@ -1573,7 +1573,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                       border: '1px solid #e0e0e0',
                       borderRadius: '8px',
                       color: '#1a1a1a',
-                      fontSize: '14px',
+                      fontSize: '16px',
                       fontWeight: '500',
                       width: '100%',
                       boxSizing: 'border-box'
@@ -2141,7 +2141,7 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove }) {
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               color: '#1a1a1a',
-              fontSize: '14px',
+              fontSize: '16px',
               fontWeight: '500',
               boxSizing: 'border-box'
             }}
@@ -2235,7 +2235,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '14px',
+                fontSize: '16px',
                 fontWeight: '500',
                 boxSizing: 'border-box'
               }}
@@ -2273,7 +2273,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
                   color: '#1a1a1a',
-                  fontSize: '13px',
+                  fontSize: '16px',
                   boxSizing: 'border-box'
                 }}
               />
@@ -2294,7 +2294,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
                   color: '#1a1a1a',
-                  fontSize: '13px',
+                  fontSize: '16px',
                   boxSizing: 'border-box'
                 }}
               />
@@ -2343,7 +2343,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
           border: '1px solid #e0e0e0',
           borderRadius: '8px',
           color: '#1a1a1a',
-          fontSize: '14px',
+          fontSize: '16px',
           marginBottom: '20px',
           boxSizing: 'border-box'
         }}
@@ -2402,7 +2402,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               color: '#1a1a1a',
-              fontSize: '14px',
+              fontSize: '16px',
               boxSizing: 'border-box'
             }}
           />
@@ -2510,7 +2510,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '14px',
+                fontSize: '16px',
                 fontWeight: '500',
                 boxSizing: 'border-box'
               }}
@@ -2558,7 +2558,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                       border: '1px solid #e0e0e0',
                       borderRadius: '8px',
                       color: '#1a1a1a',
-                      fontSize: '13px',
+                      fontSize: '16px',
                       boxSizing: 'border-box'
                     }}
                   />

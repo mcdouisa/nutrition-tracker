@@ -5,6 +5,215 @@ import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
 import { loadHistory, loadUserSettings, saveHistoryEntry } from '../../lib/dataSync'
 
+// Time-of-day line chart for weekly view
+function TimeOfDayChart({ filteredHistory, metrics }) {
+  const timeBlocks = [
+    { label: '5-8am', start: 5, end: 8 },
+    { label: '8-11am', start: 8, end: 11 },
+    { label: '11am-2pm', start: 11, end: 14 },
+    { label: '2-5pm', start: 14, end: 17 },
+    { label: '5-8pm', start: 17, end: 20 },
+    { label: '8-11pm', start: 20, end: 23 },
+  ]
+
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+
+  // Process data: group nutrition entries by time block
+  const blockData = {} // { metricKey: [block0avg, block1avg, ...] }
+  let daysWithData = 0
+
+  metrics.forEach(m => {
+    blockData[m.key] = new Array(timeBlocks.length).fill(0)
+  })
+
+  filteredHistory.forEach(day => {
+    if (!day.nutritionHistory || !Array.isArray(day.nutritionHistory)) return
+    daysWithData++
+
+    day.nutritionHistory.forEach(entry => {
+      if (!entry.timestamp) return
+      const hour = new Date(entry.timestamp).getHours()
+      let blockIndex = timeBlocks.findIndex(b => hour >= b.start && hour < b.end)
+      if (blockIndex === -1) {
+        blockIndex = hour < 5 ? 0 : 5 // Before 5am → first block, after 11pm → last block
+      }
+
+      if (entry.estimates) {
+        // AI batch entry
+        metrics.forEach(m => {
+          if (entry.estimates[m.key]) {
+            blockData[m.key][blockIndex] += entry.estimates[m.key]
+          }
+        })
+      } else if (entry.metricIndex !== undefined && entry.value !== undefined) {
+        // Single metric entry
+        const metricDef = day.nutritionMetrics?.[entry.metricIndex]
+        if (metricDef && blockData[metricDef.key] !== undefined) {
+          blockData[metricDef.key][blockIndex] += entry.value
+        }
+      }
+    })
+  })
+
+  // Average across days
+  if (daysWithData > 0) {
+    metrics.forEach(m => {
+      blockData[m.key] = blockData[m.key].map(v => Math.round(v / daysWithData))
+    })
+  }
+
+  // Check if there's any data
+  const hasData = Object.values(blockData).some(arr => arr.some(v => v > 0))
+
+  if (!hasData) {
+    return (
+      <div style={{
+        padding: '16px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        border: '1px solid #e0e0e0'
+      }}>
+        <div style={{ padding: '32px 16px', textAlign: 'center', color: '#999' }}>
+          <div style={{ fontSize: '32px', marginBottom: '8px', opacity: 0.3 }}>📈</div>
+          <div style={{ fontSize: '13px', fontWeight: '500', color: '#666' }}>
+            No meal timing data available
+          </div>
+          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+            Log meals with the AI assistant to see time-of-day patterns
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // SVG dimensions
+  const svgW = 320, svgH = 200
+  const padL = 45, padR = 15, padT = 20, padB = 35
+  const chartW = svgW - padL - padR
+  const chartH = svgH - padT - padB
+
+  // Find max value across all metrics for Y-axis scaling
+  const allValues = metrics.flatMap(m => blockData[m.key])
+  const maxVal = Math.max(...allValues, 1)
+
+  // Generate points for each metric
+  const getPoints = (metricKey) => {
+    return blockData[metricKey].map((val, i) => {
+      const x = padL + (i / (timeBlocks.length - 1)) * chartW
+      const y = padT + chartH - (val / maxVal) * chartH
+      return { x, y, val }
+    })
+  }
+
+  return (
+    <div style={{
+      padding: '16px',
+      backgroundColor: '#fff',
+      borderRadius: '10px',
+      border: '1px solid #e0e0e0'
+    }}>
+      <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width: '100%', height: 'auto' }}>
+        {/* Horizontal grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((frac, i) => {
+          const y = padT + chartH - frac * chartH
+          return (
+            <g key={i}>
+              <line x1={padL} y1={y} x2={svgW - padR} y2={y} stroke="#f0f0f0" strokeWidth="0.5" />
+              <text x={padL - 6} y={y + 3} textAnchor="end" fontSize="7" fill="#999">
+                {Math.round(maxVal * frac)}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Lines for each metric */}
+        {metrics.map((metric, mi) => {
+          const points = getPoints(metric.key)
+          const color = metric.color || colors[mi % colors.length]
+          // Skip metrics with no data
+          if (points.every(p => p.val === 0)) return null
+          return (
+            <g key={metric.key}>
+              <polyline
+                points={points.map(p => `${p.x},${p.y}`).join(' ')}
+                fill="none"
+                stroke={color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Dots at data points */}
+              {points.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#fff" stroke={color} strokeWidth="2" />
+              ))}
+              {/* Values at data points */}
+              {points.map((p, i) => (
+                p.val > 0 ? (
+                  <text key={`v${i}`} x={p.x} y={p.y - 8} textAnchor="middle" fontSize="6.5" fill={color} fontWeight="600">
+                    {p.val}
+                  </text>
+                ) : null
+              ))}
+            </g>
+          )
+        })}
+
+        {/* X-axis labels */}
+        {timeBlocks.map((block, i) => {
+          const x = padL + (i / (timeBlocks.length - 1)) * chartW
+          return (
+            <text key={i} x={x} y={svgH - 8} textAnchor="middle" fontSize="7" fill="#999">
+              {block.label}
+            </text>
+          )
+        })}
+      </svg>
+
+      {/* Legend */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '12px',
+        marginTop: '10px',
+        justifyContent: 'center'
+      }}>
+        {metrics.map((metric, mi) => {
+          const hasValues = blockData[metric.key].some(v => v > 0)
+          if (!hasValues) return null
+          return (
+            <div key={metric.key} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '11px',
+              color: '#666'
+            }}>
+              <span style={{
+                width: '10px',
+                height: '3px',
+                backgroundColor: metric.color || colors[mi % colors.length],
+                borderRadius: '2px',
+                display: 'inline-block'
+              }} />
+              {metric.icon} {metric.name}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Context info */}
+      <div style={{
+        marginTop: '10px',
+        fontSize: '10px',
+        color: '#bbb',
+        textAlign: 'center'
+      }}>
+        Averaged across {daysWithData} day{daysWithData !== 1 ? 's' : ''} with meal data
+      </div>
+    </div>
+  )
+}
+
 export default function ReportsPage() {
   const { user, isConfigured } = useAuth()
   const [history, setHistory] = useState([])
@@ -322,7 +531,7 @@ export default function ReportsPage() {
               cursor: 'pointer'
             }}
           >
-            Last 7 Days
+            Daily
           </button>
           <button
             onClick={() => setViewMode('weekly')}
@@ -338,7 +547,7 @@ export default function ReportsPage() {
               cursor: 'pointer'
             }}
           >
-            Weekly
+            Time of Day
           </button>
           <button
             onClick={() => setViewMode('monthly')}
@@ -541,7 +750,7 @@ export default function ReportsPage() {
                     backgroundColor: '#fafafa',
                     border: '1px solid #e0e0e0',
                     borderRadius: '8px',
-                    fontSize: '14px',
+                    fontSize: '16px',
                     boxSizing: 'border-box'
                   }}
                 />
@@ -569,7 +778,7 @@ export default function ReportsPage() {
                       backgroundColor: '#fafafa',
                       border: '1px solid #e0e0e0',
                       borderRadius: '8px',
-                      fontSize: '14px',
+                      fontSize: '16px',
                       boxSizing: 'border-box'
                     }}
                   />
@@ -686,97 +895,115 @@ export default function ReportsPage() {
         )}
 
         {/* Chart visualization */}
-        {filteredHistory.length > 0 && metrics.length > 0 && (
+        {metrics.length > 0 && (
           <div style={{ marginBottom: '20px' }}>
-            <h2 style={{
-              margin: '0 0 12px 0',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              {metrics[0]?.name || 'Calories'} Trend
-            </h2>
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#fff',
-              borderRadius: '10px',
-              border: '1px solid #e0e0e0'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: '3px',
-                height: '100px',
-                marginBottom: '8px'
-              }}>
-                {[...filteredHistory].reverse().map((day, i) => {
-                  const metric = metrics[0]
-                  const dayMetric = day.nutritionMetrics?.find(m => m.key === metric?.key)
-                  const value = dayMetric?.value || 0
-                  const maxValue = Math.max(...filteredHistory.map(d => {
-                    const m = d.nutritionMetrics?.find(m => m.key === metric?.key)
-                    return m?.value || 0
-                  }), metric?.goal || 1)
-                  const height = maxValue > 0 ? (value / maxValue) * 100 : 0
-                  const metGoal = metric?.goal && value >= metric.goal
-
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '100%',
-                          maxWidth: '30px',
-                          height: `${Math.max(height, 4)}%`,
-                          backgroundColor: metGoal ? '#10b981' : '#60a5fa',
-                          borderRadius: '3px 3px 0 0',
-                          transition: 'height 0.3s ease',
-                          minHeight: '4px'
-                        }}
-                        title={`${value} ${metric?.unit || ''}`}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '10px',
-                color: '#999'
-              }}>
-                <span>{parseLocalDate(filteredHistory[filteredHistory.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                <span>{parseLocalDate(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-              </div>
-              {metrics[0]?.goal && (
-                <div style={{
-                  marginTop: '10px',
-                  fontSize: '11px',
+            {viewMode === 'weekly' ? (
+              <>
+                <h2 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '12px',
+                  fontWeight: '600',
                   color: '#999',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '2px' }}></span>
-                    Goal met
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ width: '10px', height: '10px', backgroundColor: '#60a5fa', borderRadius: '2px' }}></span>
-                    Under
-                  </span>
+                  Meal Timing Patterns
+                </h2>
+                <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
+              </>
+            ) : filteredHistory.length > 0 ? (
+              <>
+                <h2 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#999',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  {metrics[0]?.name || 'Calories'} Trend
+                </h2>
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#fff',
+                  borderRadius: '10px',
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    gap: '3px',
+                    height: '100px',
+                    marginBottom: '8px'
+                  }}>
+                    {[...filteredHistory].reverse().map((day, i) => {
+                      const metric = metrics[0]
+                      const dayMetric = day.nutritionMetrics?.find(m => m.key === metric?.key)
+                      const value = dayMetric?.value || 0
+                      const maxValue = Math.max(...filteredHistory.map(d => {
+                        const m = d.nutritionMetrics?.find(m => m.key === metric?.key)
+                        return m?.value || 0
+                      }), metric?.goal || 1)
+                      const height = maxValue > 0 ? (value / maxValue) * 100 : 0
+                      const metGoal = metric?.goal && value >= metric.goal
+
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '100%',
+                              maxWidth: '30px',
+                              height: `${Math.max(height, 4)}%`,
+                              backgroundColor: metGoal ? '#10b981' : '#60a5fa',
+                              borderRadius: '3px 3px 0 0',
+                              transition: 'height 0.3s ease',
+                              minHeight: '4px'
+                            }}
+                            title={`${value} ${metric?.unit || ''}`}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '10px',
+                    color: '#999'
+                  }}>
+                    <span>{parseLocalDate(filteredHistory[filteredHistory.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span>{parseLocalDate(filteredHistory[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  {metrics[0]?.goal && (
+                    <div style={{
+                      marginTop: '10px',
+                      fontSize: '11px',
+                      color: '#999',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '2px' }}></span>
+                        Goal met
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '10px', height: '10px', backgroundColor: '#60a5fa', borderRadius: '2px' }}></span>
+                        Under
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : null}
           </div>
         )}
 

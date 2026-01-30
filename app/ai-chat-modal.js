@@ -228,7 +228,7 @@ export function AIChatModal({ messages, input, isThinking, metrics, onInputChang
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 color: '#1a1a1a',
-                fontSize: '14px',
+                fontSize: '16px',
                 fontFamily: 'inherit',
                 resize: 'none',
                 minHeight: '44px',
