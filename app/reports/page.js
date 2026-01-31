@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
-import { loadHistory, loadUserSettings, saveHistoryEntry } from '../../lib/dataSync'
+import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr } from '../../lib/dataSync'
 
 // Time-of-day line chart for weekly view
 function TimeOfDayChart({ filteredHistory, metrics }) {
@@ -421,11 +421,11 @@ export default function ReportsPage() {
   const addToPreviousDay = (daysAgo) => {
     const targetDate = new Date()
     targetDate.setDate(targetDate.getDate() - daysAgo)
-    const targetKey = targetDate.toISOString().split('T')[0] // YYYY-MM-DD
+    const targetKey = toLocalDateStr(targetDate) // YYYY-MM-DD local time
 
     // Check if this day exists in history
     const existingDay = history.find(day => {
-      const dayKey = parseLocalDate(day.date).toISOString().split('T')[0]
+      const dayKey = toLocalDateStr(parseLocalDate(day.date))
       return dayKey === targetKey
     })
 
@@ -454,13 +454,13 @@ export default function ReportsPage() {
     const getDateKey = (date) => {
       const d = new Date(date)
       d.setHours(0, 0, 0, 0)
-      return d.toISOString().split('T')[0]
+      return toLocalDateStr(d)
     }
 
     // Build a map of date -> day data
     const dateMap = {}
     history.forEach(day => {
-      const key = parseLocalDate(day.date).toISOString().split('T')[0]
+      const key = toLocalDateStr(parseLocalDate(day.date))
       dateMap[key] = day
     })
 
