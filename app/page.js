@@ -633,7 +633,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
         flexDirection: 'column',
         gap: '16px'
       }}>
-        <div style={{ fontSize: '32px' }}>{migrating ? '📦' : '🍎'}</div>
+        <img src="/logo.png" alt="Lytz" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
         <div style={{ fontSize: '14px', color: '#666' }}>
           {migrating ? 'Migrating your data...' : 'Loading...'}
         </div>
@@ -662,15 +662,15 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           textAlign: 'center',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
         }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🍎</div>
+          <img src="/logo.png" alt="Lytz" style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '8px' }} />
           <h1 style={{
             margin: '0 0 8px 0',
             fontSize: '24px',
             fontWeight: '600',
-            color: '#1a1a1a',
+            color: '#5f8a8f',
             letterSpacing: '-0.5px'
           }}>
-            Nutrition Tracker
+            Lytz
           </h1>
           <p style={{
             margin: '0 0 24px 0',
@@ -685,7 +685,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#5f8a8f',
               border: 'none',
               borderRadius: '8px',
               color: '#fff',
@@ -917,7 +917,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               onClick={() => setShowChat(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: '#5f8a8f',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
@@ -998,9 +998,9 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     padding: '12px 14px',
                     backgroundColor: '#fff',
                     border: '1px solid',
-                    borderColor: item.checked ? '#1a1a1a' : '#e0e0e0',
+                    borderColor: item.checked ? '#5f8a8f' : '#e0e0e0',
                     borderRadius: '10px',
-                    color: item.checked ? '#1a1a1a' : '#666',
+                    color: item.checked ? '#5f8a8f' : '#666',
                     fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -1017,7 +1017,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     height: '18px',
                     borderRadius: '50%',
                     border: item.checked ? 'none' : '2px solid #d0d0d0',
-                    backgroundColor: item.checked ? '#1a1a1a' : 'transparent',
+                    backgroundColor: item.checked ? '#5f8a8f' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1584,7 +1584,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               <button onClick={addCustomEntry} style={{
                 width: '100%',
                 padding: '10px',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: '#5f8a8f',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
@@ -1634,7 +1634,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               onClick={() => setShowSettings(true)}
               style={{
                 padding: '10px 20px',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: '#5f8a8f',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
@@ -1989,8 +1989,8 @@ function SettingsModal({
                 padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
-                borderBottom: settingsTab === tab.id ? '2px solid #1a1a1a' : '2px solid transparent',
-                color: settingsTab === tab.id ? '#1a1a1a' : '#999',
+                borderBottom: settingsTab === tab.id ? '2px solid #5f8a8f' : '2px solid transparent',
+                color: settingsTab === tab.id ? '#5f8a8f' : '#999',
                 fontSize: '13px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -2101,7 +2101,7 @@ function SettingsModal({
             style={{
               flex: 1,
               padding: '10px 14px',
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#5f8a8f',
               border: 'none',
               borderRadius: '8px',
               color: '#fff',

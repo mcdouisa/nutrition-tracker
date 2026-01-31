@@ -148,7 +148,7 @@ export default function LoginPage() {
             margin: '0 0 12px 0',
             fontSize: '20px',
             fontWeight: '600',
-            color: '#1a1a1a'
+            color: '#5f8a8f'
           }}>
             Firebase Not Configured
           </h2>
@@ -180,7 +180,7 @@ export default function LoginPage() {
             style={{
               marginTop: '20px',
               padding: '12px 24px',
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#5f8a8f',
               border: 'none',
               borderRadius: '8px',
               color: '#fff',
@@ -222,7 +222,7 @@ export default function LoginPage() {
               margin: '0 0 4px 0',
               fontSize: '24px',
               fontWeight: '600',
-              color: '#1a1a1a',
+              color: '#5f8a8f',
               letterSpacing: '-0.5px'
             }}>
               Reset Password
@@ -305,7 +305,7 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '14px',
-                backgroundColor: loading ? '#999' : '#1a1a1a',
+                backgroundColor: loading ? '#a0b8bb' : '#5f8a8f',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
@@ -335,7 +335,7 @@ export default function LoginPage() {
               style={{
                 backgroundColor: 'transparent',
                 border: 'none',
-                color: '#1a1a1a',
+                color: '#5f8a8f',
                 fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -369,14 +369,16 @@ export default function LoginPage() {
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '40px', marginBottom: '8px' }}>
-            {isSignUp ? '🍎' : '👋'}
-          </div>
+          <img
+            src="/logo.png"
+            alt="Lytz"
+            style={{ width: '100px', height: '100px', objectFit: 'contain', marginBottom: '8px' }}
+          />
           <h1 style={{
             margin: '0 0 4px 0',
             fontSize: '24px',
             fontWeight: '600',
-            color: '#1a1a1a',
+            color: '#5f8a8f',
             letterSpacing: '-0.5px'
           }}>
             {isSignUp ? 'Create Account' : 'Welcome Back'}
@@ -384,7 +386,7 @@ export default function LoginPage() {
           <p style={{
             margin: 0,
             fontSize: '14px',
-            color: '#666'
+            color: '#888'
           }}>
             {isSignUp ? 'Start tracking your nutrition' : 'Sign in to sync your data'}
           </p>
@@ -527,7 +529,7 @@ export default function LoginPage() {
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: loading ? '#999' : '#1a1a1a',
+              backgroundColor: loading ? '#a0b8bb' : '#5f8a8f',
               border: 'none',
               borderRadius: '8px',
               color: '#fff',
@@ -560,7 +562,7 @@ export default function LoginPage() {
               marginLeft: '6px',
               backgroundColor: 'transparent',
               border: 'none',
-              color: '#1a1a1a',
+              color: '#5f8a8f',
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',

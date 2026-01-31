@@ -113,7 +113,7 @@ export function AIChatModal({ messages, input, isThinking, metrics, onInputChang
               <div style={{
                 maxWidth: '85%',
                 padding: '10px 14px',
-                backgroundColor: msg.role === 'user' ? '#1a1a1a' : '#fff',
+                backgroundColor: msg.role === 'user' ? '#5f8a8f' : '#fff',
                 color: msg.role === 'user' ? '#fff' : '#1a1a1a',
                 borderRadius: '12px',
                 fontSize: '13px',
@@ -241,7 +241,7 @@ export function AIChatModal({ messages, input, isThinking, metrics, onInputChang
               disabled={!input.trim() || isThinking}
               style={{
                 padding: '10px 18px',
-                backgroundColor: input.trim() && !isThinking ? '#1a1a1a' : '#e0e0e0',
+                backgroundColor: input.trim() && !isThinking ? '#5f8a8f' : '#e0e0e0',
                 border: 'none',
                 borderRadius: '8px',
                 color: input.trim() && !isThinking ? '#fff' : '#999',

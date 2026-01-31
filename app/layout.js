@@ -1,8 +1,8 @@
 import { AuthProvider } from '../lib/AuthContext'
 
 export const metadata = {
-  title: 'Nutrition Tracker',
-  description: 'Simple daily nutrition tracking',
+  title: 'Lytz',
+  description: 'Daily nutrition tracking & healthy habits',
 }
 
 export const viewport = {

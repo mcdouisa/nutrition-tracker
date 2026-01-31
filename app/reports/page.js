@@ -586,9 +586,9 @@ export default function ReportsPage() {
             onClick={() => setViewMode('last7')}
             style={{
               padding: '10px 12px',
-              backgroundColor: viewMode === 'last7' ? '#1a1a1a' : '#fff',
+              backgroundColor: viewMode === 'last7' ? '#5f8a8f' : '#fff',
               border: '1px solid',
-              borderColor: viewMode === 'last7' ? '#1a1a1a' : '#e0e0e0',
+              borderColor: viewMode === 'last7' ? '#5f8a8f' : '#e0e0e0',
               borderRadius: '8px',
               color: viewMode === 'last7' ? '#fff' : '#666',
               fontSize: '12px',
@@ -602,9 +602,9 @@ export default function ReportsPage() {
             onClick={() => setViewMode('weekly')}
             style={{
               padding: '10px 12px',
-              backgroundColor: viewMode === 'weekly' ? '#1a1a1a' : '#fff',
+              backgroundColor: viewMode === 'weekly' ? '#5f8a8f' : '#fff',
               border: '1px solid',
-              borderColor: viewMode === 'weekly' ? '#1a1a1a' : '#e0e0e0',
+              borderColor: viewMode === 'weekly' ? '#5f8a8f' : '#e0e0e0',
               borderRadius: '8px',
               color: viewMode === 'weekly' ? '#fff' : '#666',
               fontSize: '12px',
@@ -618,9 +618,9 @@ export default function ReportsPage() {
             onClick={() => setViewMode('monthly')}
             style={{
               padding: '10px 12px',
-              backgroundColor: viewMode === 'monthly' ? '#1a1a1a' : '#fff',
+              backgroundColor: viewMode === 'monthly' ? '#5f8a8f' : '#fff',
               border: '1px solid',
-              borderColor: viewMode === 'monthly' ? '#1a1a1a' : '#e0e0e0',
+              borderColor: viewMode === 'monthly' ? '#5f8a8f' : '#e0e0e0',
               borderRadius: '8px',
               color: viewMode === 'monthly' ? '#fff' : '#666',
               fontSize: '12px',
@@ -876,7 +876,7 @@ export default function ReportsPage() {
                   style={{
                     flex: 1,
                     padding: '12px',
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: '#5f8a8f',
                     border: 'none',
                     borderRadius: '8px',
                     color: '#fff',
