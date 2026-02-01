@@ -372,17 +372,8 @@ export default function LoginPage() {
           <img
             src="/logo.png"
             alt="Lytz"
-            style={{ width: '100px', height: '100px', objectFit: 'contain', marginBottom: '8px' }}
+            style={{ width: '140px', height: '140px', objectFit: 'contain', marginBottom: '4px' }}
           />
-          <h1 style={{
-            margin: '0 0 4px 0',
-            fontSize: '24px',
-            fontWeight: '600',
-            color: '#5f8a8f',
-            letterSpacing: '-0.5px'
-          }}>
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
-          </h1>
           <p style={{
             margin: 0,
             fontSize: '14px',

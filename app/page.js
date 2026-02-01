@@ -24,6 +24,7 @@ export default function NutritionTracker() {
   const [syncStatus, setSyncStatus] = useState('') // 'syncing', 'synced', 'error', ''
   const [migrating, setMigrating] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [splashMinTime, setSplashMinTime] = useState(true) // minimum splash display
   const isRemoteUpdate = useRef(false) // Track if update came from real-time listener
   // Customizable checklist items (empty by default)
   const [checklistItems, setChecklistItems] = useState([])
@@ -62,6 +63,12 @@ export default function NutritionTracker() {
   // Current date for tracking
   const [currentDate, setCurrentDate] = useState('')
   const [dataLoaded, setDataLoaded] = useState(false)
+
+  // Ensure splash screen shows for at least 1 second
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashMinTime(false), 1000)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Sync data to cloud when user is logged in
   const syncToCloud = useCallback(async (data, settings = null) => {
@@ -621,8 +628,8 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
     setNutritionMetrics(updated)
   }
 
-  // Show loading state
-  if (authLoading || migrating) {
+  // Show loading state (with minimum 1s splash)
+  if (authLoading || migrating || splashMinTime) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -633,7 +640,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
         flexDirection: 'column',
         gap: '16px'
       }}>
-        <img src="/logo.png" alt="Lytz" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+        <img src="/logo.png" alt="Lytz" style={{ width: '200px', height: '200px', objectFit: 'contain' }} />
         <div style={{ fontSize: '14px', color: '#666' }}>
           {migrating ? 'Migrating your data...' : 'Loading...'}
         </div>
@@ -662,16 +669,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           textAlign: 'center',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
         }}>
-          <img src="/logo.png" alt="Lytz" style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '8px' }} />
-          <h1 style={{
-            margin: '0 0 8px 0',
-            fontSize: '24px',
-            fontWeight: '600',
-            color: '#5f8a8f',
-            letterSpacing: '-0.5px'
-          }}>
-            Lytz
-          </h1>
+          <img src="/logo.png" alt="Lytz" style={{ width: '140px', height: '140px', objectFit: 'contain', marginBottom: '8px' }} />
           <p style={{
             margin: '0 0 24px 0',
             fontSize: '14px',
