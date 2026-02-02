@@ -14,7 +14,9 @@ import {
   migrateLocalStorageToFirestore,
   needsMigration,
   subscribeTodayData,
-  subscribeUserSettings
+  subscribeUserSettings,
+  saveFeedback,
+  updateUserProfile
 } from '../lib/dataSync'
 
 export default function NutritionTracker() {
@@ -117,6 +119,9 @@ export default function NutritionTracker() {
           await migrateLocalStorageToFirestore(user.uid)
           setMigrating(false)
         }
+
+        // Track user profile for admin dashboard
+        updateUserProfile(user.uid, user.email)
 
         // Load settings from cloud (definitions only - strip daily values)
         const cloudSettings = await loadUserSettings(user.uid)
@@ -848,6 +853,27 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                       {user.email}
                     </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false)
+                      setSettingsTab('feedback')
+                      setShowSettings(true)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #e0e0e0',
+                      color: '#5f8a8f',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                  >
+                    Send Feedback
+                  </button>
                   <button
                     onClick={async () => {
                       setSigningOut(true)
@@ -1978,7 +2004,8 @@ function SettingsModal({
             { id: 'checklist', label: 'Habits' },
             { id: 'nutrition', label: 'Nutrition' },
             { id: 'water', label: 'Water' },
-            { id: 'meals', label: 'Meals' }
+            { id: 'meals', label: 'Meals' },
+            { id: 'feedback', label: 'Feedback' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -2048,6 +2075,10 @@ function SettingsModal({
               onRemove={removeMeal}
             />
           )}
+
+          {settingsTab === 'feedback' && (
+            <FeedbackForm user={user} />
+          )}
         </div>
 
         {/* Footer */}
@@ -2112,6 +2143,135 @@ function SettingsModal({
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Feedback Form Component
+function FeedbackForm({ user }) {
+  const [type, setType] = useState('bug')
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  const handleSubmit = async () => {
+    if (!message.trim() || !user) return
+    setSending(true)
+    try {
+      await saveFeedback(user.uid, user.email, { type, message: message.trim() })
+      setSent(true)
+      setMessage('')
+      setTimeout(() => setSent(false), 3000)
+    } catch (e) {
+      console.error('Feedback error:', e)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  if (!user) {
+    return (
+      <div style={{ textAlign: 'center', padding: '32px 16px', color: '#999' }}>
+        <div style={{ fontSize: '32px', marginBottom: '12px' }}>💬</div>
+        <div style={{ fontSize: '14px', fontWeight: '500', color: '#666' }}>Sign in to send feedback</div>
+        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+          Create an account to report bugs or request features.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '8px' }}>
+          Type
+        </label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[
+            { id: 'bug', label: 'Bug Report' },
+            { id: 'feature', label: 'Feature Request' },
+            { id: 'other', label: 'Other' }
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setType(t.id)}
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                backgroundColor: type === t.id ? '#5f8a8f' : '#fff',
+                border: '1px solid',
+                borderColor: type === t.id ? '#5f8a8f' : '#e0e0e0',
+                borderRadius: '8px',
+                color: type === t.id ? '#fff' : '#666',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '6px' }}>
+          Message
+        </label>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder={type === 'bug' ? 'Describe the bug and steps to reproduce it...' : type === 'feature' ? 'Describe the feature you\'d like to see...' : 'Tell us what\'s on your mind...'}
+          style={{
+            width: '100%',
+            minHeight: '120px',
+            padding: '12px 14px',
+            backgroundColor: '#fff',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            color: '#1a1a1a',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            resize: 'vertical',
+            boxSizing: 'border-box',
+            outline: 'none'
+          }}
+        />
+      </div>
+
+      {sent && (
+        <div style={{
+          backgroundColor: '#f0fdf4',
+          border: '1px solid #bbf7d0',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          marginBottom: '16px',
+          color: '#166534',
+          fontSize: '13px',
+          fontWeight: '500'
+        }}>
+          Thanks for your feedback! We'll review it soon.
+        </div>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={!message.trim() || sending}
+        style={{
+          width: '100%',
+          padding: '14px',
+          backgroundColor: message.trim() && !sending ? '#5f8a8f' : '#e0e0e0',
+          border: 'none',
+          borderRadius: '8px',
+          color: message.trim() && !sending ? '#fff' : '#999',
+          fontSize: '14px',
+          fontWeight: '600',
+          cursor: message.trim() && !sending ? 'pointer' : 'not-allowed'
+        }}
+      >
+        {sending ? 'Sending...' : 'Submit Feedback'}
+      </button>
     </div>
   )
 }
