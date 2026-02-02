@@ -1676,6 +1676,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
       {/* Settings Modal */}
       {showSettings && (
         <SettingsModal
+          user={user}
           checklistItems={checklistItems}
           nutritionMetrics={nutritionMetrics}
           waterButtons={waterButtons}
@@ -1822,6 +1823,7 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
 
 // Settings Modal Component (mobile optimized)
 function SettingsModal({
+  user,
   checklistItems,
   nutritionMetrics,
   waterButtons,
