@@ -485,28 +485,7 @@ export default function ReportsPage() {
     // Tracking streak: any data logged
     const trackingStreak = countStreak(() => true)
 
-    // Metric goal streaks
-    const metricStreaks = {}
-    metrics.forEach(metric => {
-      if (metric.goal > 0) {
-        metricStreaks[metric.key] = countStreak(day => {
-          const dayMetric = day.nutritionMetrics?.find(m => m.key === metric.key)
-          return dayMetric && dayMetric.value >= metric.goal
-        })
-      }
-    })
-
-    // Water streak
-    const wGoal = typeof window !== 'undefined' ? (parseInt(localStorage.getItem('water-goal')) || 0) : 0
-    const waterStreak = wGoal > 0 ? countStreak(day => (day.water || 0) >= wGoal) : -1
-
-    // Checklist streak: all items checked
-    const checklistStreak = countStreak(day => {
-      if (!day.checklistItems || day.checklistItems.length === 0) return false
-      return day.checklistItems.every(item => item.checked)
-    })
-
-    return { trackingStreak, metricStreaks, waterStreak, checklistStreak }
+    return { trackingStreak }
   }
 
   const streaks = calculateStreaks()
@@ -941,18 +920,6 @@ export default function ReportsPage() {
                   <div style={{ fontSize: '11px', color: '#999' }}>
                     Total: {stats.totals[metric.key] || 0} {metric.unit}
                   </div>
-                  {metric.goal > 0 && (
-                    <div style={{
-                      marginTop: '8px',
-                      padding: '6px 8px',
-                      backgroundColor: (streaks.metricStreaks[metric.key] || 0) > 0 ? '#f0fdf4' : '#f5f5f5',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      color: (streaks.metricStreaks[metric.key] || 0) > 0 ? '#166534' : '#999'
-                    }}>
-                      🔥 {streaks.metricStreaks[metric.key] || 0} day{(streaks.metricStreaks[metric.key] || 0) !== 1 ? 's' : ''} in a row
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -978,8 +945,7 @@ export default function ReportsPage() {
             backgroundColor: '#fff',
             borderRadius: '10px',
             border: '1px solid #e0e0e0',
-            textAlign: 'center',
-            marginBottom: '8px'
+            textAlign: 'center'
           }}>
             <div style={{
               fontSize: '36px',
@@ -993,77 +959,6 @@ export default function ReportsPage() {
               day{streaks.trackingStreak !== 1 ? 's' : ''} tracking streak
             </div>
           </div>
-
-          {/* Goal streaks grid */}
-          {(() => {
-            const goalStreakItems = []
-
-            // Metric goal streaks
-            metrics.forEach(metric => {
-              if (metric.goal > 0) {
-                goalStreakItems.push({
-                  key: metric.key,
-                  value: streaks.metricStreaks[metric.key] || 0,
-                  label: metric.name,
-                  icon: metric.icon || '📊'
-                })
-              }
-            })
-
-            // Water goal streak
-            if (streaks.waterStreak >= 0) {
-              goalStreakItems.push({
-                key: '_water',
-                value: streaks.waterStreak,
-                label: 'Water goal',
-                icon: '💧'
-              })
-            }
-
-            // Checklist streak
-            goalStreakItems.push({
-              key: '_checklist',
-              value: streaks.checklistStreak,
-              label: 'All tasks done',
-              icon: '✅'
-            })
-
-            if (goalStreakItems.length === 0) return null
-
-            return (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${Math.min(goalStreakItems.length, 3)}, 1fr)`,
-                gap: '8px'
-              }}>
-                {goalStreakItems.map(item => (
-                  <div key={item.key} style={{
-                    padding: '14px 8px',
-                    backgroundColor: '#fff',
-                    borderRadius: '10px',
-                    border: '1px solid #e0e0e0',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{
-                      fontSize: '22px',
-                      fontWeight: '600',
-                      color: item.value > 0 ? '#10b981' : '#ccc'
-                    }}>
-                      {item.value}
-                    </div>
-                    <div style={{
-                      fontSize: '10px',
-                      color: '#666',
-                      marginTop: '4px',
-                      lineHeight: '1.3'
-                    }}>
-                      {item.icon} {item.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          })()}
         </div>
 
         {/* Time of Day chart - only for weekly view */}
@@ -1217,13 +1112,11 @@ export default function ReportsPage() {
               {(() => {
                 const totalWater = filteredHistory.reduce((sum, day) => sum + (day.water || 0), 0)
                 const avgWater = Math.round(totalWater / filteredHistory.length)
-                const waterGoal = parseInt(localStorage.getItem('water-goal')) || 0
-                const daysMetGoal = waterGoal > 0 ? filteredHistory.filter(d => (d.water || 0) >= waterGoal).length : 0
 
                 return (
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: waterGoal > 0 ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '16px',
                     textAlign: 'center'
                   }}>
@@ -1235,14 +1128,6 @@ export default function ReportsPage() {
                       <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a' }}>{avgWater}</div>
                       <div style={{ fontSize: '11px', color: '#999' }}>Avg/day</div>
                     </div>
-                    {waterGoal > 0 && (
-                      <div>
-                        <div style={{ fontSize: '24px', fontWeight: '600', color: streaks.waterStreak > 0 ? '#10b981' : '#ccc' }}>
-                          {streaks.waterStreak > 0 && '🔥 '}{streaks.waterStreak}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#999' }}>day{streaks.waterStreak !== 1 ? 's' : ''} in a row</div>
-                      </div>
-                    )}
                   </div>
                 )
               })()}

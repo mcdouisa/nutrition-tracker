@@ -28,6 +28,7 @@ export default function NutritionTracker() {
   const [signingOut, setSigningOut] = useState(false)
   const [splashMinTime, setSplashMinTime] = useState(true) // minimum splash display
   const isRemoteUpdate = useRef(false) // Track if update came from real-time listener
+  const cloudLoadSucceeded = useRef(false) // Track if cloud data was loaded successfully
   // Customizable checklist items (empty by default)
   const [checklistItems, setChecklistItems] = useState([])
 
@@ -65,6 +66,7 @@ export default function NutritionTracker() {
   // Current date for tracking
   const [currentDate, setCurrentDate] = useState('')
   const [dataLoaded, setDataLoaded] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0) // Increment to force data reload (e.g. day change)
 
   // Ensure splash screen shows for at least 1 second
   useEffect(() => {
@@ -101,6 +103,7 @@ export default function NutritionTracker() {
 
     // Reset dataLoaded to prevent stale saves during user transitions
     setDataLoaded(false)
+    cloudLoadSucceeded.current = false
 
     const loadData = async () => {
       const today = new Date().toDateString()
@@ -137,24 +140,31 @@ export default function NutritionTracker() {
           if (cloudSettings.meals) setMeals(cloudSettings.meals)
         }
 
-        // Load today's data from cloud (this has the actual daily values)
-        const cloudData = await loadTodayData(user.uid)
-        if (cloudData && cloudData.date === today) {
-          if (cloudData.checklistItems) setChecklistItems(cloudData.checklistItems)
-          if (cloudData.nutritionMetrics) setNutritionMetrics(cloudData.nutritionMetrics)
-          if (cloudData.water !== undefined) setWater(cloudData.water)
-          if (cloudData.waterHistory) setWaterHistory(cloudData.waterHistory)
-          if (cloudData.nutritionHistory) setNutritionHistory(cloudData.nutritionHistory)
-        } else {
-          // New day - ensure values are reset to zero
-          setWater(0)
-          setWaterHistory([])
-          setNutritionHistory([])
+        // Load today's data from cloud (checks both dailyData and history collections)
+        try {
+          const cloudData = await loadTodayData(user.uid)
+          cloudLoadSucceeded.current = true
+          if (cloudData) {
+            if (cloudData.checklistItems) setChecklistItems(cloudData.checklistItems)
+            if (cloudData.nutritionMetrics) setNutritionMetrics(cloudData.nutritionMetrics)
+            if (cloudData.water !== undefined) setWater(cloudData.water)
+            if (cloudData.waterHistory) setWaterHistory(cloudData.waterHistory)
+            if (cloudData.nutritionHistory) setNutritionHistory(cloudData.nutritionHistory)
+            // Reconcile: write back to dailyData so the real-time listener stays in sync
+            // (data may have come from the history collection if dailyData was stale)
+            await saveTodayData(user.uid, cloudData)
+          }
+        } catch (error) {
+          console.error('Failed to load today data from cloud:', error)
+          // Don't set cloudLoadSucceeded — prevents saving zeros over real data
         }
 
         // Set up real-time listeners for multi-device sync
         unsubscribeData = subscribeTodayData(user.uid, (data) => {
-          if (data && data.date === today) {
+          // subscribeTodayData already listens to dailyData/{YYYY-MM-DD} for today,
+          // so any data received is guaranteed to be today's data
+          if (data) {
+            cloudLoadSucceeded.current = true // Real-time data confirmed, safe to save
             isRemoteUpdate.current = true
             if (data.checklistItems) setChecklistItems(data.checklistItems)
             if (data.nutritionMetrics) setNutritionMetrics(data.nutritionMetrics)
@@ -258,7 +268,7 @@ export default function NutritionTracker() {
       unsubscribeData()
       unsubscribeSettings()
     }
-  }, [user, authLoading, isConfigured])
+  }, [user, authLoading, isConfigured, reloadKey])
 
   // Save to history function
   const saveToHistory = (dayData) => {
@@ -311,6 +321,14 @@ export default function NutritionTracker() {
     if (isRemoteUpdate.current) return
 
     const today = new Date().toDateString()
+
+    // Day has changed since we loaded data - trigger a fresh reload
+    // instead of saving stale data under the new day's date
+    if (today !== currentDate) {
+      setReloadKey(k => k + 1)
+      return
+    }
+
     const data = {
       date: today,
       checklistItems,
@@ -324,8 +342,9 @@ export default function NutritionTracker() {
     localStorage.setItem('nutrition-data', JSON.stringify(data))
     saveToHistory(data)
 
-    // Sync to cloud if user is logged in
-    if (user) {
+    // Sync to cloud if user is logged in and cloud load succeeded
+    // This prevents saving zeros to cloud if the initial load failed
+    if (user && cloudLoadSucceeded.current) {
       syncToCloud(data)
     }
   }, [checklistItems, nutritionMetrics, water, waterHistory, nutritionHistory, currentDate, dataLoaded, user, syncToCloud])
