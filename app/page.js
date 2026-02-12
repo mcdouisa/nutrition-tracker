@@ -8,9 +8,11 @@ import { useAuth } from '../lib/AuthContext'
 import {
   saveTodayData,
   loadTodayData,
+  loadDayData,
   saveUserSettings,
   loadUserSettings,
   saveHistoryEntry,
+  toLocalDateStr,
   migrateLocalStorageToFirestore,
   needsMigration,
   subscribeTodayData,
@@ -67,6 +69,11 @@ export default function NutritionTracker() {
   const [currentDate, setCurrentDate] = useState('')
   const [dataLoaded, setDataLoaded] = useState(false)
   const [reloadKey, setReloadKey] = useState(0) // Increment to force data reload (e.g. day change)
+
+  // Previous day checklist navigation
+  const [checklistViewDate, setChecklistViewDate] = useState(null) // null = today, YYYY-MM-DD for past
+  const [pastDayChecklist, setPastDayChecklist] = useState(null) // checklist items for past day
+  const [loadingPastDay, setLoadingPastDay] = useState(false)
 
   // Ensure splash screen shows for at least 1 second
   useEffect(() => {
@@ -354,6 +361,124 @@ export default function NutritionTracker() {
     const updated = [...checklistItems]
     updated[index] = { ...updated[index], checked: !updated[index].checked }
     setChecklistItems(updated)
+  }
+
+  // Navigate checklist to a different day
+  const navigateChecklistDay = async (direction) => {
+    const today = toLocalDateStr()
+
+    let targetDate
+    if (checklistViewDate === null) {
+      // Currently viewing today
+      if (direction === 'back') {
+        const d = new Date()
+        d.setDate(d.getDate() - 1)
+        targetDate = toLocalDateStr(d)
+      } else {
+        return // Already on today, can't go forward
+      }
+    } else {
+      const parts = checklistViewDate.split('-')
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+      d.setDate(d.getDate() + (direction === 'back' ? -1 : 1))
+      targetDate = toLocalDateStr(d)
+
+      // Don't go forward past today
+      if (targetDate >= today && direction === 'forward') {
+        setChecklistViewDate(null)
+        setPastDayChecklist(null)
+        return
+      }
+
+      // Limit to 7 days back
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      if (d < sevenDaysAgo) return
+    }
+
+    setLoadingPastDay(true)
+    try {
+      let dayData = null
+
+      // Try cloud first if logged in
+      if (user && isConfigured) {
+        dayData = await loadDayData(user.uid, targetDate)
+      }
+
+      // Fall back to localStorage history
+      if (!dayData) {
+        const historyStr = localStorage.getItem('nutrition-history')
+        if (historyStr) {
+          const history = JSON.parse(historyStr)
+          // History uses toDateString format, need to match
+          const parts = targetDate.split('-')
+          const targetObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+          const entry = history.find(h => {
+            if (h.date === targetDate) return true
+            try { return new Date(h.date).toDateString() === targetObj.toDateString() } catch { return false }
+          })
+          if (entry) dayData = entry
+        }
+      }
+
+      // Build checklist from saved data, falling back to current items structure
+      const savedChecklist = dayData?.checklistItems || []
+      const merged = checklistItems.map(item => {
+        const saved = savedChecklist.find(s => s.name === item.name)
+        return { ...item, checked: saved ? saved.checked : false }
+      })
+
+      setChecklistViewDate(targetDate)
+      setPastDayChecklist(merged)
+    } catch (error) {
+      console.error('Error loading past day:', error)
+    } finally {
+      setLoadingPastDay(false)
+    }
+  }
+
+  // Toggle a past day's checklist item and save
+  const togglePastChecklistItem = async (index) => {
+    if (!pastDayChecklist || !checklistViewDate) return
+
+    const updated = [...pastDayChecklist]
+    updated[index] = { ...updated[index], checked: !updated[index].checked }
+    setPastDayChecklist(updated)
+
+    // Save to cloud
+    if (user && isConfigured) {
+      const dayData = await loadDayData(user.uid, checklistViewDate)
+      const saveData = {
+        ...(dayData || {}),
+        checklistItems: updated,
+        date: checklistViewDate
+      }
+      await saveHistoryEntry(user.uid, checklistViewDate, saveData)
+    }
+
+    // Save to localStorage history
+    const historyStr = localStorage.getItem('nutrition-history')
+    if (historyStr) {
+      const history = JSON.parse(historyStr)
+      const parts = checklistViewDate.split('-')
+      const targetObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+      const idx = history.findIndex(h => {
+        if (h.date === checklistViewDate) return true
+        try { return new Date(h.date).toDateString() === targetObj.toDateString() } catch { return false }
+      })
+      if (idx >= 0) {
+        history[idx].checklistItems = updated
+        localStorage.setItem('nutrition-history', JSON.stringify(history))
+      } else {
+        history.push({
+          date: checklistViewDate,
+          checklistItems: updated,
+          nutritionMetrics: [],
+          water: 0
+        })
+        localStorage.setItem('nutrition-history', JSON.stringify(history))
+      }
+    }
   }
 
   // Add water
@@ -1018,64 +1143,165 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
         {/* Daily Checklist */}
         {checklistItems.length > 0 && (
           <div style={{ marginBottom: '24px' }}>
-            <h2 style={{
-              margin: '0 0 12px 0',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Daily Habits
-            </h2>
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: checklistItems.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-              gap: '8px'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px'
             }}>
-              {checklistItems.map((item, i) => (
+              <h2 style={{
+                margin: 0,
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#999',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Daily Habits
+              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
-                  key={i}
-                  onClick={() => toggleChecklistItem(i)}
+                  onClick={() => navigateChecklistDay('back')}
+                  disabled={loadingPastDay}
                   style={{
-                    padding: '12px 14px',
-                    backgroundColor: '#fff',
-                    border: '1px solid',
-                    borderColor: item.checked ? '#5f8a8f' : '#e0e0e0',
-                    borderRadius: '10px',
-                    color: item.checked ? '#5f8a8f' : '#666',
-                    fontSize: '13px',
-                    fontWeight: '500',
+                    background: 'none',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '6px',
+                    padding: '2px 8px',
+                    fontSize: '14px',
+                    color: '#999',
                     cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: item.checked ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.04)'
+                    lineHeight: 1
                   }}
                 >
-                  <div style={{
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    border: item.checked ? 'none' : '2px solid #d0d0d0',
-                    backgroundColor: item.checked ? '#5f8a8f' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: '10px',
-                    flexShrink: 0
-                  }}>
-                    {item.checked && '✓'}
-                  </div>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.name}
-                  </span>
+                  ‹
                 </button>
-              ))}
+                {checklistViewDate !== null && (() => {
+                  const parts = checklistViewDate.split('-')
+                  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+                  const today = new Date()
+                  today.setHours(0,0,0,0)
+                  const yesterday = new Date(today)
+                  yesterday.setDate(yesterday.getDate() - 1)
+                  const label = d.toDateString() === yesterday.toDateString()
+                    ? 'Yesterday'
+                    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  return (
+                    <span style={{ fontSize: '11px', color: '#5f8a8f', fontWeight: '600' }}>
+                      {label}
+                    </span>
+                  )
+                })()}
+                {checklistViewDate === null && (
+                  <span style={{ fontSize: '11px', color: '#999', fontWeight: '500' }}>
+                    Today
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    if (checklistViewDate !== null) {
+                      navigateChecklistDay('forward')
+                    }
+                  }}
+                  disabled={checklistViewDate === null || loadingPastDay}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '6px',
+                    padding: '2px 8px',
+                    fontSize: '14px',
+                    color: checklistViewDate === null ? '#ddd' : '#999',
+                    cursor: checklistViewDate === null ? 'default' : 'pointer',
+                    lineHeight: 1
+                  }}
+                >
+                  ›
+                </button>
+              </div>
             </div>
+            {checklistViewDate !== null && (
+              <div style={{
+                padding: '6px 12px',
+                marginBottom: '8px',
+                backgroundColor: '#f0f7f8',
+                borderRadius: '8px',
+                fontSize: '11px',
+                color: '#5f8a8f',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <span>Viewing past day — changes will be saved</span>
+                <button
+                  onClick={() => { setChecklistViewDate(null); setPastDayChecklist(null) }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#5f8a8f',
+                    fontWeight: '600',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    padding: '0 0 0 8px'
+                  }}
+                >
+                  Back to Today
+                </button>
+              </div>
+            )}
+            {loadingPastDay ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px' }}>
+                Loading...
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: checklistItems.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                gap: '8px'
+              }}>
+                {(checklistViewDate !== null && pastDayChecklist ? pastDayChecklist : checklistItems).map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => checklistViewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
+                    style={{
+                      padding: '12px 14px',
+                      backgroundColor: '#fff',
+                      border: '1px solid',
+                      borderColor: item.checked ? '#5f8a8f' : '#e0e0e0',
+                      borderRadius: '10px',
+                      color: item.checked ? '#5f8a8f' : '#666',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: item.checked ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.04)'
+                    }}
+                  >
+                    <div style={{
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '50%',
+                      border: item.checked ? 'none' : '2px solid #d0d0d0',
+                      backgroundColor: item.checked ? '#5f8a8f' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: '10px',
+                      flexShrink: 0
+                    }}>
+                      {item.checked && '✓'}
+                    </div>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1361,13 +1587,59 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               gap: '8px'
             }}>
               {nutritionMetrics.map((metric, i) => {
-                const progress = metric.goal > 0 ? Math.min((metric.value || 0) / metric.goal * 100, 100) : 0
+                const goalType = metric.goalType || 'min'
+                const value = metric.value || 0
+                const goal = metric.goal || 0
+                const goalMax = metric.goalMax || 0
                 const isEditing = editingMetric === i
+
+                // Calculate progress and colors based on goal type
+                let progress = 0
+                let fillColor = '#f0f9ff'
+                let statusColor = '#999'
+                let goalLabel = ''
+
+                if (goal > 0) {
+                  if (goalType === 'min') {
+                    progress = Math.min(value / goal * 100, 100)
+                    fillColor = progress >= 100 ? '#dcfce7' : '#f0f9ff'
+                    statusColor = progress >= 100 ? '#10b981' : '#999'
+                    goalLabel = `Goal: ${goal}+`
+                  } else if (goalType === 'max') {
+                    progress = Math.min(value / goal * 100, 100)
+                    const ratio = value / goal
+                    if (ratio > 1) {
+                      fillColor = '#fee2e2'
+                      statusColor = '#ef4444'
+                    } else if (ratio > 0.8) {
+                      fillColor = '#fef9c3'
+                      statusColor = '#f59e0b'
+                    } else {
+                      fillColor = '#dcfce7'
+                      statusColor = '#10b981'
+                    }
+                    goalLabel = `Limit: ${goal}`
+                  } else if (goalType === 'range' && goalMax > 0) {
+                    progress = Math.min(value / goalMax * 100, 100)
+                    if (value >= goal && value <= goalMax) {
+                      fillColor = '#dcfce7'
+                      statusColor = '#10b981'
+                    } else if (value < goal) {
+                      fillColor = '#f0f9ff'
+                      statusColor = '#999'
+                    } else {
+                      fillColor = '#fee2e2'
+                      statusColor = '#ef4444'
+                    }
+                    goalLabel = `Range: ${goal}–${goalMax}`
+                  }
+                }
+
                 return (
                   <div key={i} onClick={() => {
                     if (!isEditing) {
                       setEditingMetric(i)
-                      setEditMetricValue(String(metric.value || 0))
+                      setEditMetricValue(String(value))
                     }
                   }} style={{
                     padding: '16px',
@@ -1380,15 +1652,15 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     cursor: isEditing ? 'default' : 'pointer'
                   }}>
                     {/* Progress background */}
-                    {metric.goal > 0 && (
+                    {goal > 0 && (
                       <div style={{
                         position: 'absolute',
                         bottom: 0,
                         left: 0,
                         right: 0,
                         height: `${progress}%`,
-                        backgroundColor: '#f0f9ff',
-                        transition: 'height 0.3s ease',
+                        backgroundColor: fillColor,
+                        transition: 'height 0.3s ease, background-color 0.3s ease',
                         zIndex: 0
                       }} />
                     )}
@@ -1456,23 +1728,29 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                             color: '#1a1a1a',
                             letterSpacing: '-1px'
                           }}>
-                            {metric.value || 0}
+                            {value}
                             {metric.unit && <span style={{ fontSize: '14px', color: '#999', fontWeight: '500' }}> {metric.unit}</span>}
                           </div>
-                          {metric.goal > 0 && (
+                          {goal > 0 && (
                             <div style={{
                               marginTop: '4px',
                               fontSize: '11px',
                               color: '#666',
                               fontWeight: '500'
                             }}>
-                              Goal: {metric.goal}
+                              {goalLabel}
                               <span style={{
                                 marginLeft: '6px',
-                                color: progress >= 100 ? '#10b981' : '#999',
+                                color: statusColor,
                                 fontWeight: '600'
                               }}>
-                                {Math.round(progress)}%
+                                {goalType === 'max' ? (
+                                  value > goal ? `Over by ${value - goal}` : `${goal - value} left`
+                                ) : goalType === 'range' && goalMax > 0 ? (
+                                  value < goal ? `${goal - value} to go` : value > goalMax ? `Over by ${value - goalMax}` : 'In range'
+                                ) : (
+                                  `${Math.round(progress)}%`
+                                )}
                               </span>
                             </div>
                           )}
@@ -1879,7 +2157,7 @@ function SettingsModal({
   }
 
   const addNutritionMetric = () => {
-    setTempMetrics([...tempMetrics, { name: '', key: '', unit: '', value: 0, goal: 0, icon: '📊' }])
+    setTempMetrics([...tempMetrics, { name: '', key: '', unit: '', value: 0, goal: 0, goalType: 'min', goalMax: 0, icon: '📊' }])
   }
 
   const updateNutritionMetric = (index, field, value) => {
@@ -2435,31 +2713,63 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
               ✕
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-            <div>
-              <label style={{ fontSize: '10px', color: '#999', marginBottom: '2px', display: 'block' }}>
-                Unit
-              </label>
-              <input
-                type="text"
-                value={metric.unit}
-                onChange={(e) => onUpdate(i, 'unit', e.target.value)}
-                placeholder="g, cal, etc"
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '8px',
-                  color: '#1a1a1a',
-                  fontSize: '16px',
-                  boxSizing: 'border-box'
-                }}
-              />
+          <div style={{ marginBottom: '8px' }}>
+            <label style={{ fontSize: '10px', color: '#999', marginBottom: '4px', display: 'block' }}>
+              Unit
+            </label>
+            <input
+              type="text"
+              value={metric.unit}
+              onChange={(e) => onUpdate(i, 'unit', e.target.value)}
+              placeholder="g, cal, etc"
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                backgroundColor: '#fafafa',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                color: '#1a1a1a',
+                fontSize: '16px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: '8px' }}>
+            <label style={{ fontSize: '10px', color: '#999', marginBottom: '4px', display: 'block' }}>
+              Goal Type
+            </label>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[
+                { id: 'min', label: 'At Least' },
+                { id: 'max', label: 'Under' },
+                { id: 'range', label: 'Range' }
+              ].map(gt => (
+                <button
+                  key={gt.id}
+                  type="button"
+                  onClick={() => onUpdate(i, 'goalType', gt.id)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 6px',
+                    backgroundColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#fafafa',
+                    border: '1px solid',
+                    borderColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#e0e0e0',
+                    borderRadius: '6px',
+                    color: (metric.goalType || 'min') === gt.id ? '#fff' : '#666',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {gt.label}
+                </button>
+              ))}
             </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: (metric.goalType || 'min') === 'range' ? '1fr 1fr' : '1fr', gap: '6px' }}>
             <div>
               <label style={{ fontSize: '10px', color: '#999', marginBottom: '2px', display: 'block' }}>
-                Daily Goal
+                {(metric.goalType || 'min') === 'range' ? 'Min Goal' : (metric.goalType || 'min') === 'max' ? 'Max Limit' : 'Daily Goal'}
               </label>
               <input
                 type="number"
@@ -2478,6 +2788,29 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 }}
               />
             </div>
+            {(metric.goalType || 'min') === 'range' && (
+              <div>
+                <label style={{ fontSize: '10px', color: '#999', marginBottom: '2px', display: 'block' }}>
+                  Max Goal
+                </label>
+                <input
+                  type="number"
+                  value={metric.goalMax || ''}
+                  onChange={(e) => onUpdate(i, 'goalMax', parseInt(e.target.value) || 0)}
+                  placeholder="Upper limit"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    backgroundColor: '#fafafa',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    color: '#1a1a1a',
+                    fontSize: '16px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       ))}

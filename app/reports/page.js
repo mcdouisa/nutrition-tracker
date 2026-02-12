@@ -325,10 +325,15 @@ export default function ReportsPage() {
         day.nutritionMetrics.forEach(metric => {
           if (totals[metric.key] !== undefined) {
             totals[metric.key] += metric.value || 0
-            // Check if goal was met
+            // Check if goal was met (goal-type aware)
             const metricConfig = metrics.find(m => m.key === metric.key)
-            if (metricConfig?.goal && metric.value >= metricConfig.goal) {
-              goalAchievement[metric.key]++
+            if (metricConfig?.goal) {
+              const gt = metricConfig.goalType || 'min'
+              const v = metric.value || 0
+              const met = gt === 'max' ? v <= metricConfig.goal
+                : gt === 'range' ? v >= metricConfig.goal && v <= (metricConfig.goalMax || metricConfig.goal)
+                : v >= metricConfig.goal
+              if (met) goalAchievement[metric.key]++
             }
           }
         })
@@ -1059,15 +1064,21 @@ export default function ReportsPage() {
                     {metrics.map(metric => {
                       const dayMetric = day.nutritionMetrics?.find(m => m.key === metric.key)
                       const value = dayMetric?.value || 0
-                      const metGoal = metric.goal && value >= metric.goal
+                      const gt = metric.goalType || 'min'
+                      const metGoal = metric.goal && (
+                        gt === 'max' ? value <= metric.goal
+                        : gt === 'range' ? value >= metric.goal && value <= (metric.goalMax || metric.goal)
+                        : value >= metric.goal
+                      )
+                      const overLimit = metric.goal && gt === 'max' && value > metric.goal
                       return (
                         <div key={metric.key} style={{
                           padding: '4px 8px',
-                          backgroundColor: metGoal ? '#f0fdf4' : '#f5f5f5',
+                          backgroundColor: overLimit ? '#fef2f2' : metGoal ? '#f0fdf4' : '#f5f5f5',
                           borderRadius: '4px',
                           fontSize: '12px',
-                          color: metGoal ? '#166534' : '#666',
-                          fontWeight: metGoal ? '600' : '400'
+                          color: overLimit ? '#991b1b' : metGoal ? '#166534' : '#666',
+                          fontWeight: (metGoal || overLimit) ? '600' : '400'
                         }}>
                           {metric.icon && <span style={{ marginRight: '4px' }}>{metric.icon}</span>}
                           {value} {metric.unit}
