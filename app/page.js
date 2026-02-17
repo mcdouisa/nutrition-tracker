@@ -130,8 +130,10 @@ export default function NutritionTracker() {
           setMigrating(false)
         }
 
-        // Track user profile for admin dashboard
-        updateUserProfile(user.uid, user.email)
+        // Track real (non-anonymous) user profiles for admin dashboard
+        if (!user.isAnonymous) {
+          updateUserProfile(user.uid, user.email)
+        }
 
         // Load settings from cloud (definitions only - strip daily values)
         const cloudSettings = await loadUserSettings(user.uid)
@@ -793,9 +795,9 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
     )
   }
 
-  // If not logged in and Firebase is configured, show login prompt (unless skipped)
+  // Anonymous users see the login prompt until they choose to skip or create an account
   const skipAuth = typeof window !== 'undefined' && localStorage.getItem('skip-auth') === 'true'
-  if (!user && isConfigured && !skipAuth) {
+  if (user?.isAnonymous && isConfigured && !skipAuth) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -862,7 +864,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
             fontSize: '12px',
             color: '#999'
           }}>
-            Data saved locally only without an account
+            Your data may be lost if the app is removed. Create an account to keep it safe.
           </p>
           </div>{/* end padding wrapper */}
         </div>

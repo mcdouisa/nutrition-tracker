@@ -375,7 +375,7 @@ export default function LoginPage() {
             fontSize: '14px',
             color: '#888'
           }}>
-            {isSignUp ? 'Start tracking your nutrition' : 'Sign in to sync your data'}
+            {isSignUp ? 'Your existing data will be preserved' : 'Sign in to sync your data'}
           </p>
         </div>
 
