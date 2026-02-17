@@ -134,7 +134,7 @@ export default function NutritionTracker() {
 
         // Track real (non-anonymous) user profiles for admin dashboard
         if (!user.isAnonymous) {
-          updateUserProfile(user.uid, user.email)
+          updateUserProfile(user.uid, user.email, user.metadata?.creationTime)
         }
 
         // Load settings from cloud (definitions only - strip daily values)
