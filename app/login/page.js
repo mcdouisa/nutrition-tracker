@@ -360,19 +360,16 @@ export default function LoginPage() {
       padding: '20px'
     }}>
       <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
-        padding: '32px 24px',
         maxWidth: '400px',
         width: '100%',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+        padding: '0 24px 32px'
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <img
             src="/logo.png"
             alt="Lytz"
-            style={{ width: 'min(260px, 72vw)', height: 'min(260px, 72vw)', objectFit: 'contain', marginBottom: '4px' }}
+            style={{ width: 'min(300px, 88vw)', height: 'min(300px, 88vw)', objectFit: 'contain', display: 'block', margin: '0 auto 4px' }}
           />
           <p style={{
             margin: 0,
