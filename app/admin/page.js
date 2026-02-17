@@ -36,10 +36,12 @@ export default function AdminPage() {
   const [filterType, setFilterType] = useState('all')
   const [filterStatus, setFilterStatus] = useState('open')
   const [sortBy, setSortBy] = useState('date')
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (authLoading) return
-    if (!user || !isConfigured) { router.push('/login'); return }
+    // Redirect anonymous users and unauthenticated users to login
+    if (!user || user.isAnonymous || !isConfigured) { router.push('/login'); return }
 
     const checkAdmin = async () => {
       const profile = await loadUserProfile(user.uid)
@@ -56,8 +58,20 @@ export default function AdminPage() {
 
   // Optimistically update a feedback item in local state + Firestore
   const handleFeedbackUpdate = async (id, updates) => {
+    // Snapshot previous state so we can revert if the Firestore write fails
+    const previous = feedback.find(f => f.id === id)
     setFeedback(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f))
-    await updateFeedbackItem(id, updates)
+    setSaveError('')
+
+    const ok = await updateFeedbackItem(id, updates)
+    if (!ok) {
+      // Revert optimistic update
+      if (previous) {
+        setFeedback(prev => prev.map(f => f.id === id ? previous : f))
+      }
+      setSaveError('Save failed — check your connection or Firestore permissions.')
+      setTimeout(() => setSaveError(''), 5000)
+    }
   }
 
   // ── Derived analytics ──────────────────────────────────────────────────────
@@ -242,6 +256,17 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+
+        {/* Save error banner */}
+        {saveError && (
+          <div style={{
+            backgroundColor: '#fef2f2', border: '1px solid #fecaca',
+            borderRadius: '8px', padding: '10px 14px', marginBottom: '16px',
+            color: '#dc2626', fontSize: '13px', fontWeight: '500'
+          }}>
+            {saveError}
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: '2px', marginBottom: '20px', borderBottom: '1px solid #e0e0e0' }}>
