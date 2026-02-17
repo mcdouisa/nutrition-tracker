@@ -2140,6 +2140,16 @@ function SettingsModal({
     setTempChecklist(tempChecklist.filter((_, i) => i !== index))
   }
 
+  const moveChecklistItem = (index, direction) => {
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= tempChecklist.length) return
+    const updated = [...tempChecklist]
+    const temp = updated[index]
+    updated[index] = updated[newIndex]
+    updated[newIndex] = temp
+    setTempChecklist(updated)
+  }
+
   const addNutritionMetric = () => {
     setTempMetrics([...tempMetrics, { name: '', key: '', unit: '', value: 0, goal: 0, goalType: 'min', goalMax: 0, icon: '📊' }])
   }
@@ -2326,6 +2336,7 @@ function SettingsModal({
               onAdd={addChecklistItem}
               onUpdate={updateChecklistItem}
               onRemove={removeChecklistItem}
+              onMove={moveChecklistItem}
             />
           )}
 
@@ -2560,7 +2571,7 @@ function FeedbackForm({ user }) {
 }
 
 // Checklist Settings Component
-function ChecklistSettings({ items, onAdd, onUpdate, onRemove }) {
+function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
   return (
     <div>
       <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
@@ -2568,7 +2579,38 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove }) {
       </div>
 
       {items.map((item, i) => (
-        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '10px', alignItems: 'center' }}>
+          {/* Up/down reorder buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <button
+              onClick={() => onMove(i, -1)}
+              disabled={i === 0}
+              style={{
+                padding: '2px 8px',
+                backgroundColor: i === 0 ? '#f5f5f5' : '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '4px',
+                color: i === 0 ? '#ccc' : '#666',
+                fontSize: '10px',
+                cursor: i === 0 ? 'default' : 'pointer',
+                lineHeight: '1'
+              }}
+            >▲</button>
+            <button
+              onClick={() => onMove(i, 1)}
+              disabled={i === items.length - 1}
+              style={{
+                padding: '2px 8px',
+                backgroundColor: i === items.length - 1 ? '#f5f5f5' : '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '4px',
+                color: i === items.length - 1 ? '#ccc' : '#666',
+                fontSize: '10px',
+                cursor: i === items.length - 1 ? 'default' : 'pointer',
+                lineHeight: '1'
+              }}
+            >▼</button>
+          </div>
           <input
             type="text"
             value={item.name}
