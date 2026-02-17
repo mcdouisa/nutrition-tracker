@@ -14,10 +14,10 @@ service cloud.firestore {
         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Feedback - any logged-in user can submit, admins can read all
+    // Feedback - any logged-in user can submit, admins can read/update all
     match /feedback/{feedbackId} {
       allow create: if request.auth != null;
-      allow read: if request.auth != null &&
+      allow read, update: if request.auth != null &&
         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
     }
 

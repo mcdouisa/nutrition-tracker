@@ -126,7 +126,7 @@ export default function LoginPage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#fafafa',
+        backgroundColor: '#ffffff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -201,7 +201,7 @@ export default function LoginPage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#fafafa',
+        backgroundColor: '#ffffff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -353,7 +353,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#fafafa',
+      backgroundColor: '#ffffff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -372,7 +372,7 @@ export default function LoginPage() {
           <img
             src="/logo.png"
             alt="Lytz"
-            style={{ width: '140px', height: '140px', objectFit: 'contain', marginBottom: '4px' }}
+            style={{ width: 'min(260px, 72vw)', height: 'min(260px, 72vw)', objectFit: 'contain', marginBottom: '4px' }}
           />
           <p style={{
             margin: 0,
