@@ -781,18 +781,14 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
   if (authLoading || migrating || splashMinTime) {
     return (
       <div style={{
-        minHeight: '100vh',
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
         backgroundColor: '#fefefe',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '16px'
       }}>
-        <img src="/logo.png" alt="Lytz" style={{ width: 'min(300px, 88vw)', height: 'auto', display: 'block' }} />
-        <div style={{ fontSize: '14px', color: '#666' }}>
-          {migrating ? 'Migrating your data...' : 'Loading...'}
-        </div>
+        <img src="/logo.png" alt="Lytz" style={{ width: 'min(340px, 88vw)', height: 'auto', display: 'block' }} />
       </div>
     )
   }
