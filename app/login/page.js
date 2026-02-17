@@ -353,23 +353,22 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#fefefe',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '20px'
+      padding: '20px 0'
     }}>
       <div style={{
-        maxWidth: '400px',
-        width: '100%',
-        padding: '0 24px 32px'
+        maxWidth: '420px',
+        width: '100%'
       }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <img
             src="/logo.png"
             alt="Lytz"
-            style={{ width: 'min(300px, 88vw)', height: 'min(300px, 88vw)', objectFit: 'contain', display: 'block', margin: '0 auto 4px' }}
+            style={{ width: '100%', maxWidth: '420px', height: 'auto', display: 'block', margin: '0 auto 4px' }}
           />
           <p style={{
             margin: 0,
@@ -379,6 +378,9 @@ export default function LoginPage() {
             {isSignUp ? 'Start tracking your nutrition' : 'Sign in to sync your data'}
           </p>
         </div>
+
+        {/* Form area with padding */}
+        <div style={{ padding: '0 24px 32px' }}>
 
         {/* Error message */}
         {error && (
@@ -579,6 +581,7 @@ export default function LoginPage() {
         >
           Continue without account
         </button>
+        </div>{/* end form area */}
       </div>
     </div>
   )
