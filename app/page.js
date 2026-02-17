@@ -107,6 +107,7 @@ export default function NutritionTracker() {
   useEffect(() => {
     let unsubscribeData = () => {}
     let unsubscribeSettings = () => {}
+    let cancelled = false // Prevents stale async calls from updating state after user changes
 
     // Reset dataLoaded to prevent stale saves during user transitions
     setDataLoaded(false)
@@ -121,12 +122,13 @@ export default function NutritionTracker() {
       setWaterHistory([])
       setNutritionHistory([])
 
-      // If user is logged in, try to load from cloud first
+      // If user is logged in (including anonymous), load from cloud
       if (user && isConfigured) {
         // Check if we need to migrate localStorage data
         if (needsMigration()) {
           setMigrating(true)
           await migrateLocalStorageToFirestore(user.uid)
+          if (cancelled) return
           setMigrating(false)
         }
 
@@ -137,6 +139,7 @@ export default function NutritionTracker() {
 
         // Load settings from cloud (definitions only - strip daily values)
         const cloudSettings = await loadUserSettings(user.uid)
+        if (cancelled) return
         if (cloudSettings) {
           if (cloudSettings.checklistItems) {
             setChecklistItems(cloudSettings.checklistItems.map(item => ({ ...item, checked: false })))
@@ -152,6 +155,7 @@ export default function NutritionTracker() {
         // Load today's data from cloud (checks both dailyData and history collections)
         try {
           const cloudData = await loadTodayData(user.uid)
+          if (cancelled) return
           cloudLoadSucceeded.current = true
           if (cloudData) {
             if (cloudData.checklistItems) setChecklistItems(cloudData.checklistItems)
@@ -167,6 +171,8 @@ export default function NutritionTracker() {
           console.error('Failed to load today data from cloud:', error)
           // Don't set cloudLoadSucceeded — prevents saving zeros over real data
         }
+
+        if (cancelled) return
 
         // Set up real-time listeners for multi-device sync
         unsubscribeData = subscribeTodayData(user.uid, (data) => {
@@ -274,6 +280,7 @@ export default function NutritionTracker() {
 
     // Cleanup listeners on unmount or user change
     return () => {
+      cancelled = true
       unsubscribeData()
       unsubscribeSettings()
     }
@@ -795,9 +802,9 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
     )
   }
 
-  // Anonymous users see the login prompt until they choose to skip or create an account
+  // Show login prompt for anonymous users (and null user if anonymous sign-in failed)
   const skipAuth = typeof window !== 'undefined' && localStorage.getItem('skip-auth') === 'true'
-  if (user?.isAnonymous && isConfigured && !skipAuth) {
+  if ((!user || user.isAnonymous) && isConfigured && !skipAuth) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -1825,7 +1832,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
                   }}>
-                    {nutritionMetrics.map((metric, idx) =>
+                    {nutritionMetrics.map((metric) =>
                       meal[metric.key] ? `${meal[metric.key]}${metric.unit || ''}` : ''
                     ).filter(Boolean).join(' • ')}
                   </div>
