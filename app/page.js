@@ -782,14 +782,14 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#fafafa',
+        backgroundColor: '#fefefe',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
         gap: '16px'
       }}>
-        <img src="/logo.png" alt="Lytz" style={{ width: '200px', height: '200px', objectFit: 'contain' }} />
+        <img src="/logo.png" alt="Lytz" style={{ width: 'min(300px, 88vw)', height: 'auto', display: 'block' }} />
         <div style={{ fontSize: '14px', color: '#666' }}>
           {migrating ? 'Migrating your data...' : 'Loading...'}
         </div>
@@ -803,22 +803,19 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#fafafa',
+        backgroundColor: '#fefefe',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px'
+        padding: '20px 0'
       }}>
         <div style={{
-          backgroundColor: '#fff',
-          borderRadius: '16px',
-          padding: '32px 24px',
-          maxWidth: '400px',
+          maxWidth: '420px',
           width: '100%',
-          textAlign: 'center',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+          textAlign: 'center'
         }}>
-          <img src="/logo.png" alt="Lytz" style={{ width: '140px', height: '140px', objectFit: 'contain', marginBottom: '8px' }} />
+          <img src="/logo.png" alt="Lytz" style={{ width: '100%', maxWidth: '420px', height: 'auto', display: 'block', marginBottom: '8px' }} />
+          <div style={{ padding: '0 24px 32px' }}>
           <p style={{
             margin: '0 0 24px 0',
             fontSize: '14px',
@@ -871,6 +868,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           }}>
             Data saved locally only without an account
           </p>
+          </div>{/* end padding wrapper */}
         </div>
       </div>
     )
