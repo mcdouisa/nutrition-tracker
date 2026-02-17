@@ -3,6 +3,15 @@ import { AuthProvider } from '../lib/AuthContext'
 export const metadata = {
   title: 'Lytz',
   description: 'Daily nutrition tracking & healthy habits',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Lytz',
+  },
+  icons: {
+    apple: [{ url: '/icon.png', sizes: '1024x1024', type: 'image/png' }],
+  },
 }
 
 export const viewport = {

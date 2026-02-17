@@ -788,7 +788,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-        <img src="/logo.png" alt="Lytz" style={{ width: 'min(340px, 88vw)', height: 'auto', display: 'block' }} />
+        <img src="/logo.png" alt="Lytz" style={{ width: 'min(380px, 92vw)', height: 'auto', display: 'block' }} />
       </div>
     )
   }

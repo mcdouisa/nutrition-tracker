@@ -1,0 +1,17 @@
+{
+  "name": "Lytz",
+  "short_name": "Lytz",
+  "description": "Daily nutrition tracking & healthy habits",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fefefe",
+  "theme_color": "#5f8a8f",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
