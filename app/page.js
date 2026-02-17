@@ -1767,8 +1767,8 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           </div>
         )}
 
-        {/* Quick Add Meals */}
-        <div style={{ marginBottom: '24px' }}>
+        {/* Quick Add Meals — only shown when at least one meal is configured */}
+        {meals.some(m => m) && <div style={{ marginBottom: '24px' }}>
           <h2 style={{
             margin: '0 0 12px 0',
             fontSize: '12px',
@@ -1837,26 +1837,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     ).filter(Boolean).join(' • ')}
                   </div>
                 </button>
-              ) : (
-                <div
-                  key={i}
-                  style={{
-                    padding: '14px 12px',
-                    backgroundColor: '#fafafa',
-                    border: '1px dashed #d0d0d0',
-                    borderRadius: '10px',
-                    color: '#ccc',
-                    fontSize: '12px',
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '500'
-                  }}
-                >
-                  Empty Slot
-                </div>
-              )
+              ) : null
             ))}
           </div>
 
@@ -1921,7 +1902,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               </button>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Empty State Message */}
         {checklistItems.length === 0 && nutritionMetrics.length === 0 && waterButtons.length === 0 && (
