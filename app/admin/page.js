@@ -60,7 +60,12 @@ export default function AdminPage() {
   const handleFeedbackUpdate = async (id, updates) => {
     // Snapshot previous state so we can revert if the Firestore write fails
     const previous = feedback.find(f => f.id === id)
-    setFeedback(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f))
+    // Mirror the auto-timestamp logic from updateFeedbackItem so local state stays in sync
+    const now = new Date().toISOString()
+    const optimistic = { ...updates }
+    if (updates.status === 'in-progress' && !previous?.startedAt) optimistic.startedAt = now
+    if (updates.status === 'resolved'    && !previous?.resolvedAt) optimistic.resolvedAt = now
+    setFeedback(prev => prev.map(f => f.id === id ? { ...f, ...optimistic } : f))
     setSaveError('')
 
     const ok = await updateFeedbackItem(id, updates)
@@ -569,6 +574,22 @@ export default function AdminPage() {
                       }}>
                         {item.message}
                       </div>
+
+                      {/* Status timestamps */}
+                      {(item.startedAt || item.resolvedAt) && (
+                        <div style={{ display: 'flex', gap: '16px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f0f0f0' }}>
+                          {item.startedAt && (
+                            <div style={{ fontSize: '11px', color: '#d97706' }}>
+                              <span style={{ fontWeight: '600' }}>Started:</span> {formatDateTime(item.startedAt)}
+                            </div>
+                          )}
+                          {item.resolvedAt && (
+                            <div style={{ fontSize: '11px', color: '#16a34a' }}>
+                              <span style={{ fontWeight: '600' }}>Resolved:</span> {formatDateTime(item.resolvedAt)}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

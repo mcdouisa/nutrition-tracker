@@ -1767,8 +1767,8 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           </div>
         )}
 
-        {/* Quick Add Meals — only shown when at least one meal is configured */}
-        {meals.some(m => m) && <div style={{ marginBottom: '24px' }}>
+        {/* Quick Add — meal buttons only when configured; custom entry always shown */}
+        {(meals.some(m => m) || nutritionMetrics.length > 0) && <div style={{ marginBottom: '24px' }}>
           <h2 style={{
             margin: '0 0 12px 0',
             fontSize: '12px',
@@ -1779,7 +1779,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           }}>
             Quick Add
           </h2>
-          <div style={{
+          {meals.some(m => m) && <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '8px',
@@ -1839,7 +1839,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                 </button>
               ) : null
             ))}
-          </div>
+          </div>}
 
           {/* Custom Entry */}
           {nutritionMetrics.length > 0 && (
