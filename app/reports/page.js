@@ -214,6 +214,151 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
   )
 }
 
+function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
+  const today = new Date()
+  const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const generatedAt = today.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      backgroundColor: '#fff',
+      overflowY: 'auto',
+      padding: '32px 24px'
+    }}>
+      {/* Print CSS — hides controls and forces white background */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+        }
+      `}</style>
+
+      {/* Controls (hidden when printing) */}
+      <div className="no-print" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginBottom: '28px' }}>
+        <button
+          onClick={() => window.print()}
+          style={{
+            padding: '10px 20px', backgroundColor: '#5f8a8f', border: 'none',
+            borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+          }}
+        >
+          Print / Save as PDF
+        </button>
+        <button
+          onClick={onClose}
+          style={{
+            padding: '10px 20px', backgroundColor: '#fff', border: '1px solid #e0e0e0',
+            borderRadius: '8px', color: '#666', fontSize: '14px', fontWeight: '500', cursor: 'pointer'
+          }}
+        >
+          Close
+        </button>
+      </div>
+
+      {/* Report content */}
+      <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ borderBottom: '2px solid #5f8a8f', paddingBottom: '16px', marginBottom: '28px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#5f8a8f', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '6px' }}>
+            Lytz · Daily Health Report
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#1a1a1a', letterSpacing: '-0.5px' }}>
+            {dateLabel}
+          </div>
+        </div>
+
+        {!todayEntry ? (
+          <div style={{ padding: '40px 0', textAlign: 'center', color: '#999', fontSize: '15px' }}>
+            No data recorded for today yet.
+          </div>
+        ) : (
+          <>
+            {/* Nutrition */}
+            {metrics.length > 0 && todayEntry.nutritionMetrics && (
+              <div style={{ marginBottom: '28px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#999', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>
+                  Nutrition
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
+                      {['Metric', 'Value', 'Goal', 'Progress'].map(h => (
+                        <th key={h} style={{ textAlign: h === 'Value' || h === 'Goal' || h === 'Progress' ? 'right' : 'left', padding: '6px 8px', fontSize: '11px', fontWeight: '600', color: '#999' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.map((metric, i) => {
+                      const entry = todayEntry.nutritionMetrics?.[i] || {}
+                      const val = entry.value || 0
+                      const goal = metric.goal || 0
+                      const pct = goal > 0 ? Math.min(Math.round((val / goal) * 100), 100) : null
+                      return (
+                        <tr key={metric.key} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                          <td style={{ padding: '8px 8px', fontSize: '14px', color: '#1a1a1a', fontWeight: '500' }}>{metric.name}</td>
+                          <td style={{ padding: '8px 8px', fontSize: '14px', color: '#1a1a1a', textAlign: 'right', fontWeight: '600' }}>{val}{metric.unit || ''}</td>
+                          <td style={{ padding: '8px 8px', fontSize: '14px', color: '#999', textAlign: 'right' }}>{goal > 0 ? `${goal}${metric.unit || ''}` : '—'}</td>
+                          <td style={{ padding: '8px 8px', textAlign: 'right' }}>
+                            {pct !== null ? (
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: pct >= 100 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626' }}>
+                                {pct}%
+                              </span>
+                            ) : '—'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Water */}
+            <div style={{ marginBottom: '28px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#999', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>
+                Hydration
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f5f5f5' }}>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: '#1a1a1a' }}>Water Intake</span>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a' }}>
+                  {todayEntry.water || 0} oz
+                  {waterGoal > 0 && <span style={{ fontWeight: '400', color: '#999' }}> / {waterGoal} oz ({Math.min(Math.round(((todayEntry.water || 0) / waterGoal) * 100), 100)}%)</span>}
+                </span>
+              </div>
+            </div>
+
+            {/* Habits */}
+            {todayEntry.checklistItems?.length > 0 && (
+              <div style={{ marginBottom: '28px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#999', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>
+                  Daily Habits
+                </div>
+                {todayEntry.checklistItems.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <span style={{ fontSize: '16px', color: item.checked ? '#16a34a' : '#dc2626' }}>
+                      {item.checked ? '✓' : '✗'}
+                    </span>
+                    <span style={{ fontSize: '14px', color: item.checked ? '#1a1a1a' : '#999', fontWeight: '500', textDecoration: item.checked ? 'none' : 'line-through' }}>
+                      {item.label || item.name || `Habit ${i + 1}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Footer */}
+        <div style={{ marginTop: '40px', paddingTop: '16px', borderTop: '1px solid #e0e0e0', fontSize: '11px', color: '#bbb', textAlign: 'center' }}>
+          Generated {generatedAt} · Lytz Daily Nutrition Tracker
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ReportsPage() {
   const { user, isConfigured } = useAuth()
   const [history, setHistory] = useState([])
@@ -223,6 +368,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
   const [editingDay, setEditingDay] = useState(null)
   const [editValues, setEditValues] = useState({})
+  const [waterGoal, setWaterGoal] = useState(0)
+  const [showExport, setShowExport] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -236,6 +383,9 @@ export default function ReportsPage() {
         const cloudSettings = await loadUserSettings(user.uid)
         if (cloudSettings?.nutritionMetrics) {
           setMetrics(cloudSettings.nutritionMetrics)
+        }
+        if (cloudSettings?.waterGoal) {
+          setWaterGoal(cloudSettings.waterGoal)
         }
       } else {
         // Fallback to localStorage
@@ -516,6 +666,14 @@ export default function ReportsPage() {
       padding: '16px 12px',
       paddingBottom: '32px'
     }}>
+      {showExport && (
+        <ExportView
+          todayEntry={history.find(d => d.date === toLocalDateStr()) || null}
+          metrics={metrics}
+          waterGoal={waterGoal}
+          onClose={() => setShowExport(false)}
+        />
+      )}
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
@@ -541,22 +699,40 @@ export default function ReportsPage() {
               Track your progress
             </div>
           </div>
-          <Link
-            href="/"
-            style={{
-              padding: '8px 14px',
-              backgroundColor: '#fff',
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              color: '#1a1a1a',
-              fontSize: '13px',
-              fontWeight: '500',
-              textDecoration: 'none',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-            }}
-          >
-            ← Back
-          </Link>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => setShowExport(true)}
+              style={{
+                padding: '8px 14px',
+                backgroundColor: '#f0f7f8',
+                border: '1px solid #5f8a8f',
+                borderRadius: '8px',
+                color: '#5f8a8f',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+              }}
+            >
+              Export Today
+            </button>
+            <Link
+              href="/"
+              style={{
+                padding: '8px 14px',
+                backgroundColor: '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                color: '#1a1a1a',
+                fontSize: '13px',
+                fontWeight: '500',
+                textDecoration: 'none',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+              }}
+            >
+              ← Back
+            </Link>
+          </div>
         </div>
 
         {/* View Mode Toggle - 3 options */}
