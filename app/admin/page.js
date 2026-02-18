@@ -380,6 +380,24 @@ export default function AdminPage() {
         {/* ── FEEDBACK TAB ── */}
         {tab === 'feedback' && (
           <div>
+            {/* Priority guide download */}
+            <div style={{ marginBottom: '14px' }}>
+              <a
+                href="/bug-feature-priority.pdf"
+                download="Bug and Feature priority.pdf"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 12px',
+                  backgroundColor: '#f0f7f8', border: '1px solid #5f8a8f',
+                  borderRadius: '6px', color: '#5f8a8f',
+                  fontSize: '12px', fontWeight: '600',
+                  textDecoration: 'none'
+                }}
+              >
+                ↓ Priority Guide
+              </a>
+            </div>
+
             {/* Controls */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px', alignItems: 'center' }}>
               {/* Type filter */}
