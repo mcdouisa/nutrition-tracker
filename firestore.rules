@@ -21,6 +21,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // Admin can read all users' dailyData for engagement analytics
+    match /{path=**}/dailyData/{docId} {
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

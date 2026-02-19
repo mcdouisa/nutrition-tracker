@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/AuthContext'
-import { loadUserProfile, loadAllFeedback, loadAllUsers, updateFeedbackItem } from '../../lib/dataSync'
+import { loadUserProfile, loadAllFeedback, loadAllUsers, loadAllActivityData, updateFeedbackItem, toLocalDateStr } from '../../lib/dataSync'
 
 const PRIORITY_CONFIG = {
   none:     { label: 'No Priority', color: '#999',    bg: '#f5f5f5' },
@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState('open')
   const [sortBy, setSortBy] = useState('date')
   const [saveError, setSaveError] = useState('')
+  const [activityData, setActivityData] = useState([])
 
   useEffect(() => {
     if (authLoading) return
@@ -47,9 +48,10 @@ export default function AdminPage() {
       const profile = await loadUserProfile(user.uid)
       if (profile?.isAdmin) {
         setIsAdmin(true)
-        const [fb, u] = await Promise.all([loadAllFeedback(), loadAllUsers()])
+        const [fb, u, activity] = await Promise.all([loadAllFeedback(), loadAllUsers(), loadAllActivityData(30)])
         setFeedback(fb)
         setUsers(u)
+        setActivityData(activity)
       }
       setChecking(false)
     }
@@ -135,8 +137,44 @@ export default function AdminPage() {
       low:      feedback.filter(f => f.priority === 'low').length,
     }
 
-    return { active7d, active30d, newMonth, openBugs, openFeatures, weekBuckets, feedbackWeeks, byType, byStatus, byPriority }
-  }, [users, feedback])
+    // ── Engagement segments based on lastActive ──
+    const segments = {
+      today:   users.filter(u => u.lastActive >= ago(1)).length,
+      week:    users.filter(u => u.lastActive >= ago(7)  && u.lastActive < ago(1)).length,
+      month:   users.filter(u => u.lastActive >= ago(30) && u.lastActive < ago(7)).length,
+      dormant: users.filter(u => !u.lastActive || u.lastActive < ago(30)).length,
+    }
+
+    // ── Daily active users — last 30 days (from activityData collection-group query) ──
+    const dailyActive = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(now.getTime() - (29 - i) * msDay)
+      const key = toLocalDateStr(d)
+      const unique = new Set(activityData.filter(a => a.date === key).map(a => a.userId)).size
+      const label = i % 5 === 0 ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+      return { label, count: unique }
+    })
+
+    // ── Feedback health from startedAt / resolvedAt timestamps ──
+    const resolvedItems = feedback.filter(f => f.resolvedAt && f.createdAt)
+    const avgResolveTime = resolvedItems.length > 0
+      ? Math.round(resolvedItems.reduce((s, f) =>
+          s + (new Date(f.resolvedAt) - new Date(f.createdAt)) / msDay, 0) / resolvedItems.length)
+      : null
+    const startedItems = feedback.filter(f => f.startedAt && f.createdAt)
+    const avgStartTime = startedItems.length > 0
+      ? Math.round(startedItems.reduce((s, f) =>
+          s + (new Date(f.startedAt) - new Date(f.createdAt)) / msDay, 0) / startedItems.length)
+      : null
+    const resolutionRate = feedback.length > 0
+      ? Math.round((feedback.filter(f => f.status === 'resolved').length / feedback.length) * 100)
+      : 0
+
+    return {
+      active7d, active30d, newMonth, openBugs, openFeatures,
+      weekBuckets, feedbackWeeks, byType, byStatus, byPriority,
+      segments, dailyActive, avgResolveTime, avgStartTime, resolutionRate,
+    }
+  }, [users, feedback, activityData])
 
   // ── Filtered + sorted feedback ─────────────────────────────────────────────
   const filteredFeedback = useMemo(() => {
@@ -177,21 +215,25 @@ export default function AdminPage() {
     )
   }
 
-  const MiniBar = ({ data, color = '#5f8a8f' }) => {
+  const MiniBar = ({ data, color = '#5f8a8f', barHeight = 48 }) => {
     const max = Math.max(...data.map(d => d.count), 1)
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '72px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: `${barHeight + 28}px` }}>
         {data.map((d, i) => (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-            <div style={{ fontSize: '9px', color: '#999', height: '12px' }}>{d.count > 0 ? d.count : ''}</div>
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+            <div style={{ fontSize: '9px', color: '#999', height: '12px', lineHeight: '12px' }}>
+              {d.count > 0 ? d.count : ''}
+            </div>
             <div style={{
               width: '100%',
-              height: `${Math.max((d.count / max) * 48, d.count > 0 ? 4 : 1)}px`,
+              height: `${Math.max((d.count / max) * barHeight, d.count > 0 ? 4 : 1)}px`,
               backgroundColor: d.count > 0 ? color : '#f0f0f0',
               borderRadius: '2px 2px 0 0',
               transition: 'height 0.3s'
             }} />
-            <div style={{ fontSize: '9px', color: '#bbb', whiteSpace: 'nowrap' }}>{d.label}</div>
+            <div style={{ fontSize: '8px', color: '#bbb', whiteSpace: 'nowrap', height: '10px', lineHeight: '10px' }}>
+              {d.label}
+            </div>
           </div>
         ))}
       </div>
@@ -299,79 +341,179 @@ export default function AdminPage() {
         {tab === 'analytics' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-            {/* User activity breakdown */}
+            {/* ── Row 1: Engagement Segments ── */}
             <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>User Activity</div>
-              {[
-                { label: 'Active last 7 days',  value: analytics.active7d,  total: users.length, color: '#10b981' },
-                { label: 'Active last 30 days', value: analytics.active30d, total: users.length, color: '#5f8a8f' },
-                { label: 'New this month',       value: analytics.newMonth,  total: users.length, color: '#7c3aed' },
-              ].map(row => (
-                <div key={row.label} style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12px', color: '#555' }}>{row.label}</span>
-                    <span style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a' }}>
-                      {row.value} <span style={{ color: '#999', fontWeight: '400' }}>/ {row.total}</span>
-                    </span>
-                  </div>
-                  <div style={{ height: '6px', backgroundColor: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: row.total > 0 ? `${(row.value / row.total) * 100}%` : '0%',
-                      backgroundColor: row.color,
-                      borderRadius: '3px',
-                      transition: 'width 0.4s'
-                    }} />
-                  </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>User Engagement</div>
+                <div style={{ fontSize: '11px', color: '#999' }}>{users.length} total users</div>
+              </div>
+              {/* Stacked bar */}
+              {users.length > 0 && (
+                <div style={{ height: '14px', borderRadius: '7px', overflow: 'hidden', display: 'flex', marginBottom: '16px' }}>
+                  {[
+                    { key: 'today',   color: '#10b981', count: analytics.segments.today },
+                    { key: 'week',    color: '#5f8a8f', count: analytics.segments.week },
+                    { key: 'month',   color: '#d97706', count: analytics.segments.month },
+                    { key: 'dormant', color: '#e5e7eb', count: analytics.segments.dormant },
+                  ].map(seg => (
+                    <div
+                      key={seg.key}
+                      style={{
+                        width: `${(seg.count / users.length) * 100}%`,
+                        backgroundColor: seg.color,
+                        minWidth: seg.count > 0 ? '2px' : '0',
+                        transition: 'width 0.4s'
+                      }}
+                    />
+                  ))}
                 </div>
-              ))}
+              )}
+              {/* Legend */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {[
+                  { label: 'Active Today',    color: '#10b981', count: analytics.segments.today },
+                  { label: 'This Week',        color: '#5f8a8f', count: analytics.segments.week },
+                  { label: 'This Month',       color: '#d97706', count: analytics.segments.month },
+                  { label: 'Dormant (30d+)',   color: '#d1d5db', count: analytics.segments.dormant },
+                ].map(seg => (
+                  <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: seg.color, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1a1a1a', lineHeight: 1 }}>{seg.count}</div>
+                      <div style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>{seg.label}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Charts row */}
+            {/* ── Row 2: Daily Logins + Signups ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+              {/* Daily active users — 30 days */}
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>Daily Logins — Last 30 Days</div>
+                  <div style={{ fontSize: '11px', color: '#999' }}>unique users who logged data</div>
+                </div>
+                <MiniBar data={analytics.dailyActive} color="#5f8a8f" barHeight={64} />
+              </div>
+              {/* New signups — 8 weeks */}
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>New Signups — Last 8 Weeks</div>
+                <MiniBar data={analytics.weekBuckets} color="#7c3aed" barHeight={64} />
+              </div>
+            </div>
+
+            {/* ── Row 3: Feedback Health + Feedback Trend ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Feedback health */}
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>New Users — Last 8 Weeks</div>
-                <MiniBar data={analytics.weekBuckets} color="#5f8a8f" />
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '16px' }}>Feedback Health</div>
+                {[
+                  {
+                    label: 'Avg days to start',
+                    value: analytics.avgStartTime !== null ? `${analytics.avgStartTime}d` : '—',
+                    sub: 'created → in progress',
+                    color: '#d97706',
+                    bg: '#fffbeb',
+                  },
+                  {
+                    label: 'Avg days to resolve',
+                    value: analytics.avgResolveTime !== null ? `${analytics.avgResolveTime}d` : '—',
+                    sub: 'created → resolved',
+                    color: '#16a34a',
+                    bg: '#f0fdf4',
+                  },
+                  {
+                    label: 'Resolution rate',
+                    value: `${analytics.resolutionRate}%`,
+                    sub: `${feedback.filter(f => f.status === 'resolved').length} of ${feedback.length} resolved`,
+                    color: analytics.resolutionRate >= 70 ? '#16a34a' : analytics.resolutionRate >= 40 ? '#d97706' : '#dc2626',
+                    bg: analytics.resolutionRate >= 70 ? '#f0fdf4' : analytics.resolutionRate >= 40 ? '#fffbeb' : '#fef2f2',
+                  },
+                ].map(row => (
+                  <div key={row.label} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 12px', borderRadius: '8px', backgroundColor: row.bg, marginBottom: '8px'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a' }}>{row.label}</div>
+                      <div style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>{row.sub}</div>
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: '700', color: row.color }}>{row.value}</div>
+                  </div>
+                ))}
               </div>
+              {/* Feedback trend */}
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>Feedback — Last 8 Weeks</div>
-                <MiniBar data={analytics.feedbackWeeks} color="#7c3aed" />
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>Feedback Submissions — Last 8 Weeks</div>
+                <MiniBar data={analytics.feedbackWeeks} color="#7c3aed" barHeight={64} />
               </div>
             </div>
 
-            {/* Feedback breakdown */}
+            {/* ── Row 4: Feedback Breakdown ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
               {/* By type */}
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
                 <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>By Type</div>
-                {Object.entries(analytics.byType).map(([type, count]) => (
-                  <div key={type} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <Badge config={TYPE_CONFIG} value={type} />
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a' }}>{count}</span>
-                  </div>
-                ))}
+                {Object.entries(analytics.byType).map(([type, count]) => {
+                  const total = Object.values(analytics.byType).reduce((s, v) => s + v, 0)
+                  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                  const cfg = TYPE_CONFIG[type]
+                  return (
+                    <div key={type} style={{ marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <Badge config={TYPE_CONFIG} value={type} />
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>{count}</span>
+                      </div>
+                      <div style={{ height: '4px', backgroundColor: '#f0f0f0', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, backgroundColor: cfg.color, borderRadius: '2px', transition: 'width 0.4s' }} />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
 
               {/* By status */}
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
                 <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>By Status</div>
-                {Object.entries(analytics.byStatus).map(([status, count]) => (
-                  <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <Badge config={STATUS_CONFIG} value={status} />
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a' }}>{count}</span>
-                  </div>
-                ))}
+                {Object.entries(analytics.byStatus).map(([status, count]) => {
+                  const total = Object.values(analytics.byStatus).reduce((s, v) => s + v, 0)
+                  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.new
+                  return (
+                    <div key={status} style={{ marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <Badge config={STATUS_CONFIG} value={status} />
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>{count}</span>
+                      </div>
+                      <div style={{ height: '4px', backgroundColor: '#f0f0f0', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, backgroundColor: cfg.color, borderRadius: '2px', transition: 'width 0.4s' }} />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
 
               {/* By priority */}
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
                 <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px' }}>By Priority</div>
-                {Object.entries(analytics.byPriority).map(([pri, count]) => (
-                  <div key={pri} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <Badge config={PRIORITY_CONFIG} value={pri} />
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a' }}>{count}</span>
-                  </div>
-                ))}
+                {Object.entries(analytics.byPriority).map(([pri, count]) => {
+                  const total = Object.values(analytics.byPriority).reduce((s, v) => s + v, 0)
+                  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                  const cfg = PRIORITY_CONFIG[pri]
+                  return (
+                    <div key={pri} style={{ marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <Badge config={PRIORITY_CONFIG} value={pri} />
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>{count}</span>
+                      </div>
+                      <div style={{ height: '4px', backgroundColor: '#f0f0f0', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, backgroundColor: cfg.color, borderRadius: '2px', transition: 'width 0.4s' }} />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
