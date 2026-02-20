@@ -338,9 +338,28 @@ export default function NutritionTracker() {
 
     const today = new Date().toDateString()
 
-    // Day has changed since we loaded data - trigger a fresh reload
-    // instead of saving stale data under the new day's date
+    // Day has changed since we loaded data - save yesterday's data, then reload
     if (today !== currentDate) {
+      // Build yesterday's data using the OLD date
+      const yesterdayData = {
+        date: currentDate, // Use the old date, not today
+        checklistItems,
+        nutritionMetrics,
+        water,
+        waterHistory,
+        nutritionHistory
+      }
+
+      // Save yesterday's data to localStorage and history
+      localStorage.setItem('nutrition-data', JSON.stringify(yesterdayData))
+      saveToHistory(yesterdayData)
+
+      // Sync to cloud if user is logged in and cloud load succeeded
+      if (user && cloudLoadSucceeded.current) {
+        syncToCloud(yesterdayData)
+      }
+
+      // Now trigger reload for today
       setReloadKey(k => k + 1)
       return
     }
