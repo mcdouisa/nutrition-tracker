@@ -21,6 +21,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // Notifications - users can read/write their own notifications
+    match /users/{userId}/notifications/{notificationId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null &&
+        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     // Admin can read all users' dailyData for engagement analytics
     match /{path=**}/dailyData/{docId} {
       allow read: if request.auth != null &&

@@ -18,7 +18,9 @@ import {
   subscribeTodayData,
   subscribeUserSettings,
   saveFeedback,
-  updateUserProfile
+  updateUserProfile,
+  subscribeNotifications,
+  dismissNotification
 } from '../lib/dataSync'
 
 export default function NutritionTracker() {
@@ -65,6 +67,9 @@ export default function NutritionTracker() {
   const [chatInput, setChatInput] = useState('')
   const [isThinking, setIsThinking] = useState(false)
 
+  // Notifications
+  const [notifications, setNotifications] = useState([])
+
   // Current date for tracking
   const [currentDate, setCurrentDate] = useState('')
   const [dataLoaded, setDataLoaded] = useState(false)
@@ -107,6 +112,7 @@ export default function NutritionTracker() {
   useEffect(() => {
     let unsubscribeData = () => {}
     let unsubscribeSettings = () => {}
+    let unsubscribeNotifications = () => {}
     let cancelled = false // Prevents stale async calls from updating state after user changes
 
     // Reset dataLoaded to prevent stale saves during user transitions
@@ -222,6 +228,10 @@ export default function NutritionTracker() {
           }
         })
 
+        unsubscribeNotifications = subscribeNotifications(user.uid, (notifs) => {
+          setNotifications(notifs)
+        })
+
         setDataLoaded(true)
         return
       }
@@ -283,6 +293,7 @@ export default function NutritionTracker() {
       cancelled = true
       unsubscribeData()
       unsubscribeSettings()
+      unsubscribeNotifications()
     }
   }, [user, authLoading, isConfigured, reloadKey])
 
@@ -1161,6 +1172,21 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
             </button>
           </div>
         </div>
+
+        {/* Notification Banners */}
+        {notifications.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            {notifications.map(notif => (
+              <NotificationBanner
+                key={notif.id}
+                notification={notif}
+                onDismiss={async () => {
+                  await dismissNotification(user.uid, notif.id)
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Daily Checklist */}
         {checklistItems.length > 0 && (
@@ -2584,6 +2610,82 @@ function FeedbackForm({ user }) {
         }}
       >
         {sending ? 'Sending...' : 'Submit Feedback'}
+      </button>
+    </div>
+  )
+}
+
+// Notification banner for resolved feedback
+function NotificationBanner({ notification, onDismiss }) {
+  const getNotificationMessage = (notif) => {
+    if (notif.type === 'feedback_resolved') {
+      const typeLabel = notif.feedbackType === 'bug' ? 'bug report' :
+                        notif.feedbackType === 'feature' ? 'feature request' : 'feedback'
+      const truncatedMessage = notif.feedbackMessage.length > 60
+        ? notif.feedbackMessage.substring(0, 60) + '...'
+        : notif.feedbackMessage
+      return `Thank you for reporting the ${typeLabel} "${truncatedMessage}". The problem has been addressed.`
+    }
+    return 'You have a new notification.'
+  }
+
+  return (
+    <div style={{
+      backgroundColor: '#f0fdf4',
+      border: '1px solid #86efac',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: '12px',
+      marginBottom: '12px'
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginBottom: '4px'
+        }}>
+          <span style={{
+            fontSize: '16px',
+            color: '#16a34a'
+          }}>✓</span>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: '600',
+            color: '#16a34a',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Resolved
+          </span>
+        </div>
+        <p style={{
+          margin: 0,
+          fontSize: '14px',
+          color: '#166534',
+          lineHeight: '1.5'
+        }}>
+          {getNotificationMessage(notification)}
+        </p>
+      </div>
+      <button
+        onClick={onDismiss}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: '#16a34a',
+          fontSize: '18px',
+          cursor: 'pointer',
+          padding: '0 4px',
+          lineHeight: '1',
+          flexShrink: 0
+        }}
+        aria-label="Dismiss notification"
+      >
+        ×
       </button>
     </div>
   )
