@@ -49,6 +49,7 @@ export default function NutritionTracker() {
 
   // Custom entry values
   const [customValues, setCustomValues] = useState({})
+  const [customEntryName, setCustomEntryName] = useState('')
 
   // History for undo
   const [nutritionHistory, setNutritionHistory] = useState([])
@@ -610,7 +611,17 @@ export default function NutritionTracker() {
 
     const updated = [...nutritionMetrics]
 
-    if (entry.estimates) {
+    if (entry.type === 'manual_named' || entry.type === 'manual_unnamed') {
+      // Remove named/unnamed manual consolidated entry
+      updated.forEach((metric, i) => {
+        if (entry.values[metric.key]) {
+          updated[i] = {
+            ...metric,
+            value: Math.max(0, (metric.value || 0) - entry.values[metric.key])
+          }
+        }
+      })
+    } else if (entry.estimates) {
       // Remove AI batch entry (new format)
       updated.forEach((metric, i) => {
         if (entry.estimates[metric.key]) {
@@ -660,21 +671,41 @@ export default function NutritionTracker() {
 
   // Add custom entry - batch all values together
   const addCustomEntry = () => {
-    const updates = []
-    const updatedMetrics = nutritionMetrics.map((metric, index) => {
+    // Collect all non-zero values
+    const values = {}
+    const updatedMetrics = nutritionMetrics.map((metric) => {
       const value = parseInt(customValues[metric.key]) || 0
       if (value > 0) {
-        updates.push({ metricIndex: index, value, timestamp: Date.now() })
+        values[metric.key] = value
         return { ...metric, value: (metric.value || 0) + value }
       }
       return metric
     })
 
-    if (updates.length > 0) {
-      setNutritionMetrics(updatedMetrics)
-      setNutritionHistory([...nutritionHistory, ...updates])
-    }
+    // Only proceed if at least one value was entered
+    if (Object.keys(values).length === 0) return
+
+    setNutritionMetrics(updatedMetrics)
+
+    // Create ONE consolidated entry
+    const newEntry = customEntryName.trim()
+      ? {
+          type: 'manual_named',
+          name: customEntryName.trim(),
+          values,
+          timestamp: Date.now()
+        }
+      : {
+          type: 'manual_unnamed',
+          values,
+          timestamp: Date.now()
+        }
+
+    setNutritionHistory([...nutritionHistory, newEntry])
+
+    // Clear form
     setCustomValues({})
+    setCustomEntryName('')
   }
 
   // Reset day
@@ -1569,6 +1600,70 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                   const entryIndex = nutritionHistory.length - 1 - reverseIdx
                   const time = new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 
+                  // Named/unnamed manual consolidated entry
+                  if (entry.type === 'manual_named' || entry.type === 'manual_unnamed') {
+                    const valuesList = Object.entries(entry.values).map(([key, value]) => {
+                      const metric = nutritionMetrics.find(m => m.key === key)
+                      return metric ? `${metric.name}: +${value}${metric.unit ? ` ${metric.unit}` : ''}` : null
+                    }).filter(Boolean)
+
+                    return (
+                      <div key={entryIndex} style={{
+                        padding: '10px 14px',
+                        borderBottom: reverseIdx < nutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {entry.type === 'manual_named' && (
+                            <div style={{
+                              fontWeight: '600',
+                              color: '#1a1a1a',
+                              fontSize: '13px',
+                              marginBottom: '2px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {entry.name}
+                            </div>
+                          )}
+                          <div style={{
+                            fontSize: '12px',
+                            color: entry.type === 'manual_named' ? '#666' : '#1a1a1a',
+                            fontWeight: entry.type === 'manual_named' ? '400' : '500',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {valuesList.join(', ')}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+                            Manual <span style={{ marginLeft: '6px' }}>{time}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeNutritionEntry(entryIndex)}
+                          style={{
+                            padding: '4px 10px',
+                            backgroundColor: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            color: '#ef4444',
+                            fontSize: '11px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )
+                  }
+
                   let description = ''
                   let entryType = 'Manual'
                   if (entry.estimates) {
@@ -1919,6 +2014,25 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               }}>
                 Custom Entry
               </div>
+              {/* Optional entry name */}
+              <input
+                type="text"
+                placeholder="Entry name (optional, e.g., 'Chicken Breast')"
+                value={customEntryName}
+                onChange={(e) => setCustomEntryName(e.target.value)}
+                maxLength={50}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  border: '1px solid #e0e0e0',
+                  marginBottom: '12px',
+                  backgroundColor: '#fafafa',
+                  color: '#1a1a1a',
+                  boxSizing: 'border-box'
+                }}
+              />
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
