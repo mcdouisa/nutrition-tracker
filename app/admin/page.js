@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/AuthContext'
-import { loadUserProfile, loadAllFeedback, loadAllUsers, loadAllActivityData, updateFeedbackItem, toLocalDateStr } from '../../lib/dataSync'
+import { loadUserProfile, loadAllFeedback, loadAllUsers, loadAllActivityData, updateFeedbackItem, toLocalDateStr, createAnnouncementForAllUsers } from '../../lib/dataSync'
 
 const PRIORITY_CONFIG = {
   none:     { label: 'No Priority', color: '#999',    bg: '#f5f5f5' },
@@ -38,6 +38,12 @@ export default function AdminPage() {
   const [sortBy, setSortBy] = useState('date')
   const [saveError, setSaveError] = useState('')
   const [activityData, setActivityData] = useState([])
+
+  // Announcements
+  const [announcementTitle, setAnnouncementTitle] = useState('')
+  const [announcementMessage, setAnnouncementMessage] = useState('')
+  const [sendingAnnouncement, setSendingAnnouncement] = useState(false)
+  const [announcementResult, setAnnouncementResult] = useState(null)
 
   useEffect(() => {
     if (authLoading) return
@@ -321,6 +327,7 @@ export default function AdminPage() {
             { id: 'analytics', label: 'Analytics' },
             { id: 'feedback',  label: `Feedback (${openCount} open)` },
             { id: 'users',     label: `Users (${users.length})` },
+            { id: 'announcements', label: 'Announcements' },
           ].map(t => (
             <button
               key={t.id}
@@ -798,6 +805,178 @@ export default function AdminPage() {
                   ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── ANNOUNCEMENTS TAB ── */}
+        {tab === 'announcements' && (
+          <div>
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid #e8e8e8', marginBottom: '20px' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600', color: '#1a1a1a' }}>
+                Send Announcement to All Users
+              </h2>
+              <p style={{ margin: '0 0 24px 0', fontSize: '13px', color: '#666' }}>
+                Broadcast a feature announcement or important update. All users will see it as a notification banner.
+              </p>
+
+              {/* Title */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#333', marginBottom: '6px' }}>
+                  Title (optional)
+                </label>
+                <input
+                  type="text"
+                  value={announcementTitle}
+                  onChange={(e) => setAnnouncementTitle(e.target.value)}
+                  placeholder="e.g., NEW FEATURE"
+                  disabled={sendingAnnouncement}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontFamily: 'inherit'
+                  }}
+                />
+                <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+                  Leave blank to use "NEW FEATURE" as default
+                </div>
+              </div>
+
+              {/* Message */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#333', marginBottom: '6px' }}>
+                  Message *
+                </label>
+                <textarea
+                  value={announcementMessage}
+                  onChange={(e) => setAnnouncementMessage(e.target.value)}
+                  placeholder="e.g., Export your daily data to PDF! Check the Reports page."
+                  disabled={sendingAnnouncement}
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              {/* Result message */}
+              {announcementResult && (
+                <div style={{
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  backgroundColor: announcementResult.success ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${announcementResult.success ? '#86efac' : '#fca5a5'}`,
+                  color: announcementResult.success ? '#166534' : '#991b1b',
+                  fontSize: '13px'
+                }}>
+                  {announcementResult.success
+                    ? `✓ Announcement sent to ${announcementResult.count} user${announcementResult.count !== 1 ? 's' : ''}!`
+                    : `✗ Error: ${announcementResult.error}`}
+                </div>
+              )}
+
+              {/* Send button */}
+              <button
+                onClick={async () => {
+                  if (!announcementMessage.trim()) {
+                    setAnnouncementResult({ success: false, error: 'Message is required' })
+                    return
+                  }
+
+                  setSendingAnnouncement(true)
+                  setAnnouncementResult(null)
+
+                  const result = await createAnnouncementForAllUsers(
+                    announcementTitle.trim() || 'NEW FEATURE',
+                    announcementMessage.trim(),
+                    users
+                  )
+
+                  setSendingAnnouncement(false)
+                  setAnnouncementResult(result)
+
+                  if (result.success) {
+                    // Clear form on success
+                    setAnnouncementTitle('')
+                    setAnnouncementMessage('')
+                  }
+                }}
+                disabled={sendingAnnouncement || !announcementMessage.trim()}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: sendingAnnouncement || !announcementMessage.trim() ? '#ccc' : '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: sendingAnnouncement || !announcementMessage.trim() ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {sendingAnnouncement ? `Sending to ${users.length} users...` : `Send to All Users (${users.length})`}
+              </button>
+
+              {/* Preview */}
+              {announcementMessage.trim() && (
+                <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e8e8e8' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#666', marginBottom: '12px' }}>
+                    Preview (how users will see it):
+                  </div>
+                  <div style={{
+                    backgroundColor: '#eff6ff',
+                    border: '1px solid #93c5fd',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '4px'
+                      }}>
+                        <span style={{ fontSize: '16px', color: '#2563eb' }}>🎉</span>
+                        <span style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#2563eb',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {announcementTitle.trim() || 'NEW FEATURE'}
+                        </span>
+                      </div>
+                      <p style={{
+                        margin: 0,
+                        fontSize: '14px',
+                        color: '#1e40af',
+                        lineHeight: '1.5'
+                      }}>
+                        {announcementMessage}
+                      </p>
+                    </div>
+                    <div style={{
+                      color: '#2563eb',
+                      fontSize: '18px',
+                      cursor: 'pointer'
+                    }}>×</div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -2617,22 +2617,62 @@ function FeedbackForm({ user }) {
 
 // Notification banner for resolved feedback
 function NotificationBanner({ notification, onDismiss }) {
-  const getNotificationMessage = (notif) => {
+  const getNotificationContent = (notif) => {
     if (notif.type === 'feedback_resolved') {
       const typeLabel = notif.feedbackType === 'bug' ? 'bug report' :
                         notif.feedbackType === 'feature' ? 'feature request' : 'feedback'
       const truncatedMessage = notif.feedbackMessage.length > 60
         ? notif.feedbackMessage.substring(0, 60) + '...'
         : notif.feedbackMessage
-      return `Thank you for reporting the ${typeLabel} "${truncatedMessage}". The problem has been addressed.`
+      return {
+        icon: '✓',
+        label: 'Resolved',
+        message: `Thank you for reporting the ${typeLabel} "${truncatedMessage}". The problem has been addressed.`,
+        colors: {
+          bg: '#f0fdf4',
+          border: '#86efac',
+          icon: '#16a34a',
+          label: '#16a34a',
+          text: '#166534'
+        }
+      }
     }
-    return 'You have a new notification.'
+
+    if (notif.type === 'announcement') {
+      return {
+        icon: '🎉',
+        label: notif.title || 'NEW FEATURE',
+        message: notif.message,
+        colors: {
+          bg: '#eff6ff',
+          border: '#93c5fd',
+          icon: '#2563eb',
+          label: '#2563eb',
+          text: '#1e40af'
+        }
+      }
+    }
+
+    return {
+      icon: 'ℹ',
+      label: 'Notification',
+      message: 'You have a new notification.',
+      colors: {
+        bg: '#f0f9ff',
+        border: '#bae6fd',
+        icon: '#0284c7',
+        label: '#0284c7',
+        text: '#075985'
+      }
+    }
   }
+
+  const content = getNotificationContent(notification)
 
   return (
     <div style={{
-      backgroundColor: '#f0fdf4',
-      border: '1px solid #86efac',
+      backgroundColor: content.colors.bg,
+      border: `1px solid ${content.colors.border}`,
       borderRadius: '8px',
       padding: '12px 16px',
       display: 'flex',
@@ -2650,25 +2690,25 @@ function NotificationBanner({ notification, onDismiss }) {
         }}>
           <span style={{
             fontSize: '16px',
-            color: '#16a34a'
-          }}>✓</span>
+            color: content.colors.icon
+          }}>{content.icon}</span>
           <span style={{
             fontSize: '12px',
             fontWeight: '600',
-            color: '#16a34a',
+            color: content.colors.label,
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
-            Resolved
+            {content.label}
           </span>
         </div>
         <p style={{
           margin: 0,
           fontSize: '14px',
-          color: '#166534',
+          color: content.colors.text,
           lineHeight: '1.5'
         }}>
-          {getNotificationMessage(notification)}
+          {content.message}
         </p>
       </div>
       <button
@@ -2676,7 +2716,7 @@ function NotificationBanner({ notification, onDismiss }) {
         style={{
           background: 'transparent',
           border: 'none',
-          color: '#16a34a',
+          color: content.colors.label,
           fontSize: '18px',
           cursor: 'pointer',
           padding: '0 4px',
