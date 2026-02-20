@@ -204,21 +204,36 @@ export default function NutritionTracker() {
             // The checked state comes from daily data, not settings
             if (settings.checklistItems) {
               setChecklistItems(current => {
+                // Skip merge if current is empty (initial load not complete yet)
+                // This prevents overwriting daily data that's still loading
+                if (current.length === 0) return settings.checklistItems.map(item => ({ ...item, checked: false }))
+
                 // Merge settings items with current checked states
-                return settings.checklistItems.map((settingsItem, index) => ({
-                  ...settingsItem,
-                  // Preserve checked state from current if same item exists
-                  checked: current[index]?.name === settingsItem.name ? current[index].checked : false
-                }))
+                // Match by name, not index, to preserve checked state even if order changes
+                return settings.checklistItems.map((settingsItem) => {
+                  const existing = current.find(item => item.name === settingsItem.name)
+                  return {
+                    ...settingsItem,
+                    checked: existing?.checked ?? false
+                  }
+                })
               })
             }
             if (settings.nutritionMetrics) {
               setNutritionMetrics(current => {
+                // Skip merge if current is empty (initial load not complete yet)
+                // This prevents overwriting daily data that's still loading
+                if (current.length === 0) return settings.nutritionMetrics.map(m => ({ ...m, value: 0 }))
+
                 // Merge settings definitions with current daily values
-                return settings.nutritionMetrics.map((settingsMetric, index) => ({
-                  ...settingsMetric,
-                  value: current[index]?.key === settingsMetric.key ? (current[index].value || 0) : 0
-                }))
+                // Match by key, not index, to preserve values even if order changes
+                return settings.nutritionMetrics.map((settingsMetric) => {
+                  const existing = current.find(m => m.key === settingsMetric.key)
+                  return {
+                    ...settingsMetric,
+                    value: existing?.value ?? 0
+                  }
+                })
               })
             }
             if (settings.waterButtons) setWaterButtons(settings.waterButtons)
