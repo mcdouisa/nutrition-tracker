@@ -290,16 +290,37 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {metrics.map((metric, i) => {
-                      const entry = todayEntry.nutritionMetrics?.[i] || {}
+                    {metrics.map((metric) => {
+                      // Match by key instead of index to avoid mismatches
+                      const entry = todayEntry.nutritionMetrics?.find(m => m.key === metric.key) || {}
                       const val = entry.value || 0
                       const goal = metric.goal || 0
-                      const pct = goal > 0 ? Math.min(Math.round((val / goal) * 100), 100) : null
+                      const goalType = metric.goalType || 'min'
+
+                      // Calculate percentage and display goal based on goal type
+                      let pct = null
+                      let goalDisplay = '—'
+
+                      if (goal > 0) {
+                        if (goalType === 'min') {
+                          pct = Math.min(Math.round((val / goal) * 100), 100)
+                          goalDisplay = `${goal}${metric.unit || ''}+`
+                        } else if (goalType === 'max') {
+                          pct = val > goal ? 100 : Math.round((val / goal) * 100)
+                          goalDisplay = `<${goal}${metric.unit || ''}`
+                        } else if (goalType === 'range' && metric.goalMax) {
+                          pct = val >= goal && val <= metric.goalMax ? 100 :
+                                val < goal ? Math.round((val / goal) * 100) :
+                                Math.round((metric.goalMax / val) * 100)
+                          goalDisplay = `${goal}-${metric.goalMax}${metric.unit || ''}`
+                        }
+                      }
+
                       return (
                         <tr key={metric.key} style={{ borderBottom: '1px solid #f5f5f5' }}>
                           <td style={{ padding: '8px 8px', fontSize: '14px', color: '#1a1a1a', fontWeight: '500' }}>{metric.name}</td>
                           <td style={{ padding: '8px 8px', fontSize: '14px', color: '#1a1a1a', textAlign: 'right', fontWeight: '600' }}>{val}{metric.unit || ''}</td>
-                          <td style={{ padding: '8px 8px', fontSize: '14px', color: '#999', textAlign: 'right' }}>{goal > 0 ? `${goal}${metric.unit || ''}` : '—'}</td>
+                          <td style={{ padding: '8px 8px', fontSize: '14px', color: '#999', textAlign: 'right' }}>{goalDisplay}</td>
                           <td style={{ padding: '8px 8px', textAlign: 'right' }}>
                             {pct !== null ? (
                               <span style={{ fontSize: '12px', fontWeight: '600', color: pct >= 100 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626' }}>
