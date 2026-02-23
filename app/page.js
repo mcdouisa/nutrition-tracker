@@ -76,9 +76,9 @@ export default function NutritionTracker() {
   const [dataLoaded, setDataLoaded] = useState(false)
   const [reloadKey, setReloadKey] = useState(0) // Increment to force data reload (e.g. day change)
 
-  // Previous day checklist navigation
-  const [checklistViewDate, setChecklistViewDate] = useState(null) // null = today, YYYY-MM-DD for past
-  const [pastDayChecklist, setPastDayChecklist] = useState(null) // checklist items for past day
+  // Page-level date navigation (applies to all sections: habits, water, nutrition)
+  const [viewDate, setViewDate] = useState(null) // null = today, YYYY-MM-DD for past
+  const [pastDayData, setPastDayData] = useState(null) // Complete snapshot of past day data
   const [loadingPastDay, setLoadingPastDay] = useState(false)
 
   // Ensure splash screen shows for at least 1 second
@@ -181,22 +181,25 @@ export default function NutritionTracker() {
 
         if (cancelled) return
 
-        // Set up real-time listeners for multi-device sync
-        unsubscribeData = subscribeTodayData(user.uid, (data) => {
-          // subscribeTodayData already listens to dailyData/{YYYY-MM-DD} for today,
-          // so any data received is guaranteed to be today's data
-          if (data) {
-            cloudLoadSucceeded.current = true // Real-time data confirmed, safe to save
-            isRemoteUpdate.current = true
-            if (data.checklistItems) setChecklistItems(data.checklistItems)
-            if (data.nutritionMetrics) setNutritionMetrics(data.nutritionMetrics)
-            if (data.water !== undefined) setWater(data.water)
-            if (data.waterHistory) setWaterHistory(data.waterHistory)
-            if (data.nutritionHistory) setNutritionHistory(data.nutritionHistory)
-            // Reset flag after state updates
-            setTimeout(() => { isRemoteUpdate.current = false }, 100)
-          }
-        })
+        // Set up real-time listeners for multi-device sync (only when viewing today)
+        // When viewing past days, we don't want real-time updates overwriting displayed data
+        if (viewDate === null) {
+          unsubscribeData = subscribeTodayData(user.uid, (data) => {
+            // subscribeTodayData already listens to dailyData/{YYYY-MM-DD} for today,
+            // so any data received is guaranteed to be today's data
+            if (data) {
+              cloudLoadSucceeded.current = true // Real-time data confirmed, safe to save
+              isRemoteUpdate.current = true
+              if (data.checklistItems) setChecklistItems(data.checklistItems)
+              if (data.nutritionMetrics) setNutritionMetrics(data.nutritionMetrics)
+              if (data.water !== undefined) setWater(data.water)
+              if (data.waterHistory) setWaterHistory(data.waterHistory)
+              if (data.nutritionHistory) setNutritionHistory(data.nutritionHistory)
+              // Reset flag after state updates
+              setTimeout(() => { isRemoteUpdate.current = false }, 100)
+            }
+          })
+        }
 
         unsubscribeSettings = subscribeUserSettings(user.uid, (settings) => {
           if (settings) {
@@ -311,7 +314,7 @@ export default function NutritionTracker() {
       unsubscribeSettings()
       unsubscribeNotifications()
     }
-  }, [user, authLoading, isConfigured, reloadKey])
+  }, [user, authLoading, isConfigured, reloadKey, viewDate])
 
   // Save to history function
   const saveToHistory = (dayData) => {
@@ -419,11 +422,39 @@ export default function NutritionTracker() {
   }
 
   // Navigate checklist to a different day
-  const navigateChecklistDay = async (direction) => {
+  const navigateDay = async (direction) => {
     const today = toLocalDateStr()
 
+    // Save current data before navigating (prevents data loss)
+    if (user && isConfigured) {
+      if (viewDate !== null) {
+        // Viewing a past day - save that day's data
+        const currentData = {
+          checklistItems,
+          nutritionMetrics,
+          water,
+          waterHistory,
+          nutritionHistory,
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, currentData)
+      } else {
+        // Viewing today - save today's data before navigating away
+        const todayData = {
+          checklistItems,
+          nutritionMetrics,
+          water,
+          waterHistory,
+          nutritionHistory,
+          date: today
+        }
+        await saveTodayData(user.uid, todayData)
+        await saveHistoryEntry(user.uid, today, todayData)
+      }
+    }
+
     let targetDate
-    if (checklistViewDate === null) {
+    if (viewDate === null) {
       // Currently viewing today
       if (direction === 'back') {
         const d = new Date()
@@ -433,22 +464,22 @@ export default function NutritionTracker() {
         return // Already on today, can't go forward
       }
     } else {
-      const parts = checklistViewDate.split('-')
+      const parts = viewDate.split('-')
       const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
       d.setDate(d.getDate() + (direction === 'back' ? -1 : 1))
       targetDate = toLocalDateStr(d)
 
       // Don't go forward past today
       if (targetDate >= today && direction === 'forward') {
-        setChecklistViewDate(null)
-        setPastDayChecklist(null)
+        setViewDate(null)
+        setPastDayData(null)
         return
       }
 
-      // Limit to 7 days back
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      if (d < sevenDaysAgo) return
+      // Limit to 30 days back (more generous than 7 days)
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      if (d < thirtyDaysAgo) return
     }
 
     setLoadingPastDay(true)
@@ -465,26 +496,28 @@ export default function NutritionTracker() {
         const historyStr = localStorage.getItem('nutrition-history')
         if (historyStr) {
           const history = JSON.parse(historyStr)
-          // History uses toDateString format, need to match
-          const parts = targetDate.split('-')
-          const targetObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
-          const entry = history.find(h => {
-            if (h.date === targetDate) return true
-            try { return new Date(h.date).toDateString() === targetObj.toDateString() } catch { return false }
-          })
+          const entry = history.find(h => h.date === targetDate)
           if (entry) dayData = entry
         }
       }
 
-      // Build checklist from saved data, falling back to current items structure
-      const savedChecklist = dayData?.checklistItems || []
-      const merged = checklistItems.map(item => {
-        const saved = savedChecklist.find(s => s.name === item.name)
-        return { ...item, checked: saved ? saved.checked : false }
-      })
+      // Merge loaded data with current structure (for all sections)
+      const merged = {
+        checklistItems: checklistItems.map(item => {
+          const saved = (dayData?.checklistItems || []).find(s => s.name === item.name)
+          return { ...item, checked: saved ? saved.checked : false }
+        }),
+        nutritionMetrics: nutritionMetrics.map(metric => {
+          const saved = (dayData?.nutritionMetrics || []).find(m => m.key === metric.key)
+          return { ...metric, value: saved ? saved.value : 0 }
+        }),
+        water: dayData?.water || 0,
+        waterHistory: dayData?.waterHistory || [],
+        nutritionHistory: dayData?.nutritionHistory || []
+      }
 
-      setChecklistViewDate(targetDate)
-      setPastDayChecklist(merged)
+      setViewDate(targetDate)
+      setPastDayData(merged)
     } catch (error) {
       console.error('Error loading past day:', error)
     } finally {
@@ -494,31 +527,33 @@ export default function NutritionTracker() {
 
   // Toggle a past day's checklist item and save
   const togglePastChecklistItem = async (index) => {
-    if (!pastDayChecklist || !checklistViewDate) return
+    if (!pastDayData || !viewDate) return
 
-    const updated = [...pastDayChecklist]
+    const updated = [...pastDayData.checklistItems]
     updated[index] = { ...updated[index], checked: !updated[index].checked }
-    setPastDayChecklist(updated)
+
+    // Update pastDayData with new checklist
+    setPastDayData({ ...pastDayData, checklistItems: updated })
 
     // Save to cloud
     if (user && isConfigured) {
-      const dayData = await loadDayData(user.uid, checklistViewDate)
+      const dayData = await loadDayData(user.uid, viewDate)
       const saveData = {
         ...(dayData || {}),
         checklistItems: updated,
-        date: checklistViewDate
+        date: viewDate
       }
-      await saveHistoryEntry(user.uid, checklistViewDate, saveData)
+      await saveHistoryEntry(user.uid, viewDate, saveData)
     }
 
     // Save to localStorage history
     const historyStr = localStorage.getItem('nutrition-history')
     if (historyStr) {
       const history = JSON.parse(historyStr)
-      const parts = checklistViewDate.split('-')
+      const parts = viewDate.split('-')
       const targetObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
       const idx = history.findIndex(h => {
-        if (h.date === checklistViewDate) return true
+        if (h.date === viewDate) return true
         try { return new Date(h.date).toDateString() === targetObj.toDateString() } catch { return false }
       })
       if (idx >= 0) {
@@ -526,7 +561,7 @@ export default function NutritionTracker() {
         localStorage.setItem('nutrition-history', JSON.stringify(history))
       } else {
         history.push({
-          date: checklistViewDate,
+          date: viewDate,
           checklistItems: updated,
           nutritionMetrics: [],
           water: 0
@@ -537,175 +572,483 @@ export default function NutritionTracker() {
   }
 
   // Add water
-  const addWater = (amount) => {
-    setWaterHistory([...waterHistory, { amount, timestamp: Date.now() }])
-    setWater(water + amount)
+  const addWater = async (amount) => {
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save immediately
+      const newHistory = [...pastDayData.waterHistory, { amount, timestamp: Date.now() }]
+      const newTotal = pastDayData.water + amount
+
+      const updated = {
+        ...pastDayData,
+        water: newTotal,
+        waterHistory: newHistory
+      }
+      setPastDayData(updated)
+
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          water: newTotal,
+          waterHistory: newHistory,
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - update current state
+      setWaterHistory([...waterHistory, { amount, timestamp: Date.now() }])
+      setWater(water + amount)
+    }
   }
 
   // Undo water
-  const undoWater = () => {
-    if (waterHistory.length === 0) return
-    const lastEntry = waterHistory[waterHistory.length - 1]
-    setWater(water - lastEntry.amount)
-    setWaterHistory(waterHistory.slice(0, -1))
+  const undoWater = async () => {
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save immediately
+      if (pastDayData.waterHistory.length === 0) return
+      const lastEntry = pastDayData.waterHistory[pastDayData.waterHistory.length - 1]
+      const newTotal = pastDayData.water - lastEntry.amount
+      const newHistory = pastDayData.waterHistory.slice(0, -1)
+
+      const updated = {
+        ...pastDayData,
+        water: newTotal,
+        waterHistory: newHistory
+      }
+      setPastDayData(updated)
+
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          water: newTotal,
+          waterHistory: newHistory,
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - update current state
+      if (waterHistory.length === 0) return
+      const lastEntry = waterHistory[waterHistory.length - 1]
+      setWater(water - lastEntry.amount)
+      setWaterHistory(waterHistory.slice(0, -1))
+    }
   }
 
   // Add to nutrition metric
-  const addToMetric = (metricIndex, value) => {
+  const addToMetric = async (metricIndex, value) => {
     if (!value || value === 0) return
 
-    const updated = [...nutritionMetrics]
-    updated[metricIndex] = {
-      ...updated[metricIndex],
-      value: (updated[metricIndex].value || 0) + value
-    }
-    setNutritionMetrics(updated)
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save immediately
+      const updated = [...pastDayData.nutritionMetrics]
+      updated[metricIndex] = {
+        ...updated[metricIndex],
+        value: (updated[metricIndex].value || 0) + value
+      }
 
-    // Add to history for undo
-    setNutritionHistory([
-      ...nutritionHistory,
-      { metricIndex, value, timestamp: Date.now() }
-    ])
+      const newHistory = [
+        ...pastDayData.nutritionHistory,
+        { metricIndex, value, timestamp: Date.now() }
+      ]
+
+      const updatedPastDay = {
+        ...pastDayData,
+        nutritionMetrics: updated,
+        nutritionHistory: newHistory
+      }
+      setPastDayData(updatedPastDay)
+
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          nutritionMetrics: updated,
+          nutritionHistory: newHistory,
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - update current state
+      const updated = [...nutritionMetrics]
+      updated[metricIndex] = {
+        ...updated[metricIndex],
+        value: (updated[metricIndex].value || 0) + value
+      }
+      setNutritionMetrics(updated)
+
+      // Add to history for undo
+      setNutritionHistory([
+        ...nutritionHistory,
+        { metricIndex, value, timestamp: Date.now() }
+      ])
+    }
   }
 
   // Undo last nutrition entry (supports both single and AI batch entries)
-  const undoNutrition = () => {
-    if (nutritionHistory.length === 0) return
+  const undoNutrition = async () => {
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save immediately
+      if (pastDayData.nutritionHistory.length === 0) return
 
-    const lastEntry = nutritionHistory[nutritionHistory.length - 1]
-    const updated = [...nutritionMetrics]
+      const lastEntry = pastDayData.nutritionHistory[pastDayData.nutritionHistory.length - 1]
+      const updated = [...pastDayData.nutritionMetrics]
 
-    if (lastEntry.estimates) {
-      // Undo AI batch entry - reverse all metrics at once
-      updated.forEach((metric, index) => {
-        if (lastEntry.estimates[metric.key]) {
-          updated[index] = {
-            ...metric,
-            value: Math.max(0, (metric.value || 0) - lastEntry.estimates[metric.key])
+      if (lastEntry.type === 'manual_named' || lastEntry.type === 'manual_unnamed') {
+        // Undo named/unnamed manual consolidated entry
+        updated.forEach((metric, index) => {
+          if (lastEntry.values[metric.key]) {
+            updated[index] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - lastEntry.values[metric.key])
+            }
           }
+        })
+      } else if (lastEntry.estimates) {
+        // Undo AI batch entry - reverse all metrics at once
+        updated.forEach((metric, index) => {
+          if (lastEntry.estimates[metric.key]) {
+            updated[index] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - lastEntry.estimates[metric.key])
+            }
+          }
+        })
+      } else if (lastEntry.metricIndex !== undefined && updated[lastEntry.metricIndex]) {
+        // Undo single metric entry
+        updated[lastEntry.metricIndex] = {
+          ...updated[lastEntry.metricIndex],
+          value: Math.max(0, (updated[lastEntry.metricIndex].value || 0) - (lastEntry.value || 0))
         }
-      })
-    } else if (lastEntry.metricIndex !== undefined && updated[lastEntry.metricIndex]) {
-      // Undo single metric entry
-      updated[lastEntry.metricIndex] = {
-        ...updated[lastEntry.metricIndex],
-        value: Math.max(0, (updated[lastEntry.metricIndex].value || 0) - (lastEntry.value || 0))
+      } else if (lastEntry.metrics && Array.isArray(lastEntry.metrics)) {
+        // Old-format AI entry - restore the pre-addition snapshot values
+        lastEntry.metrics.forEach((oldMetric, i) => {
+          if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
+            updated[i] = { ...updated[i], value: oldMetric.value || 0 }
+          }
+        })
       }
-    } else if (lastEntry.metrics && Array.isArray(lastEntry.metrics)) {
-      // Old-format AI entry - restore the pre-addition snapshot values
-      lastEntry.metrics.forEach((oldMetric, i) => {
-        if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
-          updated[i] = { ...updated[i], value: oldMetric.value || 0 }
-        }
-      })
-    }
 
-    setNutritionMetrics(updated)
-    setNutritionHistory(nutritionHistory.slice(0, -1))
+      const updatedPastDay = {
+        ...pastDayData,
+        nutritionMetrics: updated,
+        nutritionHistory: pastDayData.nutritionHistory.slice(0, -1)
+      }
+      setPastDayData(updatedPastDay)
+
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          nutritionMetrics: updated,
+          nutritionHistory: pastDayData.nutritionHistory.slice(0, -1),
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - update current state
+      if (nutritionHistory.length === 0) return
+
+      const lastEntry = nutritionHistory[nutritionHistory.length - 1]
+      const updated = [...nutritionMetrics]
+
+      if (lastEntry.type === 'manual_named' || lastEntry.type === 'manual_unnamed') {
+        // Undo named/unnamed manual consolidated entry
+        updated.forEach((metric, index) => {
+          if (lastEntry.values[metric.key]) {
+            updated[index] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - lastEntry.values[metric.key])
+            }
+          }
+        })
+      } else if (lastEntry.estimates) {
+        // Undo AI batch entry - reverse all metrics at once
+        updated.forEach((metric, index) => {
+          if (lastEntry.estimates[metric.key]) {
+            updated[index] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - lastEntry.estimates[metric.key])
+            }
+          }
+        })
+      } else if (lastEntry.metricIndex !== undefined && updated[lastEntry.metricIndex]) {
+        // Undo single metric entry
+        updated[lastEntry.metricIndex] = {
+          ...updated[lastEntry.metricIndex],
+          value: Math.max(0, (updated[lastEntry.metricIndex].value || 0) - (lastEntry.value || 0))
+        }
+      } else if (lastEntry.metrics && Array.isArray(lastEntry.metrics)) {
+        // Old-format AI entry - restore the pre-addition snapshot values
+        lastEntry.metrics.forEach((oldMetric, i) => {
+          if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
+            updated[i] = { ...updated[i], value: oldMetric.value || 0 }
+          }
+        })
+      }
+
+      setNutritionMetrics(updated)
+      setNutritionHistory(nutritionHistory.slice(0, -1))
+    }
   }
 
   // Remove a specific nutrition entry by index
-  const removeNutritionEntry = (entryIndex) => {
-    const entry = nutritionHistory[entryIndex]
-    if (!entry) return
+  const removeNutritionEntry = async (entryIndex) => {
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save immediately
+      const entry = pastDayData.nutritionHistory[entryIndex]
+      if (!entry) return
 
-    const updated = [...nutritionMetrics]
+      const updated = [...pastDayData.nutritionMetrics]
 
-    if (entry.type === 'manual_named' || entry.type === 'manual_unnamed') {
-      // Remove named/unnamed manual consolidated entry
-      updated.forEach((metric, i) => {
-        if (entry.values[metric.key]) {
-          updated[i] = {
-            ...metric,
-            value: Math.max(0, (metric.value || 0) - entry.values[metric.key])
+      if (entry.type === 'manual_named' || entry.type === 'manual_unnamed') {
+        // Remove named/unnamed manual consolidated entry
+        updated.forEach((metric, i) => {
+          if (entry.values[metric.key]) {
+            updated[i] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - entry.values[metric.key])
+            }
           }
-        }
-      })
-    } else if (entry.estimates) {
-      // Remove AI batch entry (new format)
-      updated.forEach((metric, i) => {
-        if (entry.estimates[metric.key]) {
-          updated[i] = {
-            ...metric,
-            value: Math.max(0, (metric.value || 0) - entry.estimates[metric.key])
+        })
+      } else if (entry.estimates) {
+        // Remove AI batch entry (new format)
+        updated.forEach((metric, i) => {
+          if (entry.estimates[metric.key]) {
+            updated[i] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - entry.estimates[metric.key])
+            }
           }
+        })
+      } else if (entry.metricIndex !== undefined && updated[entry.metricIndex]) {
+        // Remove single metric entry
+        updated[entry.metricIndex] = {
+          ...updated[entry.metricIndex],
+          value: Math.max(0, (updated[entry.metricIndex].value || 0) - (entry.value || 0))
         }
-      })
-    } else if (entry.metricIndex !== undefined && updated[entry.metricIndex]) {
-      // Remove single metric entry
-      updated[entry.metricIndex] = {
-        ...updated[entry.metricIndex],
-        value: Math.max(0, (updated[entry.metricIndex].value || 0) - (entry.value || 0))
+      } else if (entry.metrics && Array.isArray(entry.metrics)) {
+        // Old-format AI entry - restore the pre-addition snapshot values
+        entry.metrics.forEach((oldMetric, i) => {
+          if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
+            updated[i] = { ...updated[i], value: oldMetric.value || 0 }
+          }
+        })
       }
-    } else if (entry.metrics && Array.isArray(entry.metrics)) {
-      // Old-format AI entry - restore the pre-addition snapshot values
-      entry.metrics.forEach((oldMetric, i) => {
-        if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
-          updated[i] = { ...updated[i], value: oldMetric.value || 0 }
-        }
-      })
-    }
 
-    setNutritionMetrics(updated)
-    setNutritionHistory(nutritionHistory.filter((_, i) => i !== entryIndex))
+      const updatedPastDay = {
+        ...pastDayData,
+        nutritionMetrics: updated,
+        nutritionHistory: pastDayData.nutritionHistory.filter((_, i) => i !== entryIndex)
+      }
+      setPastDayData(updatedPastDay)
+
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          nutritionMetrics: updated,
+          nutritionHistory: pastDayData.nutritionHistory.filter((_, i) => i !== entryIndex),
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - update current state
+      const entry = nutritionHistory[entryIndex]
+      if (!entry) return
+
+      const updated = [...nutritionMetrics]
+
+      if (entry.type === 'manual_named' || entry.type === 'manual_unnamed') {
+        // Remove named/unnamed manual consolidated entry
+        updated.forEach((metric, i) => {
+          if (entry.values[metric.key]) {
+            updated[i] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - entry.values[metric.key])
+            }
+          }
+        })
+      } else if (entry.estimates) {
+        // Remove AI batch entry (new format)
+        updated.forEach((metric, i) => {
+          if (entry.estimates[metric.key]) {
+            updated[i] = {
+              ...metric,
+              value: Math.max(0, (metric.value || 0) - entry.estimates[metric.key])
+            }
+          }
+        })
+      } else if (entry.metricIndex !== undefined && updated[entry.metricIndex]) {
+        // Remove single metric entry
+        updated[entry.metricIndex] = {
+          ...updated[entry.metricIndex],
+          value: Math.max(0, (updated[entry.metricIndex].value || 0) - (entry.value || 0))
+        }
+      } else if (entry.metrics && Array.isArray(entry.metrics)) {
+        // Old-format AI entry - restore the pre-addition snapshot values
+        entry.metrics.forEach((oldMetric, i) => {
+          if (updated[i] && oldMetric.key && updated[i].key === oldMetric.key) {
+            updated[i] = { ...updated[i], value: oldMetric.value || 0 }
+          }
+        })
+      }
+
+      setNutritionMetrics(updated)
+      setNutritionHistory(nutritionHistory.filter((_, i) => i !== entryIndex))
+    }
   }
 
   // Save directly edited metric value
-  const saveMetricEdit = (metricIndex) => {
+  const saveMetricEdit = async (metricIndex) => {
     const newValue = parseInt(editMetricValue) || 0
-    const updated = [...nutritionMetrics]
-    updated[metricIndex] = { ...updated[metricIndex], value: Math.max(0, newValue) }
-    setNutritionMetrics(updated)
+
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save immediately
+      const updated = [...pastDayData.nutritionMetrics]
+      updated[metricIndex] = { ...updated[metricIndex], value: Math.max(0, newValue) }
+
+      const updatedPastDay = {
+        ...pastDayData,
+        nutritionMetrics: updated
+      }
+      setPastDayData(updatedPastDay)
+
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          nutritionMetrics: updated,
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - update current state
+      const updated = [...nutritionMetrics]
+      updated[metricIndex] = { ...updated[metricIndex], value: Math.max(0, newValue) }
+      setNutritionMetrics(updated)
+    }
+
     setEditingMetric(null)
     setEditMetricValue('')
   }
 
   // Add meal
-  const addMeal = (meal) => {
-    nutritionMetrics.forEach((metric, index) => {
+  const addMeal = async (meal) => {
+    const metricsToUse = viewDate !== null && pastDayData
+      ? pastDayData.nutritionMetrics
+      : nutritionMetrics
+
+    for (let index = 0; index < metricsToUse.length; index++) {
+      const metric = metricsToUse[index]
       if (meal[metric.key]) {
-        addToMetric(index, meal[metric.key])
+        await addToMetric(index, meal[metric.key])
       }
-    })
+    }
   }
 
   // Add custom entry - batch all values together
-  const addCustomEntry = () => {
-    // Collect all non-zero values
-    const values = {}
-    const updatedMetrics = nutritionMetrics.map((metric) => {
-      const value = parseInt(customValues[metric.key]) || 0
-      if (value > 0) {
-        values[metric.key] = value
-        return { ...metric, value: (metric.value || 0) + value }
+  const addCustomEntry = async () => {
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save immediately
+      const values = {}
+      const updatedMetrics = pastDayData.nutritionMetrics.map((metric) => {
+        const value = parseInt(customValues[metric.key]) || 0
+        if (value > 0) {
+          values[metric.key] = value
+          return { ...metric, value: (metric.value || 0) + value }
+        }
+        return metric
+      })
+
+      // Only proceed if at least one value was entered
+      if (Object.keys(values).length === 0) return
+
+      // Create ONE consolidated entry
+      const newEntry = customEntryName.trim()
+        ? {
+            type: 'manual_named',
+            name: customEntryName.trim(),
+            values,
+            timestamp: Date.now()
+          }
+        : {
+            type: 'manual_unnamed',
+            values,
+            timestamp: Date.now()
+          }
+
+      const updated = {
+        ...pastDayData,
+        nutritionMetrics: updatedMetrics,
+        nutritionHistory: [...pastDayData.nutritionHistory, newEntry]
       }
-      return metric
-    })
+      setPastDayData(updated)
 
-    // Only proceed if at least one value was entered
-    if (Object.keys(values).length === 0) return
-
-    setNutritionMetrics(updatedMetrics)
-
-    // Create ONE consolidated entry
-    const newEntry = customEntryName.trim()
-      ? {
-          type: 'manual_named',
-          name: customEntryName.trim(),
-          values,
-          timestamp: Date.now()
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          nutritionMetrics: updatedMetrics,
+          nutritionHistory: [...pastDayData.nutritionHistory, newEntry],
+          date: viewDate
         }
-      : {
-          type: 'manual_unnamed',
-          values,
-          timestamp: Date.now()
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+
+      // Clear form
+      setCustomValues({})
+      setCustomEntryName('')
+    } else {
+      // Viewing today - update current state
+      const values = {}
+      const updatedMetrics = nutritionMetrics.map((metric) => {
+        const value = parseInt(customValues[metric.key]) || 0
+        if (value > 0) {
+          values[metric.key] = value
+          return { ...metric, value: (metric.value || 0) + value }
         }
+        return metric
+      })
 
-    setNutritionHistory([...nutritionHistory, newEntry])
+      // Only proceed if at least one value was entered
+      if (Object.keys(values).length === 0) return
 
-    // Clear form
-    setCustomValues({})
-    setCustomEntryName('')
+      setNutritionMetrics(updatedMetrics)
+
+      // Create ONE consolidated entry
+      const newEntry = customEntryName.trim()
+        ? {
+            type: 'manual_named',
+            name: customEntryName.trim(),
+            values,
+            timestamp: Date.now()
+          }
+        : {
+            type: 'manual_unnamed',
+            values,
+            timestamp: Date.now()
+          }
+
+      setNutritionHistory([...nutritionHistory, newEntry])
+
+      // Clear form
+      setCustomValues({})
+      setCustomEntryName('')
+    }
   }
 
   // Reset day
@@ -1234,6 +1577,87 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           </div>
         )}
 
+        {/* Page-level Date Navigation */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          backgroundColor: viewDate !== null ? '#fffbeb' : '#fff',
+          borderRadius: '10px',
+          marginBottom: '16px',
+          border: `1px solid ${viewDate !== null ? '#fcd34d' : '#e0e0e0'}`
+        }}>
+          {/* Back arrow */}
+          <button
+            onClick={() => navigateDay('back')}
+            disabled={loadingPastDay}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: 'transparent',
+              border: '1px solid #5f8a8f',
+              borderRadius: '6px',
+              color: '#5f8a8f',
+              fontSize: '16px',
+              cursor: loadingPastDay ? 'not-allowed' : 'pointer',
+              opacity: loadingPastDay ? 0.5 : 1
+            }}
+          >
+            ‹
+          </button>
+
+          {/* Date display */}
+          <div style={{
+            flex: 1,
+            textAlign: 'center',
+            fontSize: '15px',
+            fontWeight: '600',
+            color: '#1a1a1a'
+          }}>
+            {loadingPastDay ? (
+              'Loading...'
+            ) : viewDate !== null ? (
+              (() => {
+                const parts = viewDate.split('-')
+                const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+                const today = new Date()
+                today.setHours(0,0,0,0)
+                const yesterday = new Date(today)
+                yesterday.setDate(yesterday.getDate() - 1)
+
+                if (d.toDateString() === yesterday.toDateString()) {
+                  return 'Yesterday'
+                }
+                return d.toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                })
+              })()
+            ) : (
+              'Today'
+            )}
+          </div>
+
+          {/* Forward arrow */}
+          <button
+            onClick={() => navigateDay('forward')}
+            disabled={viewDate === null || loadingPastDay}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: 'transparent',
+              border: `1px solid ${viewDate === null ? '#ddd' : '#5f8a8f'}`,
+              borderRadius: '6px',
+              color: viewDate === null ? '#ddd' : '#5f8a8f',
+              fontSize: '16px',
+              cursor: viewDate === null || loadingPastDay ? 'not-allowed' : 'pointer',
+              opacity: viewDate === null || loadingPastDay ? 0.5 : 1
+            }}
+          >
+            ›
+          </button>
+        </div>
+
         {/* Daily Checklist */}
         {checklistItems.length > 0 && (
           <div style={{ marginBottom: '24px' }}>
@@ -1253,95 +1677,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               }}>
                 Daily Habits
               </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => navigateChecklistDay('back')}
-                  disabled={loadingPastDay}
-                  style={{
-                    background: 'none',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '6px',
-                    padding: '2px 8px',
-                    fontSize: '14px',
-                    color: '#999',
-                    cursor: 'pointer',
-                    lineHeight: 1
-                  }}
-                >
-                  ‹
-                </button>
-                {checklistViewDate !== null && (() => {
-                  const parts = checklistViewDate.split('-')
-                  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
-                  const today = new Date()
-                  today.setHours(0,0,0,0)
-                  const yesterday = new Date(today)
-                  yesterday.setDate(yesterday.getDate() - 1)
-                  const label = d.toDateString() === yesterday.toDateString()
-                    ? 'Yesterday'
-                    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                  return (
-                    <span style={{ fontSize: '11px', color: '#5f8a8f', fontWeight: '600' }}>
-                      {label}
-                    </span>
-                  )
-                })()}
-                {checklistViewDate === null && (
-                  <span style={{ fontSize: '11px', color: '#999', fontWeight: '500' }}>
-                    Today
-                  </span>
-                )}
-                <button
-                  onClick={() => {
-                    if (checklistViewDate !== null) {
-                      navigateChecklistDay('forward')
-                    }
-                  }}
-                  disabled={checklistViewDate === null || loadingPastDay}
-                  style={{
-                    background: 'none',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '6px',
-                    padding: '2px 8px',
-                    fontSize: '14px',
-                    color: checklistViewDate === null ? '#ddd' : '#999',
-                    cursor: checklistViewDate === null ? 'default' : 'pointer',
-                    lineHeight: 1
-                  }}
-                >
-                  ›
-                </button>
-              </div>
             </div>
-            {checklistViewDate !== null && (
-              <div style={{
-                padding: '6px 12px',
-                marginBottom: '8px',
-                backgroundColor: '#f0f7f8',
-                borderRadius: '8px',
-                fontSize: '11px',
-                color: '#5f8a8f',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <span>Viewing past day — changes will be saved</span>
-                <button
-                  onClick={() => { setChecklistViewDate(null); setPastDayChecklist(null) }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#5f8a8f',
-                    fontWeight: '600',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    padding: '0 0 0 8px'
-                  }}
-                >
-                  Back to Today
-                </button>
-              </div>
-            )}
             {loadingPastDay ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px' }}>
                 Loading...
@@ -1352,10 +1688,10 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                 gridTemplateColumns: checklistItems.length === 1 ? '1fr' : 'repeat(2, 1fr)',
                 gap: '8px'
               }}>
-                {(checklistViewDate !== null && pastDayChecklist ? pastDayChecklist : checklistItems).map((item, i) => (
+                {(viewDate !== null && pastDayData?.checklistItems ? pastDayData?.checklistItems : checklistItems).map((item, i) => (
                   <button
                     key={i}
-                    onClick={() => checklistViewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
+                    onClick={() => viewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
                     style={{
                       padding: '12px 14px',
                       backgroundColor: '#fff',
@@ -1419,6 +1755,17 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               border: '1px solid #e0e0e0',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }}>
+              {(() => {
+                // Determine which data to display (past day or today)
+                const displayWater = viewDate !== null && pastDayData
+                  ? pastDayData.water
+                  : water
+                const displayWaterHistory = viewDate !== null && pastDayData
+                  ? pastDayData.waterHistory
+                  : waterHistory
+
+                return (
+                  <>
               <div style={{
                 display: 'flex',
                 gap: '24px',
@@ -1428,7 +1775,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               }}>
                 {/* Water Bottle Visualization */}
                 {waterGoal > 0 && (() => {
-                  const fillPercent = Math.min(water / waterGoal, 1)
+                  const fillPercent = Math.min(displayWater / waterGoal, 1)
                   // Bottle body goes from y=30 (top) to y=190 (bottom) = 160 units
                   const bottleBottom = 190
                   const fillableHeight = 160
@@ -1439,7 +1786,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     <WaterBottle
                       waterTop={waterTop}
                       waterHeight={waterHeight}
-                      water={water}
+                      water={displayWater}
                       fillPercent={fillPercent}
                       isFull={isFull}
                     />
@@ -1455,7 +1802,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     marginBottom: '2px',
                     letterSpacing: '-2px'
                   }}>
-                    {water}
+                    {displayWater}
                   </div>
                   <div style={{
                     fontSize: '12px',
@@ -1506,7 +1853,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                   </button>
                 ))}
               </div>
-              {waterHistory.length > 0 && (
+              {displayWaterHistory.length > 0 && (
                 <div style={{ textAlign: 'center' }}>
                   <button onClick={undoWater} style={{
                     padding: '6px 12px',
@@ -1522,6 +1869,9 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                   </button>
                 </div>
               )}
+                  </>
+                )
+              })()}
             </div>
           </div>
         )}
@@ -1529,6 +1879,17 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
         {/* Nutrition Totals */}
         {nutritionMetrics.length > 0 && (
           <div style={{ marginBottom: '24px' }}>
+            {(() => {
+              // Determine which data to display (past day or today)
+              const displayNutritionMetrics = viewDate !== null && pastDayData
+                ? pastDayData.nutritionMetrics
+                : nutritionMetrics
+              const displayNutritionHistory = viewDate !== null && pastDayData
+                ? pastDayData.nutritionHistory
+                : nutritionHistory
+
+              return (
+                <>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -1545,7 +1906,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
               }}>
                 Nutrition
               </h2>
-              {nutritionHistory.length > 0 && (
+              {displayNutritionHistory.length > 0 && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={undoNutrition} style={{
                     padding: '4px 10px',
@@ -1576,7 +1937,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
             </div>
 
             {/* Nutrition Entry Log */}
-            {showNutritionLog && nutritionHistory.length > 0 && (
+            {showNutritionLog && displayNutritionHistory.length > 0 && (
               <div style={{
                 marginBottom: '12px',
                 backgroundColor: '#fff',
@@ -1594,23 +1955,23 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
-                  Today&apos;s Entries ({nutritionHistory.length})
+                  Today&apos;s Entries ({displayNutritionHistory.length})
                 </div>
-                {[...nutritionHistory].reverse().map((entry, reverseIdx) => {
-                  const entryIndex = nutritionHistory.length - 1 - reverseIdx
+                {[...displayNutritionHistory].reverse().map((entry, reverseIdx) => {
+                  const entryIndex = displayNutritionHistory.length - 1 - reverseIdx
                   const time = new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 
                   // Named/unnamed manual consolidated entry
                   if (entry.type === 'manual_named' || entry.type === 'manual_unnamed') {
                     const valuesList = Object.entries(entry.values).map(([key, value]) => {
-                      const metric = nutritionMetrics.find(m => m.key === key)
+                      const metric = displayNutritionMetrics.find(m => m.key === key)
                       return metric ? `${metric.name}: +${value}${metric.unit ? ` ${metric.unit}` : ''}` : null
                     }).filter(Boolean)
 
                     return (
                       <div key={entryIndex} style={{
                         padding: '10px 14px',
-                        borderBottom: reverseIdx < nutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                        borderBottom: reverseIdx < displayNutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -1669,13 +2030,13 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                   if (entry.estimates) {
                     // AI batch entry (new format)
                     entryType = 'AI Estimate'
-                    const parts = nutritionMetrics
+                    const parts = displayNutritionMetrics
                       .filter(m => entry.estimates[m.key])
                       .map(m => `${m.name}: ${entry.estimates[m.key]}${m.unit ? ` ${m.unit}` : ''}`)
                     description = parts.join(', ')
                   } else if (entry.metricIndex !== undefined) {
                     // Single metric entry
-                    const metric = nutritionMetrics[entry.metricIndex]
+                    const metric = displayNutritionMetrics[entry.metricIndex]
                     if (metric) {
                       description = `${metric.name}: +${entry.value}${metric.unit ? ` ${metric.unit}` : ''}`
                     }
@@ -1688,7 +2049,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                   return (
                     <div key={entryIndex} style={{
                       padding: '10px 14px',
-                      borderBottom: reverseIdx < nutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      borderBottom: reverseIdx < displayNutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -1741,10 +2102,10 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: nutritionMetrics.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+              gridTemplateColumns: displayNutritionMetrics.length === 1 ? '1fr' : 'repeat(2, 1fr)',
               gap: '8px'
             }}>
-              {nutritionMetrics.map((metric, i) => {
+              {displayNutritionMetrics.map((metric, i) => {
                 const goalType = metric.goalType || 'min'
                 const value = metric.value || 0
                 const goal = metric.goal || 0
@@ -1919,6 +2280,9 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                 )
               })}
             </div>
+                </>
+              )
+            })()}
           </div>
         )}
 
