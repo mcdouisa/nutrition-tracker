@@ -477,7 +477,7 @@ export default function Onboarding({ onComplete }) {
                     Calories: {recommendations.calories} Cal/day
                   </span>
                 </div>
-                <div style={{ fontSize: '12px', color: '#1e40af', opacity: 0.8' }}>
+                <div style={{ fontSize: '12px', color: '#1e40af', opacity: 0.8 }}>
                   Maintenance level for your profile
                 </div>
               </div>
