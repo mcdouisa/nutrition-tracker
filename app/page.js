@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AIChatModal } from './ai-chat-modal'
+import Onboarding from './components/Onboarding'
 import { useAuth } from '../lib/AuthContext'
 import {
   saveTodayData,
@@ -20,7 +21,9 @@ import {
   saveFeedback,
   updateUserProfile,
   subscribeNotifications,
-  dismissNotification
+  dismissNotification,
+  completeOnboarding,
+  loadUserProfile
 } from '../lib/dataSync'
 
 export default function NutritionTracker() {
@@ -70,6 +73,10 @@ export default function NutritionTracker() {
 
   // Notifications
   const [notifications, setNotifications] = useState([])
+
+  // Onboarding
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
   // Current date for tracking
   const [currentDate, setCurrentDate] = useState('')
@@ -316,6 +323,153 @@ export default function NutritionTracker() {
     }
   }, [user, authLoading, isConfigured, reloadKey, viewDate])
 
+  // Check if user needs onboarding
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (authLoading || !user || user.isAnonymous) {
+        setCheckingOnboarding(false)
+        return
+      }
+
+      try {
+        const profile = await loadUserProfile(user.uid)
+
+        // Only show onboarding if:
+        // 1. User hasn't completed onboarding before
+        // 2. User has no existing settings (truly new user)
+        if (profile && profile.onboardingCompleted) {
+          setShowOnboarding(false)
+        } else {
+          // Check if user has existing settings
+          const settings = await loadUserSettings(user.uid)
+          const hasExistingSettings = settings && (
+            (settings.nutritionMetrics && settings.nutritionMetrics.length > 0) ||
+            (settings.checklistItems && settings.checklistItems.length > 0)
+          )
+
+          if (hasExistingSettings) {
+            // User has existing settings - don't show onboarding
+            setShowOnboarding(false)
+            // Mark as completed so we don't check again
+            await completeOnboarding(user.uid, { profile: {}, habits: [], goals: {} })
+          } else {
+            // Truly new user - show onboarding
+            setShowOnboarding(true)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error)
+        // If we can't check, don't show onboarding to avoid annoying existing users
+        setShowOnboarding(false)
+      } finally {
+        setCheckingOnboarding(false)
+      }
+    }
+
+    checkOnboarding()
+  }, [user, authLoading])
+
+  // Handle onboarding completion
+  const handleOnboardingComplete = async (onboardingData) => {
+    setShowOnboarding(false)
+
+    if (!user) return
+
+    try {
+      // Save onboarding completion to user profile
+      await completeOnboarding(user.uid, onboardingData)
+
+      // Apply selected settings
+      const { profile, habits, goals, optionalMetrics } = onboardingData
+
+      // Build nutrition metrics from recommendations
+      const newMetrics = []
+      if (goals.calories) {
+        newMetrics.push({
+          key: 'calories',
+          name: 'Calories',
+          unit: 'Cal',
+          goal: goals.calories,
+          goalType: 'range',
+          goalMax: goals.calories + 200, // +/- 200 cal range
+          color: '#ff6b6b'
+        })
+      }
+      if (goals.protein) {
+        newMetrics.push({
+          key: 'protein',
+          name: 'Protein',
+          unit: 'g',
+          goal: goals.protein,
+          goalType: 'min',
+          color: '#4ecdc4'
+        })
+      }
+      // Only add optional metrics if user selected them
+      if (goals.fiber && optionalMetrics?.fiber) {
+        newMetrics.push({
+          key: 'fiber',
+          name: 'Fiber',
+          unit: 'g',
+          goal: goals.fiber,
+          goalType: 'min',
+          color: '#95e1d3'
+        })
+      }
+      if (goals.carbs && optionalMetrics?.carbs) {
+        newMetrics.push({
+          key: 'carbs',
+          name: 'Carbs',
+          unit: 'g',
+          goal: goals.carbs,
+          goalType: 'range',
+          goalMax: goals.carbs + 50,
+          color: '#feca57'
+        })
+      }
+      if (goals.fat && optionalMetrics?.fat) {
+        newMetrics.push({
+          key: 'fat',
+          name: 'Fat',
+          unit: 'g',
+          goal: goals.fat,
+          goalType: 'range',
+          goalMax: goals.fat + 20,
+          color: '#ff9ff3'
+        })
+      }
+
+      // Build checklist items from selected habits
+      const newHabits = habits.map(habit => ({
+        name: habit.label,
+        checked: false
+      }))
+
+      // Set water goal
+      const newWaterGoal = goals.water || 64
+
+      // Set default water buttons
+      const defaultWaterButtons = [8, 16, 24, 32]
+
+      // Apply settings
+      setNutritionMetrics(newMetrics.map(m => ({ ...m, value: 0 })))
+      setChecklistItems(newHabits)
+      setWaterGoal(newWaterGoal)
+      setWaterButtons(defaultWaterButtons)
+
+      // Save settings to cloud
+      await saveUserSettings(user.uid, {
+        nutritionMetrics: newMetrics,
+        checklistItems: newHabits,
+        waterGoal: newWaterGoal,
+        waterButtons: defaultWaterButtons
+      })
+
+    } catch (error) {
+      console.error('Error applying onboarding settings:', error)
+    }
+  }
+
   // Save to history function
   const saveToHistory = (dayData) => {
     if (!dayData || !dayData.date) return
@@ -428,16 +582,14 @@ export default function NutritionTracker() {
     // Save current data before navigating (prevents data loss)
     if (user && isConfigured) {
       if (viewDate !== null) {
-        // Viewing a past day - save that day's data
-        const currentData = {
-          checklistItems,
-          nutritionMetrics,
-          water,
-          waterHistory,
-          nutritionHistory,
-          date: viewDate
+        // Viewing a past day - save that day's data using pastDayData (not today's state)
+        if (pastDayData) {
+          const currentData = {
+            ...pastDayData,
+            date: viewDate
+          }
+          await saveHistoryEntry(user.uid, viewDate, currentData)
         }
-        await saveHistoryEntry(user.uid, viewDate, currentData)
       } else {
         // Viewing today - save today's data before navigating away
         const todayData = {
@@ -1194,19 +1346,56 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
     }
   }
 
-  const addEstimatedNutrition = (estimates) => {
-    const updated = nutritionMetrics.map(metric => ({
-      ...metric,
-      value: (metric.value || 0) + (estimates[metric.key] || 0)
-    }))
+  const addEstimatedNutrition = async (estimates, messageIndex) => {
+    const timestamp = Date.now()
+    const newEntry = { estimates, timestamp }
 
-    // Store as batch entry so undo can reverse all metrics at once
-    setNutritionHistory([...nutritionHistory, { estimates, timestamp: Date.now() }])
-    setNutritionMetrics(updated)
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - update pastDayData and save to Firestore
+      const updated = pastDayData.nutritionMetrics.map(metric => ({
+        ...metric,
+        value: (metric.value || 0) + (estimates[metric.key] || 0)
+      }))
+
+      const updatedPastDay = {
+        ...pastDayData,
+        nutritionMetrics: updated,
+        nutritionHistory: [...pastDayData.nutritionHistory, newEntry]
+      }
+      setPastDayData(updatedPastDay)
+
+      // Save to Firestore immediately
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          nutritionMetrics: updated,
+          nutritionHistory: [...(dayData?.nutritionHistory || []), newEntry],
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - update current state
+      const updated = nutritionMetrics.map(metric => ({
+        ...metric,
+        value: (metric.value || 0) + (estimates[metric.key] || 0)
+      }))
+
+      setNutritionHistory([...nutritionHistory, newEntry])
+      setNutritionMetrics(updated)
+    }
+
+    // Mark this message's estimates as added
+    if (messageIndex !== undefined) {
+      setChatMessages(prev => prev.map((msg, idx) =>
+        idx === messageIndex ? { ...msg, added: true } : msg
+      ))
+    }
   }
 
   // Show loading state (with minimum 1s splash)
-  if (authLoading || migrating || splashMinTime) {
+  if (authLoading || migrating || splashMinTime || checkingOnboarding) {
     return (
       <div style={{
         position: 'fixed',
@@ -1305,6 +1494,11 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
       padding: '16px 12px',
       paddingBottom: '32px'
     }}>
+      {/* Onboarding Modal */}
+      {showOnboarding && !checkingOnboarding && (
+        <Onboarding onComplete={handleOnboardingComplete} />
+      )}
+
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
@@ -1441,6 +1635,26 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                     Send Feedback
                   </button>
                   <button
+                    onClick={() => {
+                      setShowUserMenu(false)
+                      setShowOnboarding(true)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #e0e0e0',
+                      color: '#5f8a8f',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                  >
+                    View Tutorial
+                  </button>
+                  <button
                     onClick={async () => {
                       setSigningOut(true)
                       // Save current data before signing out
@@ -1557,7 +1771,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                 boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
               }}
             >
-              Settings
+              Your Goals
             </button>
           </div>
         </div>
@@ -2486,7 +2700,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
                 cursor: 'pointer'
               }}
             >
-              Open Settings
+              Open Your Goals
             </button>
           </div>
         )}
@@ -2520,6 +2734,7 @@ Replace the 0s with your numerical estimates for the EXACT amount described.`
           input={chatInput}
           isThinking={isThinking}
           metrics={nutritionMetrics}
+          viewDate={viewDate}
           onInputChange={setChatInput}
           onSend={sendChatMessage}
           onAddEstimates={addEstimatedNutrition}
@@ -2803,7 +3018,7 @@ function SettingsModal({
             color: '#1a1a1a',
             letterSpacing: '-0.3px'
           }}>
-            Settings
+            Your Goals
           </h2>
           <button
             onClick={onClose}

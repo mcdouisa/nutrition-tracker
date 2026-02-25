@@ -1,10 +1,32 @@
 // AI Chat Modal Component (mobile optimized)
-export function AIChatModal({ messages, input, isThinking, metrics, onInputChange, onSend, onAddEstimates, onClose }) {
+export function AIChatModal({ messages, input, isThinking, metrics, viewDate, onInputChange, onSend, onAddEstimates, onClose }) {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       onSend()
     }
+  }
+
+  // Generate button text based on viewing date
+  const getAddButtonText = () => {
+    if (viewDate === null) {
+      return '✓ Add to Today'
+    }
+
+    // Parse viewDate (YYYY-MM-DD format)
+    const parts = viewDate.split('-')
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    if (d.toDateString() === yesterday.toDateString()) {
+      return '✓ Add to Yesterday'
+    }
+
+    // Format as "Add to Dec 15"
+    return `✓ Add to ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
   }
 
   return (
@@ -54,10 +76,22 @@ export function AIChatModal({ messages, input, isThinking, metrics, onInputChang
             </h2>
             <div style={{
               fontSize: '12px',
-              color: '#999',
+              color: viewDate !== null ? '#d97706' : '#999',
               marginTop: '2px'
             }}>
-              Describe your meal for estimates
+              {viewDate !== null
+                ? `Adding to ${(() => {
+                    const parts = viewDate.split('-')
+                    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+                    const yesterday = new Date()
+                    yesterday.setDate(yesterday.getDate() - 1)
+                    yesterday.setHours(0, 0, 0, 0)
+                    return d.toDateString() === yesterday.toDateString()
+                      ? 'Yesterday'
+                      : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  })()}`
+                : 'Describe your meal for estimates'
+              }
             </div>
           </div>
           <button
@@ -127,8 +161,8 @@ export function AIChatModal({ messages, input, isThinking, metrics, onInputChang
               {msg.estimates && (
                 <div style={{
                   marginTop: '6px',
-                  backgroundColor: '#f0fdf4',
-                  border: '1px solid #bbf7d0',
+                  backgroundColor: msg.added ? '#f5f5f5' : '#f0fdf4',
+                  border: msg.added ? '1px solid #d1d5db' : '1px solid #bbf7d0',
                   borderRadius: '8px',
                   padding: '10px 12px',
                   maxWidth: '85%'
@@ -136,12 +170,12 @@ export function AIChatModal({ messages, input, isThinking, metrics, onInputChang
                   <div style={{
                     fontSize: '11px',
                     fontWeight: '600',
-                    color: '#166534',
+                    color: msg.added ? '#6b7280' : '#166534',
                     marginBottom: '6px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                   }}>
-                    Will add:
+                    {msg.added ? 'Added:' : 'Will add:'}
                   </div>
                   <div style={{
                     display: 'flex',
@@ -155,30 +189,32 @@ export function AIChatModal({ messages, input, isThinking, metrics, onInputChang
                       return (
                         <div key={m.key} style={{
                           fontSize: '12px',
-                          color: '#1a1a1a',
+                          color: msg.added ? '#6b7280' : '#1a1a1a',
                           fontWeight: '500'
                         }}>
-                          <span style={{ color: m.color || '#666' }}>{m.name}:</span>{' '}
+                          <span style={{ color: msg.added ? '#9ca3af' : (m.color || '#666') }}>{m.name}:</span>{' '}
                           {val}{m.unit ? ` ${m.unit}` : ''}
                         </div>
                       )
                     })}
                   </div>
                   <button
-                    onClick={() => onAddEstimates(msg.estimates)}
+                    onClick={() => onAddEstimates(msg.estimates, i)}
+                    disabled={msg.added}
                     style={{
                       width: '100%',
                       padding: '8px 14px',
-                      backgroundColor: '#10b981',
+                      backgroundColor: msg.added ? '#e5e7eb' : '#10b981',
                       border: 'none',
                       borderRadius: '6px',
-                      color: '#fff',
+                      color: msg.added ? '#9ca3af' : '#fff',
                       fontSize: '12px',
                       fontWeight: '500',
-                      cursor: 'pointer'
+                      cursor: msg.added ? 'not-allowed' : 'pointer',
+                      opacity: msg.added ? 0.7 : 1
                     }}
                   >
-                    ✓ Add to Today
+                    {msg.added ? '✓ Added' : getAddButtonText()}
                   </button>
                 </div>
               )}
