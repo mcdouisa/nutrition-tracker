@@ -21,6 +21,14 @@ export async function POST(request) {
     const timeoutId = setTimeout(() => controller.abort(), 25000)
 
     try {
+      // Use vision model when any message contains an image
+      const hasImage = messages.some(m =>
+        Array.isArray(m.content) && m.content.some(c => c.type === 'image_url')
+      )
+      const model = hasImage
+        ? 'meta-llama/llama-4-scout-17b-16e-instruct'
+        : 'llama-3.3-70b-versatile'
+
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -28,7 +36,7 @@ export async function POST(request) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model,
           messages: messages,
           temperature: 0.1,
           max_tokens: 500

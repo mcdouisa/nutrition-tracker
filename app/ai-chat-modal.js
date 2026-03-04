@@ -1,10 +1,47 @@
 // AI Chat Modal Component (mobile optimized)
-export function AIChatModal({ messages, input, isThinking, metrics, viewDate, onInputChange, onSend, onAddEstimates, onClose }) {
+import { useRef } from 'react'
+
+// Compress image to max 900px JPEG before sending to API
+function compressImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const MAX = 900
+        let w = img.width, h = img.height
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+          else { w = Math.round(w * MAX / h); h = MAX }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', 0.75))
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+export function AIChatModal({ messages, input, pendingImage, isThinking, metrics, viewDate, onInputChange, onImageSelect, onImageClear, onSend, onAddEstimates, onClose }) {
+  const fileInputRef = useRef(null)
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      onSend()
+      if (input.trim() || pendingImage) onSend()
     }
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const compressed = await compressImage(file)
+    onImageSelect(compressed)
+    e.target.value = '' // allow re-selecting same file
   }
 
   // Generate button text based on viewing date
@@ -90,7 +127,7 @@ export function AIChatModal({ messages, input, isThinking, metrics, viewDate, on
                       ? 'Yesterday'
                       : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                   })()}`
-                : 'Describe your meal for estimates'
+                : 'Describe your meal or snap a photo'
               }
             </div>
           </div>
@@ -128,11 +165,13 @@ export function AIChatModal({ messages, input, isThinking, metrics, viewDate, on
               <div style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '500', color: '#666' }}>
                 Ask me about your meals!
               </div>
-              <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
-                Examples:<br />
+              <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
+                Type a description:<br />
                 "Chicken breast with rice"<br />
-                "Large pizza slice"<br />
-                "Oatmeal with banana"
+                <br />
+                Or tap 📷 to:<br />
+                • Take a photo of your food<br />
+                • Snap a nutrition label
               </div>
             </div>
           )}
@@ -155,7 +194,21 @@ export function AIChatModal({ messages, input, isThinking, metrics, viewDate, on
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 whiteSpace: 'pre-wrap'
               }}>
-                {msg.content}
+                {/* Show image thumbnail if the user message had a photo */}
+                {msg.image && (
+                  <img
+                    src={msg.image}
+                    alt="Food photo"
+                    style={{
+                      display: 'block',
+                      maxWidth: '100%',
+                      borderRadius: '8px',
+                      marginBottom: msg.content && msg.content !== 'Analyze this food photo' ? '8px' : '0'
+                    }}
+                  />
+                )}
+                {/* Only show text if it's not the auto-generated fallback placeholder */}
+                {msg.content && msg.content !== 'Analyze this food photo' && msg.content}
               </div>
 
               {msg.estimates && (
@@ -250,12 +303,87 @@ export function AIChatModal({ messages, input, isThinking, metrics, viewDate, on
           borderTop: '1px solid #e0e0e0',
           backgroundColor: '#fff'
         }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Image preview */}
+          {pendingImage && (
+            <div style={{
+              position: 'relative',
+              display: 'inline-block',
+              marginBottom: '8px'
+            }}>
+              <img
+                src={pendingImage}
+                alt="Selected food"
+                style={{
+                  height: '72px',
+                  width: '72px',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  border: '2px solid #5f8a8f',
+                  display: 'block'
+                }}
+              />
+              <button
+                onClick={onImageClear}
+                style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-6px',
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ef4444',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1
+                }}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+            {/* Hidden file input — capture="environment" opens rear camera on mobile */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+
+            {/* Camera button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isThinking}
+              title="Take a photo or choose from library"
+              style={{
+                padding: '10px 12px',
+                backgroundColor: pendingImage ? '#5f8a8f' : '#f3f4f6',
+                border: `1px solid ${pendingImage ? '#5f8a8f' : '#e0e0e0'}`,
+                borderRadius: '8px',
+                fontSize: '18px',
+                cursor: isThinking ? 'not-allowed' : 'pointer',
+                lineHeight: 1,
+                flexShrink: 0,
+                opacity: isThinking ? 0.5 : 1
+              }}
+            >
+              📷
+            </button>
+
             <textarea
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Describe your meal..."
+              onKeyDown={handleKeyPress}
+              placeholder={pendingImage ? 'Optional: add context (e.g. "I had half of this")' : 'Describe your meal...'}
               disabled={isThinking}
               style={{
                 flex: 1,
@@ -274,16 +402,16 @@ export function AIChatModal({ messages, input, isThinking, metrics, viewDate, on
             />
             <button
               onClick={onSend}
-              disabled={!input.trim() || isThinking}
+              disabled={(!input.trim() && !pendingImage) || isThinking}
               style={{
                 padding: '10px 18px',
-                backgroundColor: input.trim() && !isThinking ? '#5f8a8f' : '#e0e0e0',
+                backgroundColor: (input.trim() || pendingImage) && !isThinking ? '#5f8a8f' : '#e0e0e0',
                 border: 'none',
                 borderRadius: '8px',
-                color: input.trim() && !isThinking ? '#fff' : '#999',
+                color: (input.trim() || pendingImage) && !isThinking ? '#fff' : '#999',
                 fontSize: '13px',
                 fontWeight: '500',
-                cursor: input.trim() && !isThinking ? 'pointer' : 'not-allowed'
+                cursor: (input.trim() || pendingImage) && !isThinking ? 'pointer' : 'not-allowed'
               }}
             >
               Send

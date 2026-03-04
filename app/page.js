@@ -69,6 +69,7 @@ export default function NutritionTracker() {
   const [showChat, setShowChat] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
+  const [chatImage, setChatImage] = useState(null)
   const [isThinking, setIsThinking] = useState(false)
 
   // Notifications
@@ -1269,11 +1270,16 @@ export default function NutritionTracker() {
 
   // AI Chat functions using Groq API (free tier)
   const sendChatMessage = async () => {
-    if (!chatInput.trim()) return
+    if (!chatInput.trim() && !chatImage) return
 
-    const userMessage = { role: 'user', content: chatInput }
+    const userMessage = {
+      role: 'user',
+      content: chatInput || 'Analyze this food photo',
+      image: chatImage || undefined
+    }
     setChatMessages([...chatMessages, userMessage])
     setChatInput('')
+    setChatImage(null)
     setIsThinking(true)
 
     try {
@@ -1285,7 +1291,7 @@ export default function NutritionTracker() {
         ? Object.fromEntries(nutritionMetrics.map(m => [m.key, 0]))
         : { calories: 0, protein: 0, carbs: 0, fat: 0 }
 
-      const systemPrompt = `You are a precise nutrition database assistant. The user is tracking these metrics: ${metricsInfo}.
+      const basePrompt = `You are a precise nutrition database assistant. The user is tracking these metrics: ${metricsInfo}.
 
 ACCURACY IS YOUR TOP PRIORITY. Use real nutritional data from official sources (USDA, restaurant websites, food labels). Do not guess or extrapolate wildly.
 
@@ -1294,25 +1300,42 @@ Rules:
 - For generic foods, use USDA database values as your reference.
 - Scale linearly from known serving sizes. If a 12-count is X calories, a 10-count is (10/12 * X) calories.
 - NEVER inflate calorie estimates. When uncertain, estimate conservatively (lower end).
-- Calculate for the EXACT quantity described, not a default serving size.
+- Calculate for the EXACT quantity described, not a default serving size.`
 
-When the user describes a meal or food, provide:
-1. A brief response with your source or reasoning (e.g. "Based on Chick-fil-A's official data...")
-2. Your accurate estimates for the EXACT amount described
+      const imagePrompt = chatImage ? `
+
+When analyzing a food photo:
+- If it's a nutrition facts label, read the exact values directly from the label. Use the serving size shown unless the user specifies otherwise.
+- If it's a photo of food, identify what you see and estimate a typical portion. If the user specified a quantity or amount in their message, use that instead.
+- Describe briefly what you identified so the user can confirm it's correct.` : ''
+
+      const systemPrompt = `${basePrompt}${imagePrompt}
+
+When the user describes or shows a meal or food, provide:
+1. A brief response with your source or reasoning (e.g. "Based on Chick-fil-A's official data..." or "I can see this is a nutrition label showing...")
+2. Your accurate estimates for the EXACT amount described or shown
 
 Always end your response with nutrition data in this exact JSON format on its own line:
 NUTRITION_DATA: ${JSON.stringify(metricsKeys)}
 
 Replace the 0s with accurate numerical values for the EXACT amount described.`
 
-      // Build messages array for chat completion
+      // Format current user message — use content array when image is present
+      const currentUserContent = chatImage
+        ? [
+            ...(chatInput.trim() ? [{ type: 'text', text: chatInput }] : [{ type: 'text', text: 'Analyze this food and estimate its nutrition.' }]),
+            { type: 'image_url', image_url: { url: chatImage } }
+          ]
+        : chatInput
+
+      // Build messages array — exclude images from history to keep payload small
       const messages = [
         { role: 'system', content: systemPrompt },
         ...chatMessages.slice(-6).map(msg => ({
           role: msg.role,
-          content: msg.content
+          content: typeof msg.content === 'string' ? msg.content : msg.content
         })),
-        { role: 'user', content: chatInput }
+        { role: 'user', content: currentUserContent }
       ]
 
       const response = await fetch('/api/chat', {
@@ -2748,10 +2771,13 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         <AIChatModal
           messages={chatMessages}
           input={chatInput}
+          pendingImage={chatImage}
           isThinking={isThinking}
           metrics={nutritionMetrics}
           viewDate={viewDate}
           onInputChange={setChatInput}
+          onImageSelect={setChatImage}
+          onImageClear={() => setChatImage(null)}
           onSend={sendChatMessage}
           onAddEstimates={addEstimatedNutrition}
           onClose={() => setShowChat(false)}
