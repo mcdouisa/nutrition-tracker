@@ -1,14 +1,15 @@
 // AI Chat Modal Component (mobile optimized)
 import { useRef } from 'react'
 
-// Compress image to max 900px JPEG before sending to API
+// Compress image before sending to API
+// Higher resolution + quality needed for nutrition label text to remain legible
 function compressImage(file) {
   return new Promise((resolve) => {
     const reader = new FileReader()
     reader.onload = (e) => {
       const img = new Image()
       img.onload = () => {
-        const MAX = 900
+        const MAX = 1400
         let w = img.width, h = img.height
         if (w > MAX || h > MAX) {
           if (w > h) { h = Math.round(h * MAX / w); w = MAX }
@@ -18,7 +19,7 @@ function compressImage(file) {
         canvas.width = w
         canvas.height = h
         canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL('image/jpeg', 0.75))
+        resolve(canvas.toDataURL('image/jpeg', 0.92))
       }
       img.src = e.target.result
     }
