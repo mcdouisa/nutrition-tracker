@@ -28,10 +28,10 @@ export async function POST(request) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          model: 'llama-3.3-70b-versatile',
           messages: messages,
-          temperature: 0.7,
-          max_tokens: 400 // Reduced for faster responses
+          temperature: 0.1,
+          max_tokens: 500
         }),
         signal: controller.signal
       })

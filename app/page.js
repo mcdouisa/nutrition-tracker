@@ -1285,18 +1285,25 @@ export default function NutritionTracker() {
         ? Object.fromEntries(nutritionMetrics.map(m => [m.key, 0]))
         : { calories: 0, protein: 0, carbs: 0, fat: 0 }
 
-      const systemPrompt = `You are a helpful nutrition assistant. The user is tracking these metrics: ${metricsInfo}.
+      const systemPrompt = `You are a precise nutrition database assistant. The user is tracking these metrics: ${metricsInfo}.
+
+ACCURACY IS YOUR TOP PRIORITY. Use real nutritional data from official sources (USDA, restaurant websites, food labels). Do not guess or extrapolate wildly.
+
+Rules:
+- For branded/restaurant foods (McDonald's, Chick-fil-A, Starbucks, etc.), use their OFFICIAL published nutrition data. Example: Chick-fil-A 12-ct nuggets = 380 cal, so 10 = ~317 cal.
+- For generic foods, use USDA database values as your reference.
+- Scale linearly from known serving sizes. If a 12-count is X calories, a 10-count is (10/12 * X) calories.
+- NEVER inflate calorie estimates. When uncertain, estimate conservatively (lower end).
+- Calculate for the EXACT quantity described, not a default serving size.
 
 When the user describes a meal or food, provide:
-1. A brief, friendly response about the nutritional content
-2. Your estimates for the EXACT amount they described
-
-CRITICAL: Calculate nutrition for the EXACT quantity the user specifies, NOT the standard serving size. If they say "4 skittles", calculate for exactly 4 individual skittles, not a full bag or standard serving. If they say "half a sandwich", calculate for half. Always match the user's described portion precisely.
+1. A brief response with your source or reasoning (e.g. "Based on Chick-fil-A's official data...")
+2. Your accurate estimates for the EXACT amount described
 
 Always end your response with nutrition data in this exact JSON format on its own line:
 NUTRITION_DATA: ${JSON.stringify(metricsKeys)}
 
-Replace the 0s with your numerical estimates for the EXACT amount described.`
+Replace the 0s with accurate numerical values for the EXACT amount described.`
 
       // Build messages array for chat completion
       const messages = [
