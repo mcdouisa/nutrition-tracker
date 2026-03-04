@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/AuthContext'
-import { loadUserProfile, loadAllFeedback, loadAllUsers, loadAllActivityData, updateFeedbackItem, toLocalDateStr, createAnnouncementForAllUsers } from '../../lib/dataSync'
+import { loadUserProfile, loadAllFeedback, loadAllUsers, loadAllActivityData, updateFeedbackItem, deleteFeedbackItem, toLocalDateStr, createAnnouncementForAllUsers } from '../../lib/dataSync'
 
 const PRIORITY_CONFIG = {
   none:     { label: 'No Priority', color: '#999',    bg: '#f5f5f5' },
@@ -63,6 +63,19 @@ export default function AdminPage() {
     }
     checkAdmin()
   }, [user, authLoading, isConfigured, router])
+
+  // Permanently delete a feedback item
+  const handleFeedbackDelete = async (id) => {
+    const previous = feedback.find(f => f.id === id)
+    setFeedback(prev => prev.filter(f => f.id !== id))
+    setSaveError('')
+    const ok = await deleteFeedbackItem(id)
+    if (!ok) {
+      if (previous) setFeedback(prev => [...prev, previous].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')))
+      setSaveError('Delete failed — check your connection or Firestore permissions.')
+      setTimeout(() => setSaveError(''), 5000)
+    }
+  }
 
   // Optimistically update a feedback item in local state + Firestore
   const handleFeedbackUpdate = async (id, updates) => {
@@ -175,10 +188,21 @@ export default function AdminPage() {
       ? Math.round((feedback.filter(f => f.status === 'resolved').length / feedback.length) * 100)
       : 0
 
+    // ── Hourly activity distribution (from activityData updatedAt timestamps) ──
+    const hourlyActivity = Array.from({ length: 24 }, (_, hour) => {
+      const count = activityData.filter(a => {
+        if (!a.updatedAt) return false
+        return new Date(a.updatedAt).getHours() === hour
+      }).length
+      const label = hour === 0 ? '12a' : hour === 12 ? '12p' : hour < 12 ? `${hour}a` : `${hour - 12}p`
+      return { label, count, hour }
+    })
+
     return {
       active7d, active30d, newMonth, openBugs, openFeatures,
       weekBuckets, feedbackWeeks, byType, byStatus, byPriority,
       segments, dailyActive, avgResolveTime, avgStartTime, resolutionRate,
+      hourlyActivity,
     }
   }, [users, feedback, activityData])
 
@@ -411,7 +435,16 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* ── Row 3: Feedback Health + Feedback Trend ── */}
+            {/* ── Row 3: Time-of-Day Activity ── */}
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>Activity by Time of Day — Last 30 Days</div>
+                <div style={{ fontSize: '11px', color: '#999' }}>when users save data (local time)</div>
+              </div>
+              <MiniBar data={analytics.hourlyActivity} color="#5f8a8f" barHeight={56} />
+            </div>
+
+            {/* ── Row 4: Feedback Health + Feedback Trend ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {/* Feedback health */}
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
@@ -458,7 +491,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* ── Row 4: Feedback Breakdown ── */}
+            {/* ── Row 5: Feedback Breakdown ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
               {/* By type */}
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e8e8e8' }}>
@@ -654,13 +687,17 @@ export default function AdminPage() {
                     >
                       {/* Top row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                        {/* Resolve checkbox */}
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flexShrink: 0 }}>
+                        {/* Resolve checkbox — only enabled if in-progress or already resolved */}
+                        <label
+                          title={!isResolved && item.status !== 'in-progress' ? 'Mark In Progress before resolving' : ''}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: item.status === 'in-progress' || isResolved ? 'pointer' : 'not-allowed', flexShrink: 0, opacity: !isResolved && item.status !== 'in-progress' ? 0.4 : 1 }}
+                        >
                           <input
                             type="checkbox"
                             checked={isResolved}
-                            onChange={e => handleFeedbackUpdate(item.id, { status: e.target.checked ? 'resolved' : 'new' })}
-                            style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#16a34a' }}
+                            disabled={!isResolved && item.status !== 'in-progress'}
+                            onChange={e => handleFeedbackUpdate(item.id, { status: e.target.checked ? 'resolved' : 'in-progress' })}
+                            style={{ width: '15px', height: '15px', cursor: 'inherit', accentColor: '#16a34a' }}
                           />
                           <span style={{ fontSize: '11px', color: '#999', userSelect: 'none' }}>
                             {isResolved ? 'Resolved' : 'Resolve'}
@@ -727,9 +764,32 @@ export default function AdminPage() {
                         )}
 
                         {/* Date + user — pushed right */}
-                        <div style={{ marginLeft: 'auto', textAlign: 'right', flexShrink: 0 }}>
-                          <div style={{ fontSize: '11px', color: '#bbb' }}>{formatDateTime(item.createdAt)}</div>
-                          <div style={{ fontSize: '11px', color: '#999', marginTop: '1px' }}>{item.userEmail || 'Anonymous'}</div>
+                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '11px', color: '#bbb' }}>{formatDateTime(item.createdAt)}</div>
+                            <div style={{ fontSize: '11px', color: '#999', marginTop: '1px' }}>{item.userEmail || 'Anonymous'}</div>
+                          </div>
+                          {/* Delete button */}
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Permanently delete this feedback? This cannot be undone.')) {
+                                handleFeedbackDelete(item.id)
+                              }
+                            }}
+                            title="Delete feedback"
+                            style={{
+                              padding: '4px 8px',
+                              backgroundColor: '#fef2f2',
+                              border: '1px solid #fecaca',
+                              borderRadius: '4px',
+                              color: '#dc2626',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              flexShrink: 0
+                            }}
+                          >
+                            🗑
+                          </button>
                         </div>
                       </div>
 

@@ -48,7 +48,7 @@ export default function NutritionTracker() {
   const [waterGoal, setWaterGoal] = useState(0)
 
   // Meal slots
-  const [meals, setMeals] = useState([null, null, null, null])
+  const [meals, setMeals] = useState([null, null, null, null, null, null, null, null, null, null])
 
   // Custom entry values
   const [customValues, setCustomValues] = useState({})
@@ -163,7 +163,12 @@ export default function NutritionTracker() {
           }
           if (cloudSettings.waterButtons) setWaterButtons(cloudSettings.waterButtons)
           if (cloudSettings.waterGoal) setWaterGoal(cloudSettings.waterGoal)
-          if (cloudSettings.meals) setMeals(cloudSettings.meals)
+          if (cloudSettings.meals) {
+            // Pad to 10 slots so existing users with 4 slots see the new capacity
+            const padded = [...cloudSettings.meals]
+            while (padded.length < 10) padded.push(null)
+            setMeals(padded)
+          }
         }
 
         // Load today's data from cloud (checks both dailyData and history collections)
@@ -249,7 +254,11 @@ export default function NutritionTracker() {
             }
             if (settings.waterButtons) setWaterButtons(settings.waterButtons)
             if (settings.waterGoal) setWaterGoal(settings.waterGoal)
-            if (settings.meals) setMeals(settings.meals)
+            if (settings.meals) {
+              const padded = [...settings.meals]
+              while (padded.length < 10) padded.push(null)
+              setMeals(padded)
+            }
             setTimeout(() => { isRemoteUpdate.current = false }, 100)
           }
         })
