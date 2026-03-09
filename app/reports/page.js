@@ -380,6 +380,118 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
   )
 }
 
+// Weekly strip — shows the last 7 days with color-coded goal progress
+function WeeklyStrip({ history, metrics }) {
+  const calMetric = metrics.find(m => m.key === 'calories') || metrics[0]
+  if (!calMetric || !calMetric.goal) return null
+
+  const days = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    d.setHours(0, 0, 0, 0)
+    const dateStr = toLocalDateStr(d)
+
+    const dayData = history.find(h => {
+      if (!h.date) return false
+      // Compare as local date strings
+      const hStr = /^\d{4}-\d{2}-\d{2}$/.test(h.date)
+        ? h.date
+        : toLocalDateStr(new Date(h.date))
+      return hStr === dateStr
+    })
+
+    const metricEntry = dayData?.nutritionMetrics?.find(m => m.key === calMetric.key)
+    const value = metricEntry?.value || 0
+    const goal = calMetric.goal || 0
+    const pct = goal > 0 ? value / goal : 0
+    const hasData = value > 0
+
+    let dotColor = '#e5e7eb' // gray = no data
+    if (hasData) {
+      dotColor = pct >= 0.8 ? '#16a34a'  // green
+               : pct >= 0.5 ? '#d97706'  // amber
+               : '#dc2626'               // red
+    }
+
+    days.push({ d, value, goal, dotColor, hasData, isToday: i === 0 })
+  }
+
+  return (
+    <div style={{
+      backgroundColor: '#fff',
+      borderRadius: '12px',
+      border: '1px solid #e0e0e0',
+      padding: '16px',
+      marginBottom: '16px'
+    }}>
+      <div style={{
+        fontSize: '11px',
+        fontWeight: '600',
+        color: '#999',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        marginBottom: '14px'
+      }}>
+        This Week — {calMetric.name}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        {days.map(({ d, value, goal, dotColor, hasData, isToday }) => (
+          <div key={d.toISOString()} style={{ textAlign: 'center', flex: 1 }}>
+            {/* Day letter */}
+            <div style={{
+              fontSize: '11px',
+              color: isToday ? '#5f8a8f' : '#999',
+              fontWeight: isToday ? '700' : '400',
+              marginBottom: '6px'
+            }}>
+              {d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}
+            </div>
+            {/* Color dot */}
+            <div style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              backgroundColor: dotColor,
+              margin: '0 auto 6px',
+              border: isToday ? '2px solid #5f8a8f' : '2px solid transparent',
+              boxSizing: 'border-box'
+            }} />
+            {/* Value */}
+            <div style={{
+              fontSize: '10px',
+              color: hasData ? '#1a1a1a' : '#d1d5db',
+              fontWeight: '500',
+              lineHeight: '1.3'
+            }}>
+              {hasData ? value.toLocaleString() : '—'}
+            </div>
+            {/* Goal denominator */}
+            {hasData && goal > 0 && (
+              <div style={{ fontSize: '9px', color: '#9ca3af' }}>
+                /{goal.toLocaleString()}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {/* Legend */}
+      <div style={{
+        display: 'flex',
+        gap: '14px',
+        justifyContent: 'center',
+        marginTop: '14px',
+        fontSize: '11px',
+        color: '#9ca3af'
+      }}>
+        <span><span style={{ color: '#16a34a' }}>●</span> On track</span>
+        <span><span style={{ color: '#d97706' }}>●</span> Partial</span>
+        <span><span style={{ color: '#dc2626' }}>●</span> Low</span>
+      </div>
+    </div>
+  )
+}
+
 export default function ReportsPage() {
   const { user, isConfigured } = useAuth()
   const [history, setHistory] = useState([])
@@ -755,6 +867,9 @@ export default function ReportsPage() {
             </Link>
           </div>
         </div>
+
+        {/* Weekly Strip — this week at a glance */}
+        <WeeklyStrip history={history} metrics={metrics} />
 
         {/* View Mode Toggle - 3 options */}
         <div style={{

@@ -79,6 +79,10 @@ export default function NutritionTracker() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
+  // Yesterday entry prompt
+  const [showYesterdayPrompt, setShowYesterdayPrompt] = useState(false)
+  const [eveningCutoff, setEveningCutoff] = useState('19:30') // HH:MM 24hr, default 7:30 PM
+
   // Current date for tracking
   const [currentDate, setCurrentDate] = useState('')
   const [dataLoaded, setDataLoaded] = useState(false)
@@ -164,6 +168,7 @@ export default function NutritionTracker() {
           }
           if (cloudSettings.waterButtons) setWaterButtons(cloudSettings.waterButtons)
           if (cloudSettings.waterGoal) setWaterGoal(cloudSettings.waterGoal)
+          if (cloudSettings.eveningCutoff) setEveningCutoff(cloudSettings.eveningCutoff)
           if (cloudSettings.meals) {
             // Pad to 10 slots so existing users with 4 slots see the new capacity
             const padded = [...cloudSettings.meals]
@@ -294,6 +299,11 @@ export default function NutritionTracker() {
         setWaterGoal(Number(storedWaterGoal))
       }
 
+      const storedCutoff = localStorage.getItem('evening-cutoff')
+      if (storedCutoff) {
+        setEveningCutoff(storedCutoff)
+      }
+
       const storedMeals = localStorage.getItem('custom-meals')
       if (storedMeals) {
         setMeals(JSON.parse(storedMeals))
@@ -378,6 +388,47 @@ export default function NutritionTracker() {
 
     checkOnboarding()
   }, [user, authLoading])
+
+  // Check if user forgot to log yesterday evening
+  useEffect(() => {
+    if (!dataLoaded) return
+    if (viewDate !== null) return // already viewing a past day
+    const today = toLocalDateStr()
+    if (localStorage.getItem('yesterday-prompt-shown') === today) return
+
+    const checkYesterday = async () => {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayStr = toLocalDateStr(yesterday)
+
+      let dayData = null
+      if (user && isConfigured) {
+        dayData = await loadDayData(user.uid, yesterdayStr)
+      } else {
+        const hist = localStorage.getItem('nutrition-history')
+        if (hist) {
+          try { dayData = JSON.parse(hist).find(h => h.date === yesterdayStr) } catch (_) {}
+        }
+      }
+
+      const hist = dayData?.nutritionHistory || []
+      const [cutoffH, cutoffM] = eveningCutoff.split(':').map(Number)
+      const cutoffMinutes = cutoffH * 60 + cutoffM
+
+      const hadEveningEntry = hist.some(entry => {
+        if (!entry.timestamp) return false
+        const d = new Date(entry.timestamp)
+        return (d.getHours() * 60 + d.getMinutes()) >= cutoffMinutes
+      })
+
+      if (!hadEveningEntry) {
+        setShowYesterdayPrompt(true)
+        localStorage.setItem('yesterday-prompt-shown', today)
+      }
+    }
+
+    checkYesterday()
+  }, [dataLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle onboarding completion
   const handleOnboardingComplete = async (onboardingData) => {
@@ -1260,6 +1311,21 @@ export default function NutritionTracker() {
     }
   }
 
+  const saveEveningCutoff = (value) => {
+    localStorage.setItem('evening-cutoff', value)
+    setEveningCutoff(value)
+    if (user) {
+      saveUserSettings(user.uid, { eveningCutoff: value })
+    }
+  }
+
+  const formatCutoffTime = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number)
+    const suffix = h >= 12 ? 'PM' : 'AM'
+    const hour = h > 12 ? h - 12 : h === 0 ? 12 : h
+    return `${hour}:${String(m).padStart(2, '0')} ${suffix}`
+  }
+
   const saveMeals = (mealsData) => {
     localStorage.setItem('custom-meals', JSON.stringify(mealsData))
     setMeals(mealsData)
@@ -1536,6 +1602,83 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
       {/* Onboarding Modal */}
       {showOnboarding && !checkingOnboarding && (
         <Onboarding onComplete={handleOnboardingComplete} />
+      )}
+
+      {/* Yesterday Entry Prompt */}
+      {showYesterdayPrompt && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          zIndex: 1100
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '16px 16px 0 0',
+            width: '100%',
+            maxWidth: '600px',
+            padding: '28px 24px 40px'
+          }}>
+            <div style={{ fontSize: '36px', textAlign: 'center', marginBottom: '12px' }}>🌙</div>
+            <h3 style={{
+              margin: '0 0 8px 0',
+              fontSize: '17px',
+              fontWeight: '600',
+              color: '#1a1a1a',
+              textAlign: 'center'
+            }}>
+              Looks like yesterday was incomplete
+            </h3>
+            <p style={{
+              margin: '0 0 24px 0',
+              fontSize: '14px',
+              color: '#666',
+              textAlign: 'center',
+              lineHeight: '1.5'
+            }}>
+              No entries were logged after {formatCutoffTime(eveningCutoff)} yesterday.<br />
+              Want to go back and fill it in?
+            </p>
+            <button
+              onClick={() => { navigateDay('back'); setShowYesterdayPrompt(false) }}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '14px',
+                backgroundColor: '#5f8a8f',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                marginBottom: '10px'
+              }}
+            >
+              Go to Yesterday
+            </button>
+            <button
+              onClick={() => setShowYesterdayPrompt(false)}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '12px',
+                backgroundColor: 'transparent',
+                border: '1px solid #e0e0e0',
+                borderRadius: '10px',
+                fontSize: '14px',
+                color: '#666',
+                cursor: 'pointer'
+              }}
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
       )}
 
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -2754,10 +2897,12 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           waterButtons={waterButtons}
           waterGoal={waterGoal}
           meals={meals}
+          eveningCutoff={eveningCutoff}
           onSaveChecklist={saveChecklistItems}
           onSaveNutrition={saveNutritionMetrics}
           onSaveWater={saveWaterButtons}
           onSaveWaterGoal={saveWaterGoal}
+          onSaveEveningCutoff={saveEveningCutoff}
           onSaveMeals={saveMeals}
           onResetDay={resetDay}
           onClose={() => setShowSettings(false)}
@@ -2905,10 +3050,12 @@ function SettingsModal({
   waterButtons,
   waterGoal,
   meals,
+  eveningCutoff,
   onSaveChecklist,
   onSaveNutrition,
   onSaveWater,
   onSaveWaterGoal,
+  onSaveEveningCutoff,
   onSaveMeals,
   onResetDay,
   onClose,
@@ -3145,15 +3292,54 @@ function SettingsModal({
           )}
 
           {settingsTab === 'water' && (
-            <WaterSettings
-              buttons={tempWater}
-              goal={tempWaterGoal}
-              onGoalChange={setTempWaterGoal}
-              onAdd={addWaterButton}
-              onUpdate={updateWaterButton}
-              onRemove={removeWaterButton}
-              onMove={moveWaterButton}
-            />
+            <>
+              <WaterSettings
+                buttons={tempWater}
+                goal={tempWaterGoal}
+                onGoalChange={setTempWaterGoal}
+                onAdd={addWaterButton}
+                onUpdate={updateWaterButton}
+                onRemove={removeWaterButton}
+                onMove={moveWaterButton}
+              />
+              {/* Evening cutoff reminder setting */}
+              <div style={{
+                marginTop: '20px',
+                padding: '16px',
+                backgroundColor: '#fff',
+                borderRadius: '10px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+                  Evening reminder cutoff
+                </div>
+                <div style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>
+                  If no entries are logged after this time, you'll be reminded the next morning.
+                </div>
+                <select
+                  value={eveningCutoff}
+                  onChange={e => onSaveEveningCutoff(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: '#1a1a1a',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="18:00">6:00 PM</option>
+                  <option value="18:30">6:30 PM</option>
+                  <option value="19:00">7:00 PM</option>
+                  <option value="19:30">7:30 PM (default)</option>
+                  <option value="20:00">8:00 PM</option>
+                  <option value="20:30">8:30 PM</option>
+                  <option value="21:00">9:00 PM</option>
+                </select>
+              </div>
+            </>
           )}
 
           {settingsTab === 'meals' && (
