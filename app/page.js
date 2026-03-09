@@ -396,6 +396,10 @@ export default function NutritionTracker() {
     const today = toLocalDateStr()
     if (localStorage.getItem('yesterday-prompt-shown') === today) return
 
+    // Mark as checked for today immediately — no matter what happens next,
+    // the prompt won't appear again until tomorrow
+    localStorage.setItem('yesterday-prompt-shown', today)
+
     const checkYesterday = async () => {
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
@@ -423,7 +427,6 @@ export default function NutritionTracker() {
 
       if (!hadEveningEntry) {
         setShowYesterdayPrompt(true)
-        localStorage.setItem('yesterday-prompt-shown', today)
       }
     }
 
