@@ -3795,17 +3795,17 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: '#666', marginBottom: '2px' }}>
+      <div style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>
         Add nutrition metrics with optional goals
       </div>
 
       {metrics.map((metric, i) => (
         <div key={i} style={{
-          padding: '14px',
+          padding: '8px 10px',
           backgroundColor: '#fff',
           border: '1px solid #e0e0e0',
           borderRadius: '10px',
-          marginBottom: '10px'
+          marginBottom: '8px'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Icon + Name + Remove */}
@@ -4115,7 +4115,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: '#666', marginBottom: '2px' }}>
+      <div style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>
         Configure quick-add meal presets
       </div>
 
@@ -4135,11 +4135,11 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
 
       {metrics.length > 0 && meals.map((meal, i) => (
         <div key={i} style={{
-          padding: '14px',
+          padding: '8px 10px',
           backgroundColor: '#fff',
           border: '1px solid #e0e0e0',
           borderRadius: '10px',
-          marginBottom: '10px'
+          marginBottom: '8px'
         }}>
           <div style={{ display: 'flex', gap: '6px', marginBottom: meal ? '12px' : '0' }}>
             {meal && (
