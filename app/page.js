@@ -3795,7 +3795,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+      <div style={{ fontSize: '13px', color: '#666', marginBottom: '2px' }}>
         Add nutrition metrics with optional goals
       </div>
 
@@ -4115,7 +4115,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+      <div style={{ fontSize: '13px', color: '#666', marginBottom: '2px' }}>
         Configure quick-add meal presets
       </div>
 
