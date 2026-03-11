@@ -3807,121 +3807,70 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
           borderRadius: '10px',
           marginBottom: '10px'
         }}>
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-            <select
-              value={metric.icon || '📊'}
-              onChange={(e) => onUpdate(i, 'icon', e.target.value)}
-              style={{
-                padding: '8px',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '16px',
-                cursor: 'pointer',
-                width: '50px'
-              }}
-            >
-              {iconOptions.map(icon => (
-                <option key={icon} value={icon}>{icon}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={metric.name}
-              onChange={(e) => onUpdate(i, 'name', e.target.value)}
-              placeholder="Name (e.g., Calories)"
-              style={{
-                flex: 1,
-                minWidth: 0,
-                padding: '10px 12px',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                color: '#1a1a1a',
-                fontSize: '16px',
-                fontWeight: '500',
-                boxSizing: 'border-box'
-              }}
-            />
-            <button
-              onClick={() => onRemove(i)}
-              style={{
-                padding: '10px 12px',
-                backgroundColor: '#f5f5f5',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#999',
-                fontSize: '13px',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-          <div style={{ marginBottom: '8px' }}>
-            <label style={{ fontSize: '10px', color: '#999', marginBottom: '4px', display: 'block' }}>
-              Unit
-            </label>
-            <input
-              type="text"
-              value={metric.unit}
-              onChange={(e) => onUpdate(i, 'unit', e.target.value)}
-              placeholder="g, cal, etc"
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                color: '#1a1a1a',
-                fontSize: '16px',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '8px' }}>
-            <label style={{ fontSize: '10px', color: '#999', marginBottom: '4px', display: 'block' }}>
-              Goal Type
-            </label>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[
-                { id: 'min', label: 'At Least' },
-                { id: 'max', label: 'Under' },
-                { id: 'range', label: 'Range' }
-              ].map(gt => (
-                <button
-                  key={gt.id}
-                  type="button"
-                  onClick={() => onUpdate(i, 'goalType', gt.id)}
-                  style={{
-                    flex: 1,
-                    padding: '8px 6px',
-                    backgroundColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#fafafa',
-                    border: '1px solid',
-                    borderColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#e0e0e0',
-                    borderRadius: '6px',
-                    color: (metric.goalType || 'min') === gt.id ? '#fff' : '#666',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {gt.label}
-                </button>
-              ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Icon + Name + Remove */}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <select
+                value={metric.icon || '📊'}
+                onChange={(e) => onUpdate(i, 'icon', e.target.value)}
+                style={{
+                  padding: '8px',
+                  backgroundColor: '#fafafa',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  width: '50px'
+                }}
+              >
+                {iconOptions.map(icon => (
+                  <option key={icon} value={icon}>{icon}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={metric.name}
+                onChange={(e) => onUpdate(i, 'name', e.target.value)}
+                placeholder="Name (e.g., Calories)"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '10px 12px',
+                  backgroundColor: '#fafafa',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  color: '#1a1a1a',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <button
+                onClick={() => onRemove(i)}
+                style={{
+                  padding: '10px 12px',
+                  backgroundColor: '#f5f5f5',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#999',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                ✕
+              </button>
             </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: (metric.goalType || 'min') === 'range' ? '1fr 1fr' : '1fr', gap: '6px' }}>
+            {/* Unit */}
             <div>
-              <label style={{ fontSize: '10px', color: '#999', marginBottom: '2px', display: 'block' }}>
-                {(metric.goalType || 'min') === 'range' ? 'Min Goal' : (metric.goalType || 'min') === 'max' ? 'Max Limit' : 'Daily Goal'}
+              <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+                Unit
               </label>
               <input
-                type="number"
-                value={metric.goal || ''}
-                onChange={(e) => onUpdate(i, 'goal', parseInt(e.target.value) || 0)}
-                placeholder="Optional"
+                type="text"
+                value={metric.unit}
+                onChange={(e) => onUpdate(i, 'unit', e.target.value)}
+                placeholder="g, cal, etc"
                 style={{
                   width: '100%',
                   padding: '8px 10px',
@@ -3934,16 +3883,50 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 }}
               />
             </div>
-            {(metric.goalType || 'min') === 'range' && (
+            {/* Goal Type */}
+            <div>
+              <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+                Goal Type
+              </label>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {[
+                  { id: 'min', label: 'At Least' },
+                  { id: 'max', label: 'Under' },
+                  { id: 'range', label: 'Range' }
+                ].map(gt => (
+                  <button
+                    key={gt.id}
+                    type="button"
+                    onClick={() => onUpdate(i, 'goalType', gt.id)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 6px',
+                      backgroundColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#fafafa',
+                      border: '1px solid',
+                      borderColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#e0e0e0',
+                      borderRadius: '6px',
+                      color: (metric.goalType || 'min') === gt.id ? '#fff' : '#666',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {gt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Goal value(s) */}
+            <div style={{ display: 'grid', gridTemplateColumns: (metric.goalType || 'min') === 'range' ? '1fr 1fr' : '1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '10px', color: '#999', marginBottom: '2px', display: 'block' }}>
-                  Max Goal
+                <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+                  {(metric.goalType || 'min') === 'range' ? 'Min Goal' : (metric.goalType || 'min') === 'max' ? 'Max Limit' : 'Daily Goal'}
                 </label>
                 <input
                   type="number"
-                  value={metric.goalMax || ''}
-                  onChange={(e) => onUpdate(i, 'goalMax', parseInt(e.target.value) || 0)}
-                  placeholder="Upper limit"
+                  value={metric.goal || ''}
+                  onChange={(e) => onUpdate(i, 'goal', parseInt(e.target.value) || 0)}
+                  placeholder="Optional"
                   style={{
                     width: '100%',
                     padding: '8px 10px',
@@ -3956,7 +3939,30 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                   }}
                 />
               </div>
-            )}
+              {(metric.goalType || 'min') === 'range' && (
+                <div>
+                  <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+                    Max Goal
+                  </label>
+                  <input
+                    type="number"
+                    value={metric.goalMax || ''}
+                    onChange={(e) => onUpdate(i, 'goalMax', parseInt(e.target.value) || 0)}
+                    placeholder="Upper limit"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      backgroundColor: '#fafafa',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      color: '#1a1a1a',
+                      fontSize: '16px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ))}
