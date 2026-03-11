@@ -1604,7 +1604,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
     }}>
       {/* Onboarding Modal */}
       {showOnboarding && !checkingOnboarding && (
-        <Onboarding onComplete={handleOnboardingComplete} />
+        <Onboarding onComplete={handleOnboardingComplete} onSkip={() => setShowOnboarding(false)} />
       )}
 
       {/* Yesterday Entry Prompt */}

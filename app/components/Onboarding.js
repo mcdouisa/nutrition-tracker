@@ -40,7 +40,7 @@ const RECOMMENDATIONS = {
   }
 }
 
-export default function Onboarding({ onComplete }) {
+export default function Onboarding({ onComplete, onSkip }) {
   const [step, setStep] = useState(1)
   const [profile, setProfile] = useState({
     age: '',
@@ -155,8 +155,35 @@ export default function Onboarding({ onComplete }) {
         width: '100%',
         maxHeight: '90vh',
         overflow: 'auto',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        position: 'relative'
       }}>
+        {/* Close / skip button */}
+        {onSkip && (
+          <button
+            onClick={onSkip}
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: '#f0f0f0',
+              color: '#666',
+              fontSize: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1,
+              lineHeight: '1'
+            }}
+          >
+            ✕
+          </button>
+        )}
         {/* Progress bar */}
         <div style={{
           height: '4px',
