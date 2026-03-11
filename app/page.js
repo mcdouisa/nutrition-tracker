@@ -1732,6 +1732,26 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               </div>
             </div>
 
+            {/* Return to Today button — only shown when viewing a past day */}
+            {viewDate !== null && (
+              <button
+                onClick={() => { setViewDate(null); setPastDayData(null) }}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: '#5f8a8f',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Today
+              </button>
+            )}
+
             {/* User Account Button */}
             <div style={{ position: 'relative' }}>
               <button
