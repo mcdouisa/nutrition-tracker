@@ -3801,11 +3801,9 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 
       {metrics.map((metric, i) => (
         <div key={i} style={{
-          padding: '8px 10px',
-          backgroundColor: '#fff',
-          border: '1px solid #e0e0e0',
-          borderRadius: '10px',
-          marginBottom: '8px'
+          paddingBottom: '12px',
+          marginBottom: '12px',
+          borderBottom: i < metrics.length - 1 ? '1px solid #f0f0f0' : 'none'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Icon + Name + Remove */}
@@ -4135,11 +4133,9 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
 
       {metrics.length > 0 && meals.map((meal, i) => (
         <div key={i} style={{
-          padding: '8px 10px',
-          backgroundColor: '#fff',
-          border: '1px solid #e0e0e0',
-          borderRadius: '10px',
-          marginBottom: '8px'
+          paddingBottom: '12px',
+          marginBottom: '12px',
+          borderBottom: i < meals.length - 1 ? '1px solid #f0f0f0' : 'none'
         }}>
           <div style={{ display: 'flex', gap: '6px', marginBottom: meal ? '12px' : '0' }}>
             {meal && (
