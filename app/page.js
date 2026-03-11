@@ -3090,6 +3090,11 @@ function SettingsModal({
   const [tempWater, setTempWater] = useState([...waterButtons])
   const [tempWaterGoal, setTempWaterGoal] = useState(waterGoal)
   const [tempMeals, setTempMeals] = useState([...meals])
+  const contentRef = useRef(null)
+
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0
+  }, [settingsTab])
 
   const addChecklistItem = () => {
     setTempChecklist([...tempChecklist, { name: '', checked: false }])
@@ -3289,7 +3294,7 @@ function SettingsModal({
         </div>
 
         {/* Content */}
-        <div style={{
+        <div ref={contentRef} style={{
           flex: 1,
           overflow: 'auto',
           padding: '20px 16px',
