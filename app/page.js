@@ -1177,15 +1177,55 @@ export default function NutritionTracker() {
 
   // Add meal
   const addMeal = async (meal) => {
-    const metricsToUse = viewDate !== null && pastDayData
-      ? pastDayData.nutritionMetrics
-      : nutritionMetrics
+    if (viewDate !== null && pastDayData) {
+      // Viewing past day - create a single consolidated entry
+      const values = {}
+      const updatedMetrics = pastDayData.nutritionMetrics.map((metric, index) => {
+        const value = meal[metric.key]
+        if (value) {
+          values[metric.key] = value
+          return { ...metric, value: (metric.value || 0) + value }
+        }
+        return metric
+      })
 
-    for (let index = 0; index < metricsToUse.length; index++) {
-      const metric = metricsToUse[index]
-      if (meal[metric.key]) {
-        await addToMetric(index, meal[metric.key])
+      if (Object.keys(values).length === 0) return
+
+      const newEntry = { type: 'manual_named', name: meal.name || 'Meal', values, timestamp: Date.now() }
+      const updatedPastDay = {
+        ...pastDayData,
+        nutritionMetrics: updatedMetrics,
+        nutritionHistory: [...pastDayData.nutritionHistory, newEntry]
       }
+      setPastDayData(updatedPastDay)
+
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        const saveData = {
+          ...(dayData || {}),
+          nutritionMetrics: updatedMetrics,
+          nutritionHistory: [...pastDayData.nutritionHistory, newEntry],
+          date: viewDate
+        }
+        await saveHistoryEntry(user.uid, viewDate, saveData)
+      }
+    } else {
+      // Viewing today - create a single consolidated entry
+      const values = {}
+      const updated = [...nutritionMetrics]
+      nutritionMetrics.forEach((metric, index) => {
+        const value = meal[metric.key]
+        if (value) {
+          values[metric.key] = value
+          updated[index] = { ...metric, value: (metric.value || 0) + value }
+        }
+      })
+
+      if (Object.keys(values).length === 0) return
+
+      const newEntry = { type: 'manual_named', name: meal.name || 'Meal', values, timestamp: Date.now() }
+      setNutritionMetrics(updated)
+      setNutritionHistory([...nutritionHistory, newEntry])
     }
   }
 
