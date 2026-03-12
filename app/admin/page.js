@@ -706,8 +706,26 @@ export default function AdminPage() {
 
                         <div style={{ width: '1px', height: '14px', backgroundColor: '#e0e0e0', flexShrink: 0 }} />
 
-                        {/* Type badge */}
-                        <Badge config={TYPE_CONFIG} value={item.type || 'other'} />
+                        {/* Type selector */}
+                        <select
+                          value={item.type || 'other'}
+                          onChange={e => handleFeedbackUpdate(item.id, { type: e.target.value })}
+                          style={{
+                            padding: '2px 6px',
+                            backgroundColor: TYPE_CONFIG[item.type || 'other'].bg,
+                            color: TYPE_CONFIG[item.type || 'other'].color,
+                            border: `1px solid ${TYPE_CONFIG[item.type || 'other'].color}40`,
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            outline: 'none'
+                          }}
+                        >
+                          {Object.entries(TYPE_CONFIG).map(([val, cfg]) => (
+                            <option key={val} value={val}>{cfg.label}</option>
+                          ))}
+                        </select>
 
                         {/* Status badge (if not new/resolved) */}
                         {item.status === 'in-progress' && (
