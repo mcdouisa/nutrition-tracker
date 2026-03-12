@@ -3800,7 +3800,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
   const iconOptions = ['📊', '🔥', '💪', '🥩', '🥚', '🥛', '🍗', '🥤', '🧈', '🥜', '🌾']
 
   return (
-    <div>
+    <div style={{ paddingTop: '20px' }}>
       <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
         Add nutrition metrics with optional goals
       </div>
@@ -4118,7 +4118,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
   const mealIcons = ['🍽️', '🍕', '🍔', '🥗', '🍜', '🍱', '🥪', '🌮', '🌯', '🥙', '🍳', '🥞', '🍞', '🥐', '🥓']
 
   return (
-    <div>
+    <div style={{ paddingTop: '20px' }}>
       <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
         Configure quick-add meal presets
       </div>
