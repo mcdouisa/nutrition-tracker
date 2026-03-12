@@ -3277,13 +3277,13 @@ function SettingsModal({
                 padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
-                borderBottom: 'none',
-                boxShadow: settingsTab === tab.id ? 'inset 0 -2px 0 #5f8a8f' : 'none',
+                borderBottom: settingsTab === tab.id ? '2px solid #5f8a8f' : '2px solid transparent',
                 color: settingsTab === tab.id ? '#5f8a8f' : '#999',
                 fontSize: '13px',
                 fontWeight: '500',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
+                marginBottom: '-1px',
                 whiteSpace: 'nowrap',
                 flexShrink: 0
               }}
@@ -3297,9 +3297,10 @@ function SettingsModal({
         <div ref={contentRef} style={{
           flex: 1,
           overflow: 'auto',
+          padding: '20px 16px',
           backgroundColor: '#fafafa'
         }}>
-          <div style={{ padding: '20px 16px' }}>
+          <div>
           {settingsTab === 'checklist' && (
             <ChecklistSettings
               items={tempChecklist}
@@ -3800,7 +3801,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
   const iconOptions = ['📊', '🔥', '💪', '🥩', '🥚', '🥛', '🍗', '🥤', '🧈', '🥜', '🌾']
 
   return (
-    <div style={{ paddingTop: '20px' }}>
+    <div>
       <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
         Add nutrition metrics with optional goals
       </div>
@@ -4118,7 +4119,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
   const mealIcons = ['🍽️', '🍕', '🍔', '🥗', '🍜', '🍱', '🥪', '🌮', '🌯', '🥙', '🍳', '🥞', '🍞', '🥐', '🥓']
 
   return (
-    <div style={{ paddingTop: '20px' }}>
+    <div>
       <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
         Configure quick-add meal presets
       </div>
