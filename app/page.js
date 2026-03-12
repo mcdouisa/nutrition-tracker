@@ -1926,10 +1926,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowChat(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: '#5f8a8f',
-                border: 'none',
+                backgroundColor: '#fff',
+                border: '1px solid #e0e0e0',
                 borderRadius: '8px',
-                color: '#fff',
+                color: '#1a1a1a',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
