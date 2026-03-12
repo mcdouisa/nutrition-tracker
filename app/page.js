@@ -635,7 +635,14 @@ export default function NutritionTracker() {
   // Toggle checklist item
   const toggleChecklistItem = (index) => {
     const updated = [...checklistItems]
-    updated[index] = { ...updated[index], checked: !updated[index].checked }
+    const item = updated[index]
+    if ((item.frequency || 'daily') === 'multiple') {
+      const target = item.targetCount || 1
+      const newCount = ((item.count || 0) + 1) > target ? 0 : (item.count || 0) + 1
+      updated[index] = { ...item, count: newCount }
+    } else {
+      updated[index] = { ...item, checked: !item.checked }
+    }
     setChecklistItems(updated)
   }
 
@@ -746,7 +753,14 @@ export default function NutritionTracker() {
     if (!pastDayData || !viewDate) return
 
     const updated = [...pastDayData.checklistItems]
-    updated[index] = { ...updated[index], checked: !updated[index].checked }
+    const item = updated[index]
+    if ((item.frequency || 'daily') === 'multiple') {
+      const target = item.targetCount || 1
+      const newCount = ((item.count || 0) + 1) > target ? 0 : (item.count || 0) + 1
+      updated[index] = { ...item, count: newCount }
+    } else {
+      updated[index] = { ...item, checked: !item.checked }
+    }
 
     // Update pastDayData with new checklist
     setPastDayData({ ...pastDayData, checklistItems: updated })
@@ -2084,7 +2098,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '12px'
+              marginBottom: '8px'
             }}>
               <h2 style={{
                 margin: 0,
@@ -2096,7 +2110,29 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               }}>
                 Daily Habits
               </h2>
+              {(() => {
+                const displayItems = viewDate !== null && pastDayData?.checklistItems ? pastDayData.checklistItems : checklistItems
+                const completed = displayItems.filter(item => {
+                  if ((item.frequency || 'daily') === 'multiple') return (item.count || 0) >= (item.targetCount || 1)
+                  return item.checked
+                }).length
+                return <span style={{ fontSize: '12px', color: '#999' }}>{completed}/{displayItems.length}</span>
+              })()}
             </div>
+            {/* Progress bar */}
+            {(() => {
+              const displayItems = viewDate !== null && pastDayData?.checklistItems ? pastDayData.checklistItems : checklistItems
+              const completed = displayItems.filter(item => {
+                if ((item.frequency || 'daily') === 'multiple') return (item.count || 0) >= (item.targetCount || 1)
+                return item.checked
+              }).length
+              const pct = displayItems.length > 0 ? Math.round(completed / displayItems.length * 100) : 0
+              return (
+                <div style={{ height: '4px', backgroundColor: '#e8e8e8', borderRadius: '2px', marginBottom: '10px' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#4caf50' : '#5f8a8f', borderRadius: '2px', transition: 'width 0.3s ease' }} />
+                </div>
+              )
+            })()}
             {loadingPastDay ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px' }}>
                 Loading...
@@ -2107,48 +2143,80 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 gridTemplateColumns: checklistItems.length === 1 ? '1fr' : 'repeat(2, 1fr)',
                 gap: '8px'
               }}>
-                {(viewDate !== null && pastDayData?.checklistItems ? pastDayData?.checklistItems : checklistItems).map((item, i) => (
-                  <button
-                    key={i}
-                    onClick={() => viewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
-                    style={{
-                      padding: '12px 14px',
-                      backgroundColor: '#fff',
-                      border: '1px solid',
-                      borderColor: item.checked ? '#5f8a8f' : '#e0e0e0',
-                      borderRadius: '10px',
-                      color: item.checked ? '#5f8a8f' : '#666',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: item.checked ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.04)'
-                    }}
-                  >
-                    <div style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      border: item.checked ? 'none' : '2px solid #d0d0d0',
-                      backgroundColor: item.checked ? '#5f8a8f' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: '10px',
-                      flexShrink: 0
-                    }}>
-                      {item.checked && '✓'}
-                    </div>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.name}
-                    </span>
-                  </button>
-                ))}
+                {(viewDate !== null && pastDayData?.checklistItems ? pastDayData?.checklistItems : checklistItems).map((item, i) => {
+                  const freq = item.frequency || 'daily'
+                  const isMultiple = freq === 'multiple'
+                  const isWeekly = freq === 'weekly'
+                  const count = item.count || 0
+                  const target = item.targetCount || 1
+                  const isDone = isMultiple ? count >= target : item.checked
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => viewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
+                      style={{
+                        padding: '12px 14px',
+                        backgroundColor: '#fff',
+                        border: '1px solid',
+                        borderColor: isDone ? '#5f8a8f' : '#e0e0e0',
+                        borderRadius: '10px',
+                        color: isDone ? '#5f8a8f' : '#666',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        textAlign: 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: isDone ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.04)'
+                      }}
+                    >
+                      {isMultiple ? (
+                        <div style={{
+                          minWidth: '32px',
+                          height: '18px',
+                          borderRadius: '9px',
+                          backgroundColor: isDone ? '#5f8a8f' : count > 0 ? '#e8f4f4' : '#f0f0f0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          color: isDone ? '#fff' : count > 0 ? '#5f8a8f' : '#999',
+                          flexShrink: 0,
+                          padding: '0 4px'
+                        }}>
+                          {count}/{target}
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          border: isDone ? 'none' : '2px solid #d0d0d0',
+                          backgroundColor: isDone ? '#5f8a8f' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          fontSize: '10px',
+                          flexShrink: 0
+                        }}>
+                          {isDone && '✓'}
+                        </div>
+                      )}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {item.name}
+                      </span>
+                      {isWeekly && (
+                        <span style={{ fontSize: '9px', fontWeight: '600', color: '#999', backgroundColor: '#f0f0f0', borderRadius: '4px', padding: '1px 4px', flexShrink: 0 }}>
+                          W
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -3097,12 +3165,12 @@ function SettingsModal({
   }, [settingsTab])
 
   const addChecklistItem = () => {
-    setTempChecklist([...tempChecklist, { name: '', checked: false }])
+    setTempChecklist([...tempChecklist, { name: '', checked: false, frequency: 'daily', targetCount: 1 }])
   }
 
-  const updateChecklistItem = (index, name) => {
+  const updateChecklistItem = (index, field, value) => {
     const updated = [...tempChecklist]
-    updated[index] = { ...updated[index], name }
+    updated[index] = { ...updated[index], [field]: value }
     setTempChecklist(updated)
   }
 
@@ -3706,71 +3774,120 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
       </div>
 
       {items.map((item, i) => (
-        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '10px', alignItems: 'center' }}>
-          {/* Up/down reorder buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <button
-              onClick={() => onMove(i, -1)}
-              disabled={i === 0}
+        <div key={i} style={{ marginBottom: '10px' }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            {/* Up/down reorder buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <button
+                onClick={() => onMove(i, -1)}
+                disabled={i === 0}
+                style={{
+                  padding: '2px 8px',
+                  backgroundColor: i === 0 ? '#f5f5f5' : '#fff',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '4px',
+                  color: i === 0 ? '#ccc' : '#666',
+                  fontSize: '10px',
+                  cursor: i === 0 ? 'default' : 'pointer',
+                  lineHeight: '1'
+                }}
+              >▲</button>
+              <button
+                onClick={() => onMove(i, 1)}
+                disabled={i === items.length - 1}
+                style={{
+                  padding: '2px 8px',
+                  backgroundColor: i === items.length - 1 ? '#f5f5f5' : '#fff',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '4px',
+                  color: i === items.length - 1 ? '#ccc' : '#666',
+                  fontSize: '10px',
+                  cursor: i === items.length - 1 ? 'default' : 'pointer',
+                  lineHeight: '1'
+                }}
+              >▼</button>
+            </div>
+            <input
+              type="text"
+              value={item.name}
+              onChange={(e) => onUpdate(i, 'name', e.target.value)}
+              placeholder="Habit name"
               style={{
-                padding: '2px 8px',
-                backgroundColor: i === 0 ? '#f5f5f5' : '#fff',
+                flex: 1,
+                minWidth: 0,
+                padding: '10px 12px',
+                backgroundColor: '#fff',
                 border: '1px solid #e0e0e0',
-                borderRadius: '4px',
-                color: i === 0 ? '#ccc' : '#666',
-                fontSize: '10px',
-                cursor: i === 0 ? 'default' : 'pointer',
-                lineHeight: '1'
+                borderRadius: '8px',
+                color: '#1a1a1a',
+                fontSize: '16px',
+                fontWeight: '500',
+                boxSizing: 'border-box'
               }}
-            >▲</button>
+            />
             <button
-              onClick={() => onMove(i, 1)}
-              disabled={i === items.length - 1}
+              onClick={() => onRemove(i)}
               style={{
-                padding: '2px 8px',
-                backgroundColor: i === items.length - 1 ? '#f5f5f5' : '#fff',
-                border: '1px solid #e0e0e0',
-                borderRadius: '4px',
-                color: i === items.length - 1 ? '#ccc' : '#666',
-                fontSize: '10px',
-                cursor: i === items.length - 1 ? 'default' : 'pointer',
-                lineHeight: '1'
+                padding: '10px 12px',
+                backgroundColor: '#f5f5f5',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#999',
+                fontSize: '13px',
+                cursor: 'pointer',
+                fontWeight: '500'
               }}
-            >▼</button>
+            >
+              ✕
+            </button>
           </div>
-          <input
-            type="text"
-            value={item.name}
-            onChange={(e) => onUpdate(i, e.target.value)}
-            placeholder="Habit name"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              padding: '10px 12px',
-              backgroundColor: '#fff',
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              color: '#1a1a1a',
-              fontSize: '16px',
-              fontWeight: '500',
-              boxSizing: 'border-box'
-            }}
-          />
-          <button
-            onClick={() => onRemove(i)}
-            style={{
-              padding: '10px 12px',
-              backgroundColor: '#f5f5f5',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#999',
-              fontSize: '13px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            ✕
-          </button>
+          {/* Frequency row */}
+          <div style={{ display: 'flex', gap: '6px', marginTop: '6px', paddingLeft: '36px', alignItems: 'center' }}>
+            {[
+              { id: 'daily', label: 'Daily' },
+              { id: 'multiple', label: 'Multiple/day' },
+              { id: 'weekly', label: 'Weekly' }
+            ].map(opt => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onUpdate(i, 'frequency', opt.id)}
+                style={{
+                  padding: '4px 8px',
+                  backgroundColor: (item.frequency || 'daily') === opt.id ? '#5f8a8f' : '#f5f5f5',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: (item.frequency || 'daily') === opt.id ? '#fff' : '#666',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+            {(item.frequency || 'daily') === 'multiple' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                <span style={{ fontSize: '11px', color: '#999' }}>×</span>
+                <input
+                  type="number"
+                  min="2"
+                  max="20"
+                  value={item.targetCount || 2}
+                  onChange={(e) => onUpdate(i, 'targetCount', Math.max(2, parseInt(e.target.value) || 2))}
+                  style={{
+                    width: '44px',
+                    padding: '4px 6px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    textAlign: 'center'
+                  }}
+                />
+                <span style={{ fontSize: '11px', color: '#999' }}>times</span>
+              </div>
+            )}
+          </div>
         </div>
       ))}
 
