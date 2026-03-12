@@ -3297,9 +3297,9 @@ function SettingsModal({
         <div ref={contentRef} style={{
           flex: 1,
           overflow: 'auto',
-          padding: '20px 16px',
           backgroundColor: '#fafafa'
         }}>
+          <div style={{ padding: '20px 16px' }}>
           {settingsTab === 'checklist' && (
             <ChecklistSettings
               items={tempChecklist}
@@ -3382,6 +3382,7 @@ function SettingsModal({
           {settingsTab === 'feedback' && (
             <FeedbackForm user={user} />
           )}
+          </div>
         </div>
 
         {/* Footer */}
