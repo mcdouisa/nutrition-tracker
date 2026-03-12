@@ -1926,10 +1926,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowChat(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: showChat ? '#5f8a8f' : '#fff',
+                border: `1px solid ${showChat ? '#5f8a8f' : '#e0e0e0'}`,
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: showChat ? '#fff' : '#1a1a1a',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -1965,10 +1965,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowSettings(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: showSettings ? '#5f8a8f' : '#fff',
+                border: `1px solid ${showSettings ? '#5f8a8f' : '#e0e0e0'}`,
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: showSettings ? '#fff' : '#1a1a1a',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -2002,10 +2002,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 16px',
-          backgroundColor: viewDate !== null ? '#fffbeb' : '#fff',
+          backgroundColor: viewDate !== null ? '#fffbeb' : '#eef4f4',
           borderRadius: '10px',
           marginBottom: '16px',
-          border: `1px solid ${viewDate !== null ? '#fcd34d' : '#e0e0e0'}`
+          border: `1px solid ${viewDate !== null ? '#fcd34d' : '#5f8a8f'}`
         }}>
           {/* Back arrow */}
           <button
