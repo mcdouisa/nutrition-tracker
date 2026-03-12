@@ -3277,13 +3277,13 @@ function SettingsModal({
                 padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
-                borderBottom: settingsTab === tab.id ? '2px solid #5f8a8f' : '2px solid transparent',
+                borderBottom: 'none',
+                boxShadow: settingsTab === tab.id ? 'inset 0 -2px 0 #5f8a8f' : 'none',
                 color: settingsTab === tab.id ? '#5f8a8f' : '#999',
                 fontSize: '13px',
                 fontWeight: '500',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                marginBottom: '-1px',
                 whiteSpace: 'nowrap',
                 flexShrink: 0
               }}
