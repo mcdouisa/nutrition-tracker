@@ -126,14 +126,14 @@ export default function LoginPage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#1A1A1A',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px'
       }}>
         <div style={{
-          backgroundColor: '#fff',
+          backgroundColor: '#1A1A1A',
           borderRadius: '16px',
           padding: '32px 24px',
           maxWidth: '400px',
@@ -148,25 +148,25 @@ export default function LoginPage() {
             margin: '0 0 12px 0',
             fontSize: '20px',
             fontWeight: '600',
-            color: '#5f8a8f'
+            color: '#0A84FF'
           }}>
             Firebase Not Configured
           </h2>
           <p style={{
             margin: '0 0 20px 0',
             fontSize: '14px',
-            color: '#666',
+            color: '#888888',
             lineHeight: '1.6'
           }}>
             To enable cloud sync and accounts, please set up Firebase:
           </p>
           <div style={{
             textAlign: 'left',
-            backgroundColor: '#f5f5f5',
+            backgroundColor: '#222222',
             borderRadius: '8px',
             padding: '16px',
             fontSize: '13px',
-            color: '#333',
+            color: '#FFFFFF',
             lineHeight: '1.8'
           }}>
             <strong>1.</strong> Go to console.firebase.google.com<br />
@@ -180,10 +180,10 @@ export default function LoginPage() {
             style={{
               marginTop: '20px',
               padding: '12px 24px',
-              backgroundColor: '#5f8a8f',
+              backgroundColor: '#0A84FF',
               border: 'none',
               borderRadius: '8px',
-              color: '#fff',
+              color: '#1A1A1A',
               fontSize: '14px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -201,14 +201,14 @@ export default function LoginPage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#1A1A1A',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px'
       }}>
         <div style={{
-          backgroundColor: '#fff',
+          backgroundColor: '#1A1A1A',
           borderRadius: '16px',
           padding: '32px 24px',
           maxWidth: '400px',
@@ -222,7 +222,7 @@ export default function LoginPage() {
               margin: '0 0 4px 0',
               fontSize: '24px',
               fontWeight: '600',
-              color: '#5f8a8f',
+              color: '#0A84FF',
               letterSpacing: '-0.5px'
             }}>
               Reset Password
@@ -230,7 +230,7 @@ export default function LoginPage() {
             <p style={{
               margin: 0,
               fontSize: '14px',
-              color: '#666'
+              color: '#888888'
             }}>
               Enter your email to receive a reset link
             </p>
@@ -239,7 +239,7 @@ export default function LoginPage() {
           {/* Error message */}
           {error && (
             <div style={{
-              backgroundColor: '#fef2f2',
+              backgroundColor: 'rgba(255,69,58,0.1)',
               border: '1px solid #fecaca',
               borderRadius: '8px',
               padding: '12px 16px',
@@ -255,12 +255,12 @@ export default function LoginPage() {
           {/* Success message */}
           {success && (
             <div style={{
-              backgroundColor: '#f0fdf4',
+              backgroundColor: 'rgba(48,209,88,0.1)',
               border: '1px solid #bbf7d0',
               borderRadius: '8px',
               padding: '12px 16px',
               marginBottom: '20px',
-              color: '#166534',
+              color: '#30D158',
               fontSize: '13px',
               fontWeight: '500'
             }}>
@@ -275,7 +275,7 @@ export default function LoginPage() {
                 display: 'block',
                 fontSize: '12px',
                 fontWeight: '500',
-                color: '#666',
+                color: '#888888',
                 marginBottom: '6px'
               }}>
                 Email
@@ -288,10 +288,10 @@ export default function LoginPage() {
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: '#0D0D0D',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '8px',
-                  color: '#1a1a1a',
+                  color: '#FFFFFF',
                   fontSize: '16px',
                   boxSizing: 'border-box',
                   outline: 'none'
@@ -305,10 +305,10 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '14px',
-                backgroundColor: loading ? '#a0b8bb' : '#5f8a8f',
+                backgroundColor: loading ? '#a0b8bb' : '#0A84FF',
                 border: 'none',
                 borderRadius: '8px',
-                color: '#fff',
+                color: '#1A1A1A',
                 fontSize: '14px',
                 fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -324,7 +324,7 @@ export default function LoginPage() {
             textAlign: 'center',
             marginTop: '24px',
             paddingTop: '24px',
-            borderTop: '1px solid #e0e0e0'
+            borderTop: '1px solid #2C2C2C'
           }}>
             <button
               onClick={() => {
@@ -335,7 +335,7 @@ export default function LoginPage() {
               style={{
                 backgroundColor: 'transparent',
                 border: 'none',
-                color: '#5f8a8f',
+                color: '#0A84FF',
                 fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -353,7 +353,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#fefefe',
+      backgroundColor: '#0D0D0D',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -385,7 +385,7 @@ export default function LoginPage() {
         {/* Error message */}
         {error && (
           <div style={{
-            backgroundColor: '#fef2f2',
+            backgroundColor: 'rgba(255,69,58,0.1)',
             border: '1px solid #fecaca',
             borderRadius: '8px',
             padding: '12px 16px',
@@ -405,7 +405,7 @@ export default function LoginPage() {
               display: 'block',
               fontSize: '12px',
               fontWeight: '500',
-              color: '#666',
+              color: '#888888',
               marginBottom: '6px'
             }}>
               Email
@@ -418,10 +418,10 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#0D0D0D',
+                border: '1px solid #2C2C2C',
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '16px',
                 boxSizing: 'border-box',
                 outline: 'none'
@@ -434,7 +434,7 @@ export default function LoginPage() {
               display: 'block',
               fontSize: '12px',
               fontWeight: '500',
-              color: '#666',
+              color: '#888888',
               marginBottom: '6px'
             }}>
               Password
@@ -447,10 +447,10 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#0D0D0D',
+                border: '1px solid #2C2C2C',
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '16px',
                 boxSizing: 'border-box',
                 outline: 'none'
@@ -470,7 +470,7 @@ export default function LoginPage() {
                 style={{
                   backgroundColor: 'transparent',
                   border: 'none',
-                  color: '#666',
+                  color: '#888888',
                   fontSize: '12px',
                   fontWeight: '500',
                   cursor: 'pointer',
@@ -488,7 +488,7 @@ export default function LoginPage() {
                 display: 'block',
                 fontSize: '12px',
                 fontWeight: '500',
-                color: '#666',
+                color: '#888888',
                 marginBottom: '6px'
               }}>
                 Confirm Password
@@ -501,10 +501,10 @@ export default function LoginPage() {
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: '#0D0D0D',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '8px',
-                  color: '#1a1a1a',
+                  color: '#FFFFFF',
                   fontSize: '16px',
                   boxSizing: 'border-box',
                   outline: 'none'
@@ -519,10 +519,10 @@ export default function LoginPage() {
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: loading ? '#a0b8bb' : '#5f8a8f',
+              backgroundColor: loading ? '#a0b8bb' : '#0A84FF',
               border: 'none',
               borderRadius: '8px',
-              color: '#fff',
+              color: '#1A1A1A',
               fontSize: '14px',
               fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -538,9 +538,9 @@ export default function LoginPage() {
           textAlign: 'center',
           marginTop: '24px',
           paddingTop: '24px',
-          borderTop: '1px solid #e0e0e0'
+          borderTop: '1px solid #2C2C2C'
         }}>
-          <span style={{ fontSize: '13px', color: '#666' }}>
+          <span style={{ fontSize: '13px', color: '#888888' }}>
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}
           </span>
           <button
@@ -552,7 +552,7 @@ export default function LoginPage() {
               marginLeft: '6px',
               backgroundColor: 'transparent',
               border: 'none',
-              color: '#5f8a8f',
+              color: '#0A84FF',
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',
@@ -571,9 +571,9 @@ export default function LoginPage() {
             marginTop: '16px',
             padding: '12px',
             backgroundColor: 'transparent',
-            border: '1px solid #e0e0e0',
+            border: '1px solid #2C2C2C',
             borderRadius: '8px',
-            color: '#666',
+            color: '#888888',
             fontSize: '13px',
             fontWeight: '500',
             cursor: 'pointer'

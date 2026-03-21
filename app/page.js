@@ -466,7 +466,7 @@ export default function NutritionTracker() {
           unit: 'g',
           goal: goals.protein,
           goalType: 'min',
-          color: '#4ecdc4'
+          color: '#0A84FF'
         })
       }
       // Only add optional metrics if user selected them
@@ -477,7 +477,7 @@ export default function NutritionTracker() {
           unit: 'g',
           goal: goals.fiber,
           goalType: 'min',
-          color: '#95e1d3'
+          color: 'rgba(10,132,255,0.25)'
         })
       }
       if (goals.carbs && optionalMetrics?.carbs) {
@@ -1562,7 +1562,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
       <div style={{
         position: 'fixed',
         top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: '#fefefe',
+        backgroundColor: '#0D0D0D',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1578,7 +1578,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#fefefe',
+        backgroundColor: '#0D0D0D',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1594,7 +1594,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           <p style={{
             margin: '0 0 24px 0',
             fontSize: '14px',
-            color: '#666',
+            color: '#888888',
             lineHeight: '1.5'
           }}>
             Track your daily nutrition, water intake, and healthy habits with cloud sync across all your devices.
@@ -1604,10 +1604,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: '#5f8a8f',
+              backgroundColor: '#0A84FF',
               border: 'none',
               borderRadius: '8px',
-              color: '#fff',
+              color: '#1A1A1A',
               fontSize: '14px',
               fontWeight: '600',
               cursor: 'pointer',
@@ -1626,9 +1626,9 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               width: '100%',
               padding: '12px',
               backgroundColor: 'transparent',
-              border: '1px solid #e0e0e0',
+              border: '1px solid #2C2C2C',
               borderRadius: '8px',
-              color: '#666',
+              color: '#888888',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -1639,7 +1639,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           <p style={{
             margin: '16px 0 0 0',
             fontSize: '12px',
-            color: '#999'
+            color: '#666666'
           }}>
             Your data may be lost if the app is removed. Create an account to keep it safe.
           </p>
@@ -1652,9 +1652,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#fafafa',
+      backgroundColor: '#0D0D0D',
       padding: '16px 12px',
-      paddingBottom: '32px'
+      paddingBottom: '32px',
+      fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      color: '#FFFFFF',
     }}>
       {/* Onboarding Modal */}
       {showOnboarding && !checkingOnboarding && (
@@ -1674,7 +1676,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           zIndex: 1100
         }}>
           <div style={{
-            backgroundColor: '#fff',
+            backgroundColor: '#1A1A1A',
             borderRadius: '16px 16px 0 0',
             width: '100%',
             maxWidth: '600px',
@@ -1685,7 +1687,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               margin: '0 0 8px 0',
               fontSize: '17px',
               fontWeight: '600',
-              color: '#1a1a1a',
+              color: '#FFFFFF',
               textAlign: 'center'
             }}>
               Looks like yesterday was incomplete
@@ -1693,7 +1695,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             <p style={{
               margin: '0 0 24px 0',
               fontSize: '14px',
-              color: '#666',
+              color: '#888888',
               textAlign: 'center',
               lineHeight: '1.5'
             }}>
@@ -1706,8 +1708,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 display: 'block',
                 width: '100%',
                 padding: '14px',
-                backgroundColor: '#5f8a8f',
-                color: '#fff',
+                backgroundColor: '#0A84FF',
+                color: '#1A1A1A',
                 border: 'none',
                 borderRadius: '10px',
                 fontSize: '15px',
@@ -1725,10 +1727,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 width: '100%',
                 padding: '12px',
                 backgroundColor: 'transparent',
-                border: '1px solid #e0e0e0',
+                border: '1px solid #2C2C2C',
                 borderRadius: '10px',
                 fontSize: '14px',
-                color: '#666',
+                color: '#888888',
                 cursor: 'pointer'
               }}
             >
@@ -1743,7 +1745,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         <div style={{
           marginBottom: '24px',
           paddingBottom: '16px',
-          borderBottom: '1px solid #e0e0e0'
+          borderBottom: '1px solid #2C2C2C'
         }}>
           <div style={{
             display: 'flex',
@@ -1756,7 +1758,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 margin: '0 0 4px 0',
                 fontSize: '22px',
                 fontWeight: '600',
-                color: '#1a1a1a',
+                color: '#FFFFFF',
                 letterSpacing: '-0.5px'
               }}>
                 Daily Tracker
@@ -1767,7 +1769,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 gap: '8px'
               }}>
                 <span style={{
-                  color: '#666',
+                  color: '#888888',
                   fontSize: '13px',
                   fontWeight: '400',
                   letterSpacing: '0'
@@ -1777,7 +1779,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 {syncStatus && (
                   <span style={{
                     fontSize: '11px',
-                    color: syncStatus === 'synced' ? '#10b981' : syncStatus === 'error' ? '#ef4444' : '#666',
+                    color: syncStatus === 'synced' ? '#10b981' : syncStatus === 'error' ? '#ef4444' : '#888888',
                     fontWeight: '500'
                   }}>
                     {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'synced' ? 'Synced' : 'Sync error'}
@@ -1792,10 +1794,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 onClick={() => { setViewDate(null); setPastDayData(null) }}
                 style={{
                   padding: '8px 12px',
-                  backgroundColor: '#5f8a8f',
+                  backgroundColor: '#0A84FF',
                   border: 'none',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#1A1A1A',
                   fontSize: '12px',
                   fontWeight: '600',
                   cursor: 'pointer',
@@ -1812,11 +1814,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 onClick={() => user ? setShowUserMenu(!showUserMenu) : router.push('/login')}
                 style={{
                   padding: '8px 12px',
-                  backgroundColor: user ? '#f0fdf4' : '#fff',
+                  backgroundColor: user ? 'rgba(48,209,88,0.12)' : '#1A1A1A',
                   border: '1px solid',
-                  borderColor: user ? '#86efac' : '#e0e0e0',
+                  borderColor: user ? 'rgba(48,209,88,0.35)' : '#2C2C2C',
                   borderRadius: '8px',
-                  color: user ? '#166534' : '#666',
+                  color: user ? '#30D158' : '#888888',
                   fontSize: '12px',
                   fontWeight: '500',
                   cursor: 'pointer',
@@ -1845,8 +1847,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   top: '100%',
                   right: 0,
                   marginTop: '4px',
-                  backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: '#1A1A1A',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   minWidth: '180px',
@@ -1855,15 +1857,15 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 }}>
                   <div style={{
                     padding: '12px 14px',
-                    borderBottom: '1px solid #e0e0e0',
-                    backgroundColor: '#fafafa'
+                    borderBottom: '1px solid #2C2C2C',
+                    backgroundColor: '#0D0D0D'
                   }}>
-                    <div style={{ fontSize: '11px', color: '#999', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '11px', color: '#666666', marginBottom: '2px' }}>
                       Signed in as
                     </div>
                     <div style={{
                       fontSize: '13px',
-                      color: '#1a1a1a',
+                      color: '#FFFFFF',
                       fontWeight: '500',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -1883,8 +1885,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       padding: '12px 14px',
                       backgroundColor: 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid #e0e0e0',
-                      color: '#5f8a8f',
+                      borderBottom: '1px solid #2C2C2C',
+                      color: '#0A84FF',
                       fontSize: '13px',
                       fontWeight: '500',
                       cursor: 'pointer',
@@ -1903,8 +1905,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       padding: '12px 14px',
                       backgroundColor: 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid #e0e0e0',
-                      color: '#5f8a8f',
+                      borderBottom: '1px solid #2C2C2C',
+                      color: '#0A84FF',
                       fontSize: '13px',
                       fontWeight: '500',
                       cursor: 'pointer',
@@ -1957,7 +1959,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       padding: '12px 14px',
                       backgroundColor: 'transparent',
                       border: 'none',
-                      color: signingOut ? '#999' : '#ef4444',
+                      color: signingOut ? '#666666' : '#ef4444',
                       fontSize: '13px',
                       fontWeight: '500',
                       cursor: signingOut ? 'not-allowed' : 'pointer',
@@ -1980,10 +1982,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowChat(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: showChat ? '#5f8a8f' : '#fff',
-                border: `1px solid ${showChat ? '#5f8a8f' : '#e0e0e0'}`,
+                backgroundColor: showChat ? '#0A84FF' : '#1A1A1A',
+                border: `1px solid ${showChat ? '#0A84FF' : '#2C2C2C'}`,
                 borderRadius: '8px',
-                color: showChat ? '#fff' : '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -1998,10 +2000,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               href="/reports"
               style={{
                 padding: '10px 8px',
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#1A1A1A',
+                border: '1px solid #2C2C2C',
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -2019,10 +2021,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowSettings(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: showSettings ? '#5f8a8f' : '#fff',
-                border: `1px solid ${showSettings ? '#5f8a8f' : '#e0e0e0'}`,
+                backgroundColor: showSettings ? '#0A84FF' : '#1A1A1A',
+                border: `1px solid ${showSettings ? '#0A84FF' : '#2C2C2C'}`,
                 borderRadius: '8px',
-                color: showSettings ? '#fff' : '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -2059,7 +2061,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           backgroundColor: viewDate !== null ? '#fffbeb' : '#eef4f4',
           borderRadius: '10px',
           marginBottom: '16px',
-          border: `1px solid ${viewDate !== null ? '#fcd34d' : '#5f8a8f'}`
+          border: `1px solid ${viewDate !== null ? '#fcd34d' : '#0A84FF'}`
         }}>
           {/* Back arrow */}
           <button
@@ -2068,9 +2070,9 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             style={{
               padding: '8px 12px',
               backgroundColor: 'transparent',
-              border: '1px solid #5f8a8f',
+              border: '1px solid #0A84FF',
               borderRadius: '6px',
-              color: '#5f8a8f',
+              color: '#0A84FF',
               fontSize: '16px',
               cursor: loadingPastDay ? 'not-allowed' : 'pointer',
               opacity: loadingPastDay ? 0.5 : 1
@@ -2085,7 +2087,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             textAlign: 'center',
             fontSize: '15px',
             fontWeight: '600',
-            color: '#1a1a1a'
+            color: '#FFFFFF'
           }}>
             {loadingPastDay ? (
               'Loading...'
@@ -2119,9 +2121,9 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             style={{
               padding: '8px 12px',
               backgroundColor: 'transparent',
-              border: `1px solid ${viewDate === null ? '#ddd' : '#5f8a8f'}`,
+              border: `1px solid ${viewDate === null ? '#ddd' : '#0A84FF'}`,
               borderRadius: '6px',
-              color: viewDate === null ? '#ddd' : '#5f8a8f',
+              color: viewDate === null ? '#ddd' : '#0A84FF',
               fontSize: '16px',
               cursor: viewDate === null || loadingPastDay ? 'not-allowed' : 'pointer',
               opacity: viewDate === null || loadingPastDay ? 0.5 : 1
@@ -2144,7 +2146,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 margin: 0,
                 fontSize: '12px',
                 fontWeight: '600',
-                color: '#999',
+                color: '#666666',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
@@ -2156,7 +2158,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   if ((item.frequency || 'daily') === 'multiple') return (item.count || 0) >= (item.targetCount || 1)
                   return item.checked
                 }).length
-                return <span style={{ fontSize: '12px', color: '#999' }}>{completed}/{displayItems.length}</span>
+                return <span style={{ fontSize: '12px', color: '#666666' }}>{completed}/{displayItems.length}</span>
               })()}
             </div>
             {/* Progress bar */}
@@ -2168,13 +2170,13 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               }).length
               const pct = displayItems.length > 0 ? Math.round(completed / displayItems.length * 100) : 0
               return (
-                <div style={{ height: '4px', backgroundColor: '#e8e8e8', borderRadius: '2px', marginBottom: '10px' }}>
-                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#4caf50' : '#5f8a8f', borderRadius: '2px', transition: 'width 0.3s ease' }} />
+                <div style={{ height: '4px', backgroundColor: '#2A2A2A', borderRadius: '2px', marginBottom: '10px' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#4caf50' : '#0A84FF', borderRadius: '2px', transition: 'width 0.3s ease' }} />
                 </div>
               )
             })()}
             {loadingPastDay ? (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px' }}>
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666666', fontSize: '13px' }}>
                 Loading...
               </div>
             ) : (
@@ -2196,11 +2198,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       onClick={() => viewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
                       style={{
                         padding: '12px 14px',
-                        backgroundColor: '#fff',
+                        backgroundColor: '#1A1A1A',
                         border: '1px solid',
-                        borderColor: isDone ? '#5f8a8f' : '#e0e0e0',
+                        borderColor: isDone ? '#0A84FF' : '#2C2C2C',
                         borderRadius: '10px',
-                        color: isDone ? '#5f8a8f' : '#666',
+                        color: isDone ? '#0A84FF' : '#888888',
                         fontSize: '13px',
                         fontWeight: '500',
                         cursor: 'pointer',
@@ -2217,13 +2219,13 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           minWidth: '32px',
                           height: '18px',
                           borderRadius: '9px',
-                          backgroundColor: isDone ? '#5f8a8f' : count > 0 ? '#e8f4f4' : '#f0f0f0',
+                          backgroundColor: isDone ? '#0A84FF' : count > 0 ? '#e8f4f4' : '#f0f0f0',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '10px',
                           fontWeight: '600',
-                          color: isDone ? '#fff' : count > 0 ? '#5f8a8f' : '#999',
+                          color: isDone ? '#fff' : count > 0 ? '#0A84FF' : '#666666',
                           flexShrink: 0,
                           padding: '0 4px'
                         }}>
@@ -2235,11 +2237,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           height: '18px',
                           borderRadius: '50%',
                           border: isDone ? 'none' : '2px solid #d0d0d0',
-                          backgroundColor: isDone ? '#5f8a8f' : 'transparent',
+                          backgroundColor: isDone ? '#0A84FF' : 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#fff',
+                          color: '#1A1A1A',
                           fontSize: '10px',
                           flexShrink: 0
                         }}>
@@ -2250,7 +2252,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                         {item.name}
                       </span>
                       {isWeekly && (
-                        <span style={{ fontSize: '9px', fontWeight: '600', color: '#999', backgroundColor: '#f0f0f0', borderRadius: '4px', padding: '1px 4px', flexShrink: 0 }}>
+                        <span style={{ fontSize: '9px', fontWeight: '600', color: '#666666', backgroundColor: '#242424', borderRadius: '4px', padding: '1px 4px', flexShrink: 0 }}>
                           W
                         </span>
                       )}
@@ -2269,17 +2271,17 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               margin: '0 0 12px 0',
               fontSize: '12px',
               fontWeight: '600',
-              color: '#999',
+              color: '#666666',
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
               Hydration
             </h2>
             <div style={{
-              backgroundColor: '#fff',
+              backgroundColor: '#1A1A1A',
               borderRadius: '12px',
               padding: '20px 16px',
-              border: '1px solid #e0e0e0',
+              border: '1px solid #2C2C2C',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }}>
               {(() => {
@@ -2325,7 +2327,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   <div style={{
                     fontSize: '48px',
                     fontWeight: '600',
-                    color: '#1a1a1a',
+                    color: '#FFFFFF',
                     marginBottom: '2px',
                     letterSpacing: '-2px'
                   }}>
@@ -2333,7 +2335,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   </div>
                   <div style={{
                     fontSize: '12px',
-                    color: '#999',
+                    color: '#666666',
                     fontWeight: '500',
                     letterSpacing: '0.5px',
                     marginBottom: waterGoal > 0 ? '4px' : '0'
@@ -2343,7 +2345,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   {waterGoal > 0 && (
                     <div style={{
                       fontSize: '12px',
-                      color: '#666',
+                      color: '#888888',
                       fontWeight: '500'
                     }}>
                       Goal: {waterGoal} oz
@@ -2365,10 +2367,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     onClick={() => addWater(amount)}
                     style={{
                       padding: '10px 16px',
-                      backgroundColor: '#f5f5f5',
-                      border: '1px solid #e0e0e0',
+                      backgroundColor: '#222222',
+                      border: '1px solid #2C2C2C',
                       borderRadius: '8px',
-                      color: '#1a1a1a',
+                      color: '#FFFFFF',
                       fontSize: '14px',
                       fontWeight: '500',
                       cursor: 'pointer',
@@ -2386,7 +2388,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     padding: '6px 12px',
                     backgroundColor: 'transparent',
                     border: 'none',
-                    color: '#999',
+                    color: '#666666',
                     fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -2427,7 +2429,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 margin: '0',
                 fontSize: '12px',
                 fontWeight: '600',
-                color: '#999',
+                color: '#666666',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
@@ -2439,7 +2441,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     padding: '4px 10px',
                     backgroundColor: 'transparent',
                     border: 'none',
-                    color: '#999',
+                    color: '#666666',
                     fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -2451,7 +2453,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     padding: '4px 10px',
                     backgroundColor: 'transparent',
                     border: 'none',
-                    color: showNutritionLog ? '#1a1a1a' : '#999',
+                    color: showNutritionLog ? '#FFFFFF' : '#666666',
                     fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -2467,18 +2469,18 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             {showNutritionLog && displayNutritionHistory.length > 0 && (
               <div style={{
                 marginBottom: '12px',
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#1A1A1A',
+                border: '1px solid #2C2C2C',
                 borderRadius: '10px',
                 overflow: 'hidden'
               }}>
                 <div style={{
                   padding: '10px 14px',
-                  backgroundColor: '#fafafa',
-                  borderBottom: '1px solid #e0e0e0',
+                  backgroundColor: '#0D0D0D',
+                  borderBottom: '1px solid #2C2C2C',
                   fontSize: '11px',
                   fontWeight: '600',
-                  color: '#666',
+                  color: '#888888',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
@@ -2508,7 +2510,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           {entry.type === 'manual_named' && (
                             <div style={{
                               fontWeight: '600',
-                              color: '#1a1a1a',
+                              color: '#FFFFFF',
                               fontSize: '13px',
                               marginBottom: '2px',
                               overflow: 'hidden',
@@ -2520,7 +2522,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           )}
                           <div style={{
                             fontSize: '12px',
-                            color: entry.type === 'manual_named' ? '#666' : '#1a1a1a',
+                            color: entry.type === 'manual_named' ? '#888888' : '#FFFFFF',
                             fontWeight: entry.type === 'manual_named' ? '400' : '500',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -2528,7 +2530,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           }}>
                             {valuesList.join(', ')}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+                          <div style={{ fontSize: '11px', color: '#666666', marginTop: '2px' }}>
                             Manual <span style={{ marginLeft: '6px' }}>{time}</span>
                           </div>
                         </div>
@@ -2536,7 +2538,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           onClick={() => removeNutritionEntry(entryIndex)}
                           style={{
                             padding: '4px 10px',
-                            backgroundColor: '#fef2f2',
+                            backgroundColor: 'rgba(255,69,58,0.1)',
                             border: '1px solid #fecaca',
                             borderRadius: '6px',
                             color: '#ef4444',
@@ -2585,18 +2587,18 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
                           fontSize: '13px',
-                          color: '#1a1a1a',
+                          color: '#FFFFFF',
                           fontWeight: '500',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}>
                           {entryType}
-                          <span style={{ color: '#999', fontWeight: '400', marginLeft: '6px', fontSize: '11px' }}>{time}</span>
+                          <span style={{ color: '#666666', fontWeight: '400', marginLeft: '6px', fontSize: '11px' }}>{time}</span>
                         </div>
                         <div style={{
                           fontSize: '12px',
-                          color: '#666',
+                          color: '#888888',
                           marginTop: '2px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -2609,7 +2611,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                         onClick={() => removeNutritionEntry(entryIndex)}
                         style={{
                           padding: '4px 10px',
-                          backgroundColor: '#fef2f2',
+                          backgroundColor: 'rgba(255,69,58,0.1)',
                           border: '1px solid #fecaca',
                           borderRadius: '6px',
                           color: '#ef4444',
@@ -2642,14 +2644,14 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 // Calculate progress and colors based on goal type
                 let progress = 0
                 let fillColor = '#f0f9ff'
-                let statusColor = '#999'
+                let statusColor = '#666666'
                 let goalLabel = ''
 
                 if (goal > 0) {
                   if (goalType === 'min') {
                     progress = Math.min(value / goal * 100, 100)
                     fillColor = progress >= 100 ? '#dcfce7' : '#f0f9ff'
-                    statusColor = progress >= 100 ? '#10b981' : '#999'
+                    statusColor = progress >= 100 ? '#10b981' : '#666666'
                     goalLabel = `Goal: ${goal}+`
                   } else if (goalType === 'max') {
                     progress = Math.min(value / goal * 100, 100)
@@ -2672,7 +2674,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       statusColor = '#10b981'
                     } else if (value < goal) {
                       fillColor = '#f0f9ff'
-                      statusColor = '#999'
+                      statusColor = '#666666'
                     } else {
                       fillColor = '#fee2e2'
                       statusColor = '#ef4444'
@@ -2689,8 +2691,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     }
                   }} style={{
                     padding: '16px',
-                    backgroundColor: '#fff',
-                    border: isEditing ? '1px solid #3b82f6' : '1px solid #e0e0e0',
+                    backgroundColor: '#1A1A1A',
+                    border: isEditing ? '1px solid #3b82f6' : '1px solid #2C2C2C',
                     borderRadius: '10px',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     position: 'relative',
@@ -2723,7 +2725,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                         )}
                         <div style={{
                           fontSize: '11px',
-                          color: '#999',
+                          color: '#666666',
                           fontWeight: '500',
                           letterSpacing: '0.5px'
                         }}>
@@ -2745,7 +2747,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                               width: '100%',
                               fontSize: '24px',
                               fontWeight: '600',
-                              color: '#1a1a1a',
+                              color: '#FFFFFF',
                               border: 'none',
                               borderBottom: '2px solid #3b82f6',
                               outline: 'none',
@@ -2758,11 +2760,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                             <button onClick={() => saveMetricEdit(i)} style={{
                               flex: 1, padding: '6px', backgroundColor: '#10b981', border: 'none',
-                              borderRadius: '4px', color: '#fff', fontSize: '11px', fontWeight: '600', cursor: 'pointer'
+                              borderRadius: '4px', color: '#1A1A1A', fontSize: '11px', fontWeight: '600', cursor: 'pointer'
                             }}>Save</button>
                             <button onClick={() => { setEditingMetric(null); setEditMetricValue('') }} style={{
-                              flex: 1, padding: '6px', backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0',
-                              borderRadius: '4px', color: '#666', fontSize: '11px', fontWeight: '500', cursor: 'pointer'
+                              flex: 1, padding: '6px', backgroundColor: '#222222', border: '1px solid #2C2C2C',
+                              borderRadius: '4px', color: '#888888', fontSize: '11px', fontWeight: '500', cursor: 'pointer'
                             }}>Cancel</button>
                           </div>
                         </div>
@@ -2771,17 +2773,17 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           <div style={{
                             fontSize: '28px',
                             fontWeight: '600',
-                            color: '#1a1a1a',
+                            color: '#FFFFFF',
                             letterSpacing: '-1px'
                           }}>
                             {value}
-                            {metric.unit && <span style={{ fontSize: '14px', color: '#999', fontWeight: '500' }}> {metric.unit}</span>}
+                            {metric.unit && <span style={{ fontSize: '14px', color: '#666666', fontWeight: '500' }}> {metric.unit}</span>}
                           </div>
                           {goal > 0 && (
                             <div style={{
                               marginTop: '4px',
                               fontSize: '11px',
-                              color: '#666',
+                              color: '#888888',
                               fontWeight: '500'
                             }}>
                               {goalLabel}
@@ -2819,7 +2821,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             margin: '0 0 12px 0',
             fontSize: '12px',
             fontWeight: '600',
-            color: '#999',
+            color: '#666666',
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
@@ -2838,10 +2840,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   onClick={() => addMeal(meal)}
                   style={{
                     padding: '14px 12px',
-                    backgroundColor: '#fff',
-                    border: '1px solid #e0e0e0',
+                    backgroundColor: '#1A1A1A',
+                    border: '1px solid #2C2C2C',
                     borderRadius: '10px',
-                    color: '#1a1a1a',
+                    color: '#FFFFFF',
                     fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -2862,7 +2864,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     <div style={{
                       fontSize: '13px',
                       fontWeight: '500',
-                      color: '#1a1a1a',
+                      color: '#FFFFFF',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -2872,7 +2874,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   </div>
                   <div style={{
                     fontSize: '11px',
-                    color: '#999',
+                    color: '#666666',
                     lineHeight: '1.4',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -2891,14 +2893,14 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           {nutritionMetrics.length > 0 && (
             <div style={{
               padding: '16px',
-              backgroundColor: '#fff',
-              border: '1px solid #e0e0e0',
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #2C2C2C',
               borderRadius: '10px',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }}>
               <div style={{
                 fontSize: '12px',
-                color: '#999',
+                color: '#666666',
                 marginBottom: '12px',
                 fontWeight: '500',
                 letterSpacing: '0.5px'
@@ -2917,10 +2919,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   padding: '10px 12px',
                   fontSize: '14px',
                   borderRadius: '8px',
-                  border: '1px solid #e0e0e0',
+                  border: '1px solid #2C2C2C',
                   marginBottom: '12px',
-                  backgroundColor: '#fafafa',
-                  color: '#1a1a1a',
+                  backgroundColor: '#0D0D0D',
+                  color: '#FFFFFF',
                   boxSizing: 'border-box'
                 }}
               />
@@ -2939,10 +2941,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     onChange={(e) => setCustomValues({ ...customValues, [metric.key]: e.target.value })}
                     style={{
                       padding: '10px 12px',
-                      backgroundColor: '#fafafa',
-                      border: '1px solid #e0e0e0',
+                      backgroundColor: '#0D0D0D',
+                      border: '1px solid #2C2C2C',
                       borderRadius: '8px',
-                      color: '#1a1a1a',
+                      color: '#FFFFFF',
                       fontSize: '16px',
                       fontWeight: '500',
                       width: '100%',
@@ -2954,10 +2956,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               <button onClick={addCustomEntry} style={{
                 width: '100%',
                 padding: '10px',
-                backgroundColor: '#5f8a8f',
+                backgroundColor: '#0A84FF',
                 border: 'none',
                 borderRadius: '8px',
-                color: '#fff',
+                color: '#1A1A1A',
                 fontSize: '14px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -2974,9 +2976,9 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           <div style={{
             textAlign: 'center',
             padding: '60px 24px',
-            backgroundColor: '#fff',
+            backgroundColor: '#1A1A1A',
             borderRadius: '12px',
-            border: '1px solid #e0e0e0'
+            border: '1px solid #2C2C2C'
           }}>
             <div style={{
               fontSize: '48px',
@@ -2988,14 +2990,14 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             <div style={{
               fontSize: '18px',
               fontWeight: '600',
-              color: '#1a1a1a',
+              color: '#FFFFFF',
               marginBottom: '6px'
             }}>
               Ready to Track
             </div>
             <div style={{
               fontSize: '14px',
-              color: '#999',
+              color: '#666666',
               marginBottom: '20px'
             }}>
               Configure your tracker to get started
@@ -3004,10 +3006,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowSettings(true)}
               style={{
                 padding: '10px 20px',
-                backgroundColor: '#5f8a8f',
+                backgroundColor: '#0A84FF',
                 border: 'none',
                 borderRadius: '8px',
-                color: '#fff',
+                color: '#1A1A1A',
                 fontSize: '14px',
                 fontWeight: '500',
                 cursor: 'pointer'
@@ -3105,7 +3107,7 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
         <path
           d="M 40 20 L 40 10 L 80 10 L 80 20 L 85 30 L 85 180 Q 85 190 75 190 L 45 190 Q 35 190 35 180 L 35 30 Z"
           fill="none"
-          stroke="#e0e0e0"
+          stroke="#2C2C2C"
           strokeWidth="2"
         />
 
@@ -3159,12 +3161,12 @@ function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
         )}
 
         {/* Cap */}
-        <rect x="40" y="10" width="40" height="10" fill="#e0e0e0" rx="2" />
+        <rect x="40" y="10" width="40" height="10" fill="#2C2C2C" rx="2" />
       </svg>
       <div style={{
         marginTop: '8px',
         fontSize: '11px',
-        color: isFull ? '#10b981' : '#666',
+        color: isFull ? '#10b981' : '#888888',
         fontWeight: '500'
       }}>
         {Math.round(fillPercent * 100)}% {isFull && '🎉'}
@@ -3318,7 +3320,7 @@ function SettingsModal({
       zIndex: 1000
     }}>
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: '#1A1A1A',
         borderRadius: '16px 16px 0 0',
         width: '100%',
         maxWidth: '700px',
@@ -3331,7 +3333,7 @@ function SettingsModal({
         {/* Header */}
         <div style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #e0e0e0',
+          borderBottom: '1px solid #2C2C2C',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
@@ -3340,7 +3342,7 @@ function SettingsModal({
             margin: 0,
             fontSize: '18px',
             fontWeight: '600',
-            color: '#1a1a1a',
+            color: '#FFFFFF',
             letterSpacing: '-0.3px'
           }}>
             Your Goals
@@ -3349,10 +3351,10 @@ function SettingsModal({
             onClick={onClose}
             style={{
               padding: '6px 14px',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: '#222222',
               border: 'none',
               borderRadius: '6px',
-              color: '#666',
+              color: '#888888',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -3367,7 +3369,7 @@ function SettingsModal({
           display: 'flex',
           gap: '2px',
           padding: '12px 16px 0 16px',
-          borderBottom: '1px solid #e0e0e0',
+          borderBottom: '1px solid #2C2C2C',
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch'
         }}>
@@ -3385,8 +3387,8 @@ function SettingsModal({
                 padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
-                borderBottom: settingsTab === tab.id ? '2px solid #5f8a8f' : '2px solid transparent',
-                color: settingsTab === tab.id ? '#5f8a8f' : '#999',
+                borderBottom: settingsTab === tab.id ? '2px solid #0A84FF' : '2px solid transparent',
+                color: settingsTab === tab.id ? '#0A84FF' : '#666666',
                 fontSize: '13px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -3406,7 +3408,7 @@ function SettingsModal({
           flex: 1,
           overflow: 'auto',
           padding: '20px 16px',
-          backgroundColor: '#fafafa'
+          backgroundColor: '#0D0D0D'
         }}>
           <div>
           {settingsTab === 'checklist' && (
@@ -3443,14 +3445,14 @@ function SettingsModal({
               <div style={{
                 marginTop: '20px',
                 padding: '16px',
-                backgroundColor: '#fff',
+                backgroundColor: '#1A1A1A',
                 borderRadius: '10px',
-                border: '1px solid #e0e0e0'
+                border: '1px solid #2C2C2C'
               }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>
                   Evening reminder cutoff
                 </div>
-                <div style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>
+                <div style={{ fontSize: '12px', color: '#666666', marginBottom: '10px' }}>
                   If no entries are logged after this time, you'll be reminded the next morning.
                 </div>
                 <select
@@ -3459,11 +3461,11 @@ function SettingsModal({
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    border: '1px solid #e0e0e0',
+                    border: '1px solid #2C2C2C',
                     borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#1a1a1a',
-                    backgroundColor: '#fff',
+                    color: '#FFFFFF',
+                    backgroundColor: '#1A1A1A',
                     cursor: 'pointer'
                   }}
                 >
@@ -3497,8 +3499,8 @@ function SettingsModal({
         {/* Footer */}
         <div style={{
           padding: '16px 20px',
-          borderTop: '1px solid #e0e0e0',
-          backgroundColor: '#fff',
+          borderTop: '1px solid #2C2C2C',
+          backgroundColor: '#1A1A1A',
           display: 'flex',
           gap: '8px',
           paddingBottom: '24px'
@@ -3527,10 +3529,10 @@ function SettingsModal({
             style={{
               flex: 1,
               padding: '10px 14px',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: '#222222',
               border: 'none',
               borderRadius: '8px',
-              color: '#666',
+              color: '#888888',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -3543,10 +3545,10 @@ function SettingsModal({
             style={{
               flex: 1,
               padding: '10px 14px',
-              backgroundColor: '#5f8a8f',
+              backgroundColor: '#0A84FF',
               border: 'none',
               borderRadius: '8px',
-              color: '#fff',
+              color: '#1A1A1A',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -3584,9 +3586,9 @@ function FeedbackForm({ user }) {
 
   if (!user) {
     return (
-      <div style={{ textAlign: 'center', padding: '32px 16px', color: '#999' }}>
+      <div style={{ textAlign: 'center', padding: '32px 16px', color: '#666666' }}>
         <div style={{ fontSize: '32px', marginBottom: '12px' }}>💬</div>
-        <div style={{ fontSize: '14px', fontWeight: '500', color: '#666' }}>Sign in to send feedback</div>
+        <div style={{ fontSize: '14px', fontWeight: '500', color: '#888888' }}>Sign in to send feedback</div>
         <div style={{ fontSize: '12px', marginTop: '4px' }}>
           Create an account to report bugs or request features.
         </div>
@@ -3597,7 +3599,7 @@ function FeedbackForm({ user }) {
   return (
     <div>
       <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '8px' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#888888', marginBottom: '8px' }}>
           Type
         </label>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -3612,11 +3614,11 @@ function FeedbackForm({ user }) {
               style={{
                 flex: 1,
                 padding: '10px 12px',
-                backgroundColor: type === t.id ? '#5f8a8f' : '#fff',
+                backgroundColor: type === t.id ? '#0A84FF' : '#1A1A1A',
                 border: '1px solid',
-                borderColor: type === t.id ? '#5f8a8f' : '#e0e0e0',
+                borderColor: type === t.id ? '#0A84FF' : '#2C2C2C',
                 borderRadius: '8px',
-                color: type === t.id ? '#fff' : '#666',
+                color: type === t.id ? '#fff' : '#888888',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer'
@@ -3629,7 +3631,7 @@ function FeedbackForm({ user }) {
       </div>
 
       <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '6px' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#888888', marginBottom: '6px' }}>
           Message
         </label>
         <textarea
@@ -3640,10 +3642,10 @@ function FeedbackForm({ user }) {
             width: '100%',
             minHeight: '120px',
             padding: '12px 14px',
-            backgroundColor: '#fff',
-            border: '1px solid #e0e0e0',
+            backgroundColor: '#1A1A1A',
+            border: '1px solid #2C2C2C',
             borderRadius: '8px',
-            color: '#1a1a1a',
+            color: '#FFFFFF',
             fontSize: '14px',
             fontFamily: 'inherit',
             resize: 'vertical',
@@ -3655,12 +3657,12 @@ function FeedbackForm({ user }) {
 
       {sent && (
         <div style={{
-          backgroundColor: '#f0fdf4',
+          backgroundColor: 'rgba(48,209,88,0.1)',
           border: '1px solid #bbf7d0',
           borderRadius: '8px',
           padding: '12px 16px',
           marginBottom: '16px',
-          color: '#166534',
+          color: '#30D158',
           fontSize: '13px',
           fontWeight: '500'
         }}>
@@ -3674,10 +3676,10 @@ function FeedbackForm({ user }) {
         style={{
           width: '100%',
           padding: '14px',
-          backgroundColor: message.trim() && !sending ? '#5f8a8f' : '#e0e0e0',
+          backgroundColor: message.trim() && !sending ? '#0A84FF' : '#2C2C2C',
           border: 'none',
           borderRadius: '8px',
-          color: message.trim() && !sending ? '#fff' : '#999',
+          color: message.trim() && !sending ? '#fff' : '#666666',
           fontSize: '14px',
           fontWeight: '600',
           cursor: message.trim() && !sending ? 'pointer' : 'not-allowed'
@@ -3703,11 +3705,11 @@ function NotificationBanner({ notification, onDismiss }) {
         label: 'Resolved',
         message: `Thank you for reporting the ${typeLabel} "${truncatedMessage}". The problem has been addressed.`,
         colors: {
-          bg: '#f0fdf4',
-          border: '#86efac',
+          bg: 'rgba(48,209,88,0.1)',
+          border: 'rgba(48,209,88,0.35)',
           icon: '#16a34a',
           label: '#16a34a',
-          text: '#166534'
+          text: '#30D158'
         }
       }
     }
@@ -3719,7 +3721,7 @@ function NotificationBanner({ notification, onDismiss }) {
         message: notif.message,
         colors: {
           bg: '#eff6ff',
-          border: '#93c5fd',
+          border: 'rgba(10,132,255,0.4)',
           icon: '#2563eb',
           label: '#2563eb',
           text: '#1e40af'
@@ -3733,7 +3735,7 @@ function NotificationBanner({ notification, onDismiss }) {
       message: 'You have a new notification.',
       colors: {
         bg: '#f0f9ff',
-        border: '#bae6fd',
+        border: 'rgba(10,132,255,0.3)',
         icon: '#0284c7',
         label: '#0284c7',
         text: '#075985'
@@ -3809,7 +3811,7 @@ function NotificationBanner({ notification, onDismiss }) {
 function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
   return (
     <div>
-      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+      <div style={{ fontSize: '13px', color: '#888888', marginBottom: '16px' }}>
         Add daily habits to track
       </div>
 
@@ -3823,10 +3825,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                 disabled={i === 0}
                 style={{
                   padding: '2px 8px',
-                  backgroundColor: i === 0 ? '#f5f5f5' : '#fff',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: i === 0 ? '#222222' : '#1A1A1A',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '4px',
-                  color: i === 0 ? '#ccc' : '#666',
+                  color: i === 0 ? '#ccc' : '#888888',
                   fontSize: '10px',
                   cursor: i === 0 ? 'default' : 'pointer',
                   lineHeight: '1'
@@ -3837,10 +3839,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                 disabled={i === items.length - 1}
                 style={{
                   padding: '2px 8px',
-                  backgroundColor: i === items.length - 1 ? '#f5f5f5' : '#fff',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: i === items.length - 1 ? '#222222' : '#1A1A1A',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '4px',
-                  color: i === items.length - 1 ? '#ccc' : '#666',
+                  color: i === items.length - 1 ? '#ccc' : '#888888',
                   fontSize: '10px',
                   cursor: i === items.length - 1 ? 'default' : 'pointer',
                   lineHeight: '1'
@@ -3856,10 +3858,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                 flex: 1,
                 minWidth: 0,
                 padding: '10px 12px',
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#1A1A1A',
+                border: '1px solid #2C2C2C',
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '16px',
                 fontWeight: '500',
                 boxSizing: 'border-box'
@@ -3869,10 +3871,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
               onClick={() => onRemove(i)}
               style={{
                 padding: '10px 12px',
-                backgroundColor: '#f5f5f5',
+                backgroundColor: '#222222',
                 border: 'none',
                 borderRadius: '8px',
-                color: '#999',
+                color: '#666666',
                 fontSize: '13px',
                 cursor: 'pointer',
                 fontWeight: '500'
@@ -3894,10 +3896,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                 onClick={() => onUpdate(i, 'frequency', opt.id)}
                 style={{
                   padding: '4px 8px',
-                  backgroundColor: (item.frequency || 'daily') === opt.id ? '#5f8a8f' : '#f5f5f5',
+                  backgroundColor: (item.frequency || 'daily') === opt.id ? '#0A84FF' : '#222222',
                   border: 'none',
                   borderRadius: '6px',
-                  color: (item.frequency || 'daily') === opt.id ? '#fff' : '#666',
+                  color: (item.frequency || 'daily') === opt.id ? '#fff' : '#888888',
                   fontSize: '11px',
                   fontWeight: '500',
                   cursor: 'pointer'
@@ -3908,7 +3910,7 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
             ))}
             {(item.frequency || 'daily') === 'multiple' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
-                <span style={{ fontSize: '11px', color: '#999' }}>×</span>
+                <span style={{ fontSize: '11px', color: '#666666' }}>×</span>
                 <input
                   type="number"
                   min="2"
@@ -3918,13 +3920,13 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                   style={{
                     width: '44px',
                     padding: '4px 6px',
-                    border: '1px solid #e0e0e0',
+                    border: '1px solid #2C2C2C',
                     borderRadius: '6px',
                     fontSize: '12px',
                     textAlign: 'center'
                   }}
                 />
-                <span style={{ fontSize: '11px', color: '#999' }}>times</span>
+                <span style={{ fontSize: '11px', color: '#666666' }}>times</span>
               </div>
             )}
           </div>
@@ -3937,10 +3939,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
           width: '100%',
           padding: '10px',
           marginTop: '8px',
-          backgroundColor: '#fff',
+          backgroundColor: '#1A1A1A',
           border: '1px dashed #d0d0d0',
           borderRadius: '8px',
-          color: '#666',
+          color: '#888888',
           fontSize: '13px',
           fontWeight: '500',
           cursor: 'pointer'
@@ -3959,7 +3961,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+      <div style={{ fontSize: '13px', color: '#888888', marginBottom: '16px' }}>
         Add nutrition metrics with optional goals
       </div>
 
@@ -3977,8 +3979,8 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 onChange={(e) => onUpdate(i, 'icon', e.target.value)}
                 style={{
                   padding: '8px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: '#0D0D0D',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '8px',
                   fontSize: '16px',
                   cursor: 'pointer',
@@ -3998,10 +4000,10 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                   flex: 1,
                   minWidth: 0,
                   padding: '10px 12px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: '#0D0D0D',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '8px',
-                  color: '#1a1a1a',
+                  color: '#FFFFFF',
                   fontSize: '16px',
                   fontWeight: '500',
                   boxSizing: 'border-box'
@@ -4011,10 +4013,10 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 onClick={() => onRemove(i)}
                 style={{
                   padding: '10px 12px',
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: '#222222',
                   border: 'none',
                   borderRadius: '8px',
-                  color: '#999',
+                  color: '#666666',
                   fontSize: '13px',
                   cursor: 'pointer',
                   fontWeight: '500'
@@ -4025,7 +4027,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
             </div>
             {/* Unit */}
             <div>
-              <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+              <label style={{ fontSize: '11px', color: '#666666', marginBottom: '4px', display: 'block' }}>
                 Unit
               </label>
               <input
@@ -4036,10 +4038,10 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                 style={{
                   width: '100%',
                   padding: '8px 10px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: '#0D0D0D',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '8px',
-                  color: '#1a1a1a',
+                  color: '#FFFFFF',
                   fontSize: '16px',
                   boxSizing: 'border-box'
                 }}
@@ -4047,7 +4049,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
             </div>
             {/* Goal Type */}
             <div>
-              <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+              <label style={{ fontSize: '11px', color: '#666666', marginBottom: '4px', display: 'block' }}>
                 Goal Type
               </label>
               <div style={{ display: 'flex', gap: '4px' }}>
@@ -4063,11 +4065,11 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                     style={{
                       flex: 1,
                       padding: '8px 6px',
-                      backgroundColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#fafafa',
+                      backgroundColor: (metric.goalType || 'min') === gt.id ? '#0A84FF' : '#1A1A1A',
                       border: '1px solid',
-                      borderColor: (metric.goalType || 'min') === gt.id ? '#5f8a8f' : '#e0e0e0',
+                      borderColor: (metric.goalType || 'min') === gt.id ? '#0A84FF' : '#2C2C2C',
                       borderRadius: '6px',
-                      color: (metric.goalType || 'min') === gt.id ? '#fff' : '#666',
+                      color: (metric.goalType || 'min') === gt.id ? '#fff' : '#888888',
                       fontSize: '12px',
                       fontWeight: '500',
                       cursor: 'pointer'
@@ -4081,7 +4083,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
             {/* Goal value(s) */}
             <div style={{ display: 'grid', gridTemplateColumns: (metric.goalType || 'min') === 'range' ? '1fr 1fr' : '1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+                <label style={{ fontSize: '11px', color: '#666666', marginBottom: '4px', display: 'block' }}>
                   {(metric.goalType || 'min') === 'range' ? 'Min Goal' : (metric.goalType || 'min') === 'max' ? 'Max Limit' : 'Daily Goal'}
                 </label>
                 <input
@@ -4092,10 +4094,10 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                   style={{
                     width: '100%',
                     padding: '8px 10px',
-                    backgroundColor: '#fafafa',
-                    border: '1px solid #e0e0e0',
+                    backgroundColor: '#0D0D0D',
+                    border: '1px solid #2C2C2C',
                     borderRadius: '8px',
-                    color: '#1a1a1a',
+                    color: '#FFFFFF',
                     fontSize: '16px',
                     boxSizing: 'border-box'
                   }}
@@ -4103,7 +4105,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
               </div>
               {(metric.goalType || 'min') === 'range' && (
                 <div>
-                  <label style={{ fontSize: '11px', color: '#999', marginBottom: '4px', display: 'block' }}>
+                  <label style={{ fontSize: '11px', color: '#666666', marginBottom: '4px', display: 'block' }}>
                     Max Goal
                   </label>
                   <input
@@ -4114,10 +4116,10 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                     style={{
                       width: '100%',
                       padding: '8px 10px',
-                      backgroundColor: '#fafafa',
-                      border: '1px solid #e0e0e0',
+                      backgroundColor: '#0D0D0D',
+                      border: '1px solid #2C2C2C',
                       borderRadius: '8px',
-                      color: '#1a1a1a',
+                      color: '#FFFFFF',
                       fontSize: '16px',
                       boxSizing: 'border-box'
                     }}
@@ -4135,10 +4137,10 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
           width: '100%',
           padding: '10px',
           marginTop: '8px',
-          backgroundColor: '#fff',
+          backgroundColor: '#1A1A1A',
           border: '1px dashed #d0d0d0',
           borderRadius: '8px',
-          color: '#666',
+          color: '#888888',
           fontSize: '13px',
           fontWeight: '500',
           cursor: 'pointer'
@@ -4154,7 +4156,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove, onMove }) {
   return (
     <div>
-      <div style={{ fontSize: '11px', color: '#666', marginBottom: '6px', fontWeight: '500' }}>
+      <div style={{ fontSize: '11px', color: '#888888', marginBottom: '6px', fontWeight: '500' }}>
         Daily Water Goal
       </div>
       <input
@@ -4165,17 +4167,17 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
         style={{
           width: '100%',
           padding: '10px 12px',
-          backgroundColor: '#fff',
-          border: '1px solid #e0e0e0',
+          backgroundColor: '#1A1A1A',
+          border: '1px solid #2C2C2C',
           borderRadius: '8px',
-          color: '#1a1a1a',
+          color: '#FFFFFF',
           fontSize: '16px',
           marginBottom: '20px',
           boxSizing: 'border-box'
         }}
       />
 
-      <div style={{ fontSize: '11px', color: '#666', marginBottom: '12px', fontWeight: '500' }}>
+      <div style={{ fontSize: '11px', color: '#888888', marginBottom: '12px', fontWeight: '500' }}>
         Bottle Sizes (ounces) — drag to reorder
       </div>
 
@@ -4187,10 +4189,10 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
               disabled={i === 0}
               style={{
                 padding: '2px 8px',
-                backgroundColor: i === 0 ? '#f5f5f5' : '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: i === 0 ? '#222222' : '#1A1A1A',
+                border: '1px solid #2C2C2C',
                 borderRadius: '4px',
-                color: i === 0 ? '#ccc' : '#666',
+                color: i === 0 ? '#ccc' : '#888888',
                 fontSize: '10px',
                 cursor: i === 0 ? 'default' : 'pointer',
                 lineHeight: '1'
@@ -4203,10 +4205,10 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
               disabled={i === buttons.length - 1}
               style={{
                 padding: '2px 8px',
-                backgroundColor: i === buttons.length - 1 ? '#f5f5f5' : '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: i === buttons.length - 1 ? '#222222' : '#1A1A1A',
+                border: '1px solid #2C2C2C',
                 borderRadius: '4px',
-                color: i === buttons.length - 1 ? '#ccc' : '#666',
+                color: i === buttons.length - 1 ? '#ccc' : '#888888',
                 fontSize: '10px',
                 cursor: i === buttons.length - 1 ? 'default' : 'pointer',
                 lineHeight: '1'
@@ -4224,10 +4226,10 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
               flex: 1,
               minWidth: 0,
               padding: '10px 12px',
-              backgroundColor: '#fff',
-              border: '1px solid #e0e0e0',
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #2C2C2C',
               borderRadius: '8px',
-              color: '#1a1a1a',
+              color: '#FFFFFF',
               fontSize: '16px',
               boxSizing: 'border-box'
             }}
@@ -4236,8 +4238,8 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
             onClick={() => onRemove(i)}
             style={{
               padding: '10px 14px',
-              backgroundColor: '#fff',
-              border: '1px solid #e0e0e0',
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #2C2C2C',
               borderRadius: '8px',
               color: '#ff3333',
               fontSize: '13px',
@@ -4277,7 +4279,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+      <div style={{ fontSize: '13px', color: '#888888', marginBottom: '16px' }}>
         Configure quick-add meal presets
       </div>
 
@@ -4285,11 +4287,11 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
         <div style={{
           padding: '30px 16px',
           textAlign: 'center',
-          color: '#999',
+          color: '#666666',
           fontSize: '13px',
-          backgroundColor: '#fff',
+          backgroundColor: '#1A1A1A',
           borderRadius: '10px',
-          border: '1px solid #e0e0e0'
+          border: '1px solid #2C2C2C'
         }}>
           Add nutrition metrics first
         </div>
@@ -4308,8 +4310,8 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                 onChange={(e) => onUpdate(i, 'icon', e.target.value)}
                 style={{
                   padding: '8px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e0e0e0',
+                  backgroundColor: '#0D0D0D',
+                  border: '1px solid #2C2C2C',
                   borderRadius: '8px',
                   fontSize: '16px',
                   cursor: 'pointer',
@@ -4330,10 +4332,10 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                 flex: 1,
                 minWidth: 0,
                 padding: '10px 12px',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#0D0D0D',
+                border: '1px solid #2C2C2C',
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '16px',
                 fontWeight: '500',
                 boxSizing: 'border-box'
@@ -4344,10 +4346,10 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                 onClick={() => onRemove(i)}
                 style={{
                   padding: '10px 12px',
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: '#222222',
                   border: 'none',
                   borderRadius: '8px',
-                  color: '#999',
+                  color: '#666666',
                   fontSize: '13px',
                   cursor: 'pointer',
                   fontWeight: '500'
@@ -4364,7 +4366,7 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                 <div key={metric.key}>
                   <label style={{
                     fontSize: '10px',
-                    color: '#999',
+                    color: '#666666',
                     marginBottom: '2px',
                     display: 'block'
                   }}>
@@ -4378,10 +4380,10 @@ function MealSettings({ meals, metrics, onUpdate, onRemove }) {
                     style={{
                       width: '100%',
                       padding: '8px 10px',
-                      backgroundColor: '#fafafa',
-                      border: '1px solid #e0e0e0',
+                      backgroundColor: '#0D0D0D',
+                      border: '1px solid #2C2C2C',
                       borderRadius: '8px',
-                      color: '#1a1a1a',
+                      color: '#FFFFFF',
                       fontSize: '16px',
                       boxSizing: 'border-box'
                     }}

@@ -55,9 +55,9 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
 
   if (!hasData) {
     return (
-      <div style={{ padding: '32px 16px', textAlign: 'center', color: '#999' }}>
+      <div style={{ padding: '32px 16px', textAlign: 'center', color: '#666666' }}>
         <div style={{ fontSize: '28px', marginBottom: '8px', opacity: 0.3 }}>📈</div>
-        <div style={{ fontSize: '13px', color: '#666' }}>
+        <div style={{ fontSize: '13px', color: '#888888' }}>
           No meal timing data yet — log meals with the AI to see patterns
         </div>
       </div>
@@ -90,7 +90,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
     <div>
       {peakLabel && (
         <div style={{
-          fontSize: '12px', color: '#5f8a8f', fontWeight: '600',
+          fontSize: '12px', color: '#0A84FF', fontWeight: '600',
           marginBottom: '8px', textAlign: 'center'
         }}>
           Peak eating time: {peakLabel}
@@ -146,7 +146,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
           const hasValues = blockData[metric.key].some(v => v > 0)
           if (!hasValues) return null
           return (
-            <div key={metric.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#666' }}>
+            <div key={metric.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#888888' }}>
               <span style={{
                 width: '10px', height: '3px',
                 backgroundColor: metric.color || colors[mi % colors.length],
@@ -207,7 +207,7 @@ function BarChart({ bars, goal, scrollable = false }) {
           const barH = bar.value > 0 ? Math.max((bar.value / maxVal) * chartH, 2) : 0
           const y = padT + chartH - barH
           const metGoal = goal && bar.value > 0 ? bar.value >= goal : false
-          const barColor = bar.value === 0 ? '#e5e7eb' : metGoal ? '#16a34a' : '#5f8a8f'
+          const barColor = bar.value === 0 ? '#e5e7eb' : metGoal ? '#16a34a' : '#0A84FF'
           return (
             <g key={i}>
               <rect x={x} y={bar.value === 0 ? padT + chartH - 2 : y} width={barW} height={bar.value === 0 ? 2 : barH} fill={barColor} rx="2" />
@@ -219,7 +219,7 @@ function BarChart({ bars, goal, scrollable = false }) {
       {/* Legend */}
       <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
         <span><span style={{ color: '#16a34a' }}>■</span> Met goal</span>
-        <span><span style={{ color: '#5f8a8f' }}>■</span> Logged</span>
+        <span><span style={{ color: '#0A84FF' }}>■</span> Logged</span>
         {goal && <span style={{ color: '#ef4444' }}>— Goal</span>}
       </div>
     </div>
@@ -233,35 +233,35 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
   const generatedAt = today.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: '#fff', overflowY: 'auto', padding: '32px 24px' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: '#1A1A1A', overflowY: 'auto', padding: '32px 24px' }}>
       <style>{`@media print { .no-print { display: none !important; } body { background: white !important; } }`}</style>
       <div className="no-print" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginBottom: '28px' }}>
-        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#5f8a8f', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#0A84FF', border: 'none', borderRadius: '8px', color: '#1A1A1A', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
           Print / Save as PDF
         </button>
-        <button onClick={onClose} style={{ padding: '10px 20px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', color: '#666', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
+        <button onClick={onClose} style={{ padding: '10px 20px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '8px', color: '#888888', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
           Close
         </button>
       </div>
       <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-        <div style={{ borderBottom: '2px solid #5f8a8f', paddingBottom: '16px', marginBottom: '28px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '700', color: '#5f8a8f', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '6px' }}>
+        <div style={{ borderBottom: '2px solid #0A84FF', paddingBottom: '16px', marginBottom: '28px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#0A84FF', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '6px' }}>
             Lytz · Daily Health Report
           </div>
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#1a1a1a', letterSpacing: '-0.5px' }}>{dateLabel}</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#FFFFFF', letterSpacing: '-0.5px' }}>{dateLabel}</div>
         </div>
         {!todayEntry ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#999', fontSize: '15px' }}>No data recorded for today yet.</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: '#666666', fontSize: '15px' }}>No data recorded for today yet.</div>
         ) : (
           <>
             {metrics.length > 0 && todayEntry.nutritionMetrics && (
               <div style={{ marginBottom: '28px' }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#999', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Nutrition</div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#666666', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Nutrition</div>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
+                    <tr style={{ borderBottom: '1px solid #2C2C2C' }}>
                       {['Metric', 'Value', 'Goal', 'Progress'].map(h => (
-                        <th key={h} style={{ textAlign: h === 'Metric' ? 'left' : 'right', padding: '6px 8px', fontSize: '11px', fontWeight: '600', color: '#999' }}>{h}</th>
+                        <th key={h} style={{ textAlign: h === 'Metric' ? 'left' : 'right', padding: '6px 8px', fontSize: '11px', fontWeight: '600', color: '#666666' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -282,9 +282,9 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
                       }
                       return (
                         <tr key={metric.key} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                          <td style={{ padding: '8px', fontSize: '14px', color: '#1a1a1a', fontWeight: '500' }}>{metric.name}</td>
-                          <td style={{ padding: '8px', fontSize: '14px', color: '#1a1a1a', textAlign: 'right', fontWeight: '600' }}>{val}{metric.unit || ''}</td>
-                          <td style={{ padding: '8px', fontSize: '14px', color: '#999', textAlign: 'right' }}>{goalDisplay}</td>
+                          <td style={{ padding: '8px', fontSize: '14px', color: '#FFFFFF', fontWeight: '500' }}>{metric.name}</td>
+                          <td style={{ padding: '8px', fontSize: '14px', color: '#FFFFFF', textAlign: 'right', fontWeight: '600' }}>{val}{metric.unit || ''}</td>
+                          <td style={{ padding: '8px', fontSize: '14px', color: '#666666', textAlign: 'right' }}>{goalDisplay}</td>
                           <td style={{ padding: '8px', textAlign: 'right' }}>
                             {pct !== null ? <span style={{ fontSize: '12px', fontWeight: '600', color: pct >= 100 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626' }}>{pct}%</span> : '—'}
                           </td>
@@ -296,22 +296,22 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
               </div>
             )}
             <div style={{ marginBottom: '28px' }}>
-              <div style={{ fontSize: '12px', fontWeight: '700', color: '#999', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Hydration</div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#666666', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Hydration</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f5f5f5' }}>
-                <span style={{ fontSize: '14px', fontWeight: '500', color: '#1a1a1a' }}>Water Intake</span>
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a' }}>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: '#FFFFFF' }}>Water Intake</span>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>
                   {todayEntry.water || 0} oz
-                  {waterGoal > 0 && <span style={{ fontWeight: '400', color: '#999' }}> / {waterGoal} oz ({Math.min(Math.round(((todayEntry.water || 0) / waterGoal) * 100), 100)}%)</span>}
+                  {waterGoal > 0 && <span style={{ fontWeight: '400', color: '#666666' }}> / {waterGoal} oz ({Math.min(Math.round(((todayEntry.water || 0) / waterGoal) * 100), 100)}%)</span>}
                 </span>
               </div>
             </div>
             {todayEntry.checklistItems?.length > 0 && (
               <div style={{ marginBottom: '28px' }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#999', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Daily Habits</div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#666666', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Daily Habits</div>
                 {todayEntry.checklistItems.map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
                     <span style={{ fontSize: '16px', color: item.checked ? '#16a34a' : '#dc2626' }}>{item.checked ? '✓' : '✗'}</span>
-                    <span style={{ fontSize: '14px', color: item.checked ? '#1a1a1a' : '#999', fontWeight: '500', textDecoration: item.checked ? 'none' : 'line-through' }}>
+                    <span style={{ fontSize: '14px', color: item.checked ? '#FFFFFF' : '#666666', fontWeight: '500', textDecoration: item.checked ? 'none' : 'line-through' }}>
                       {item.label || item.name || `Habit ${i + 1}`}
                     </span>
                   </div>
@@ -320,7 +320,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
             )}
           </>
         )}
-        <div style={{ marginTop: '40px', paddingTop: '16px', borderTop: '1px solid #e0e0e0', fontSize: '11px', color: '#bbb', textAlign: 'center' }}>
+        <div style={{ marginTop: '40px', paddingTop: '16px', borderTop: '1px solid #2C2C2C', fontSize: '11px', color: '#bbb', textAlign: 'center' }}>
           Generated {generatedAt} · Lytz Daily Nutrition Tracker
         </div>
       </div>
@@ -359,18 +359,18 @@ function WeeklyStrip({ history, metrics }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '16px', marginBottom: '16px' }}>
-      <div style={{ fontSize: '11px', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px' }}>
+    <div style={{ backgroundColor: '#1A1A1A', borderRadius: '12px', border: '1px solid #2C2C2C', padding: '16px', marginBottom: '16px' }}>
+      <div style={{ fontSize: '11px', fontWeight: '600', color: '#666666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px' }}>
         This Week — {calMetric.name}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         {days.map(({ d, value, goal, dotColor, hasData, isToday }) => (
           <div key={d.toISOString()} style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '11px', color: isToday ? '#5f8a8f' : '#999', fontWeight: isToday ? '700' : '400', marginBottom: '6px' }}>
+            <div style={{ fontSize: '11px', color: isToday ? '#0A84FF' : '#666666', fontWeight: isToday ? '700' : '400', marginBottom: '6px' }}>
               {d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}
             </div>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: dotColor, margin: '0 auto 6px', border: isToday ? '2px solid #5f8a8f' : '2px solid transparent', boxSizing: 'border-box' }} />
-            <div style={{ fontSize: '10px', color: hasData ? '#1a1a1a' : '#d1d5db', fontWeight: '500', lineHeight: '1.3' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: dotColor, margin: '0 auto 6px', border: isToday ? '2px solid #0A84FF' : '2px solid transparent', boxSizing: 'border-box' }} />
+            <div style={{ fontSize: '10px', color: hasData ? '#FFFFFF' : '#d1d5db', fontWeight: '500', lineHeight: '1.3' }}>
               {hasData ? value.toLocaleString() : '—'}
             </div>
             {hasData && goal > 0 && <div style={{ fontSize: '9px', color: '#9ca3af' }}>/{goal.toLocaleString()}</div>}
@@ -389,7 +389,7 @@ function WeeklyStrip({ history, metrics }) {
 // ── Shared section header ─────────────────────────────────────────────────────
 function SectionLabel({ children }) {
   return (
-    <div style={{ fontSize: '11px', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
+    <div style={{ fontSize: '11px', fontWeight: '600', color: '#666666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
       {children}
     </div>
   )
@@ -397,7 +397,7 @@ function SectionLabel({ children }) {
 
 function Card({ children, style }) {
   return (
-    <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '16px', marginBottom: '16px', ...style }}>
+    <div style={{ backgroundColor: '#1A1A1A', borderRadius: '12px', border: '1px solid #2C2C2C', padding: '16px', marginBottom: '16px', ...style }}>
       {children}
     </div>
   )
@@ -668,14 +668,14 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#666' }}>Loading...</div>
+      <div style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#888888' }}>Loading...</div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#fafafa', padding: '16px 12px', paddingBottom: '40px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', padding: '16px 12px', paddingBottom: '40px' }}>
       {showExport && (
         <ExportView
           todayEntry={history.find(d => d.date === toLocalDateStr()) || null}
@@ -687,32 +687,32 @@ export default function ReportsPage() {
       {/* Edit Modal */}
       {editingDay && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '400px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#1a1a1a' }}>Edit Entry</h3>
-            <div style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>
+          <div style={{ backgroundColor: '#1A1A1A', borderRadius: '16px', padding: '24px', maxWidth: '400px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#FFFFFF' }}>Edit Entry</h3>
+            <div style={{ fontSize: '13px', color: '#888888', marginBottom: '20px' }}>
               {parseLocalDate(editingDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </div>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '6px' }}>💧 Water (oz)</label>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#888888', marginBottom: '6px' }}>💧 Water (oz)</label>
               <input type="number" value={editValues.water || ''} onChange={e => setEditValues({ ...editValues, water: e.target.value })}
-                style={{ width: '100%', padding: '12px', backgroundColor: '#fafafa', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '12px', backgroundColor: '#0D0D0D', border: '1px solid #2C2C2C', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
             </div>
             {metrics.map(metric => (
               <div key={metric.key} style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#888888', marginBottom: '6px' }}>
                   {metric.icon} {metric.name} ({metric.unit})
                 </label>
                 <input type="number" value={editValues[metric.key] || ''} onChange={e => setEditValues({ ...editValues, [metric.key]: e.target.value })}
-                  style={{ width: '100%', padding: '12px', backgroundColor: '#fafafa', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '12px', backgroundColor: '#0D0D0D', border: '1px solid #2C2C2C', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
             ))}
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
               <button onClick={() => { setEditingDay(null); setEditValues({}) }}
-                style={{ flex: 1, padding: '12px', backgroundColor: '#f5f5f5', border: 'none', borderRadius: '8px', color: '#666', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
+                style={{ flex: 1, padding: '12px', backgroundColor: '#222222', border: 'none', borderRadius: '8px', color: '#888888', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
                 Cancel
               </button>
               <button onClick={saveEditedDay}
-                style={{ flex: 1, padding: '12px', backgroundColor: '#5f8a8f', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                style={{ flex: 1, padding: '12px', backgroundColor: '#0A84FF', border: 'none', borderRadius: '8px', color: '#1A1A1A', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
                 Save
               </button>
             </div>
@@ -725,15 +725,15 @@ export default function ReportsPage() {
         {/* Header */}
         <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ margin: '0 0 4px 0', fontSize: '22px', fontWeight: '600', color: '#1a1a1a', letterSpacing: '-0.5px' }}>Reports</h1>
-            <div style={{ color: '#666', fontSize: '13px' }}>Track your progress</div>
+            <h1 style={{ margin: '0 0 4px 0', fontSize: '22px', fontWeight: '600', color: '#FFFFFF', letterSpacing: '-0.5px' }}>Reports</h1>
+            <div style={{ color: '#888888', fontSize: '13px' }}>Track your progress</div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button onClick={() => setShowExport(true)}
-              style={{ padding: '8px 14px', backgroundColor: '#f0f7f8', border: '1px solid #5f8a8f', borderRadius: '8px', color: '#5f8a8f', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+              style={{ padding: '8px 14px', backgroundColor: '#f0f7f8', border: '1px solid #0A84FF', borderRadius: '8px', color: '#0A84FF', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
               Export Today
             </button>
-            <Link href="/" style={{ padding: '8px 14px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', color: '#1a1a1a', fontSize: '13px', fontWeight: '500', textDecoration: 'none' }}>
+            <Link href="/" style={{ padding: '8px 14px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '8px', color: '#FFFFFF', fontSize: '13px', fontWeight: '500', textDecoration: 'none' }}>
               ← Back
             </Link>
           </div>
@@ -744,9 +744,9 @@ export default function ReportsPage() {
           {[['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly']].map(([mode, label]) => (
             <button key={mode} onClick={() => setViewMode(mode)}
               style={{
-                padding: '11px 12px', backgroundColor: viewMode === mode ? '#5f8a8f' : '#fff',
-                border: '1px solid', borderColor: viewMode === mode ? '#5f8a8f' : '#e0e0e0',
-                borderRadius: '8px', color: viewMode === mode ? '#fff' : '#666',
+                padding: '11px 12px', backgroundColor: viewMode === mode ? '#0A84FF' : '#1A1A1A',
+                border: '1px solid', borderColor: viewMode === mode ? '#0A84FF' : '#2C2C2C',
+                borderRadius: '8px', color: viewMode === mode ? '#fff' : '#888888',
                 fontSize: '13px', fontWeight: viewMode === mode ? '600' : '500', cursor: 'pointer'
               }}>
               {label}
@@ -771,12 +771,12 @@ export default function ReportsPage() {
                     return (
                       <div key={m.key}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '13px', color: '#1a1a1a' }}>{m.icon} {m.name}</span>
+                          <span style={{ fontSize: '13px', color: '#FFFFFF' }}>{m.icon} {m.name}</span>
                           <span style={{ fontSize: '13px', fontWeight: '600', color: pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626' }}>
                             {hits}/{stats.days} days
                           </span>
                         </div>
-                        <div style={{ height: '6px', backgroundColor: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '6px', backgroundColor: '#242424', borderRadius: '3px', overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626', borderRadius: '3px', transition: 'width 0.3s' }} />
                         </div>
                       </div>
@@ -792,17 +792,17 @@ export default function ReportsPage() {
                 <SectionLabel>Daily Averages</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                   {metrics.map(metric => (
-                    <div key={metric.key} style={{ padding: '16px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '10px' }}>
+                    <div key={metric.key} style={{ padding: '16px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                         {metric.icon && <span style={{ fontSize: '14px' }}>{metric.icon}</span>}
-                        <span style={{ fontSize: '12px', color: '#666', fontWeight: '500' }}>{metric.name}</span>
+                        <span style={{ fontSize: '12px', color: '#888888', fontWeight: '500' }}>{metric.name}</span>
                       </div>
-                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF', marginBottom: '2px' }}>
                         {stats.averages[metric.key] || 0}
-                        <span style={{ fontSize: '12px', color: '#999', fontWeight: '500' }}> {metric.unit}/day</span>
+                        <span style={{ fontSize: '12px', color: '#666666', fontWeight: '500' }}> {metric.unit}/day</span>
                       </div>
                       {metric.goal && (
-                        <div style={{ fontSize: '11px', color: '#999' }}>
+                        <div style={{ fontSize: '11px', color: '#666666' }}>
                           Goal: {metric.goal}{metric.unit}
                         </div>
                       )}
@@ -820,7 +820,7 @@ export default function ReportsPage() {
                   <div style={{ fontSize: '32px', fontWeight: '700', color: streaks.trackingStreak > 0 ? '#f59e0b' : '#ccc', lineHeight: '1' }}>
                     {streaks.trackingStreak > 0 && '🔥 '}{streaks.trackingStreak}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: '#888888', marginTop: '4px' }}>
                     day{streaks.trackingStreak !== 1 ? 's' : ''} in a row
                   </div>
                 </div>
@@ -842,7 +842,7 @@ export default function ReportsPage() {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {['Yesterday', '2 days ago', '3 days ago'].map((label, i) => (
                   <button key={i} onClick={() => addToPreviousDay(i + 1)}
-                    style={{ padding: '8px 14px', backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0', borderRadius: '6px', color: '#1a1a1a', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
+                    style={{ padding: '8px 14px', backgroundColor: '#222222', border: '1px solid #2C2C2C', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
                     {label}
                   </button>
                 ))}
@@ -857,9 +857,9 @@ export default function ReportsPage() {
             {/* Date nav */}
             <Card style={{ padding: '12px 16px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: '#f5f5f5', border: 'none', borderRadius: '6px', color: '#666', fontSize: '16px', cursor: 'pointer' }}>←</button>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a' }}>{formatDateRange()}</div>
-                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: '#f5f5f5', border: 'none', borderRadius: '6px', color: '#666', fontSize: '16px', cursor: 'pointer' }}>→</button>
+                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>←</button>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>{formatDateRange()}</div>
+                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>→</button>
               </div>
             </Card>
 
@@ -868,15 +868,15 @@ export default function ReportsPage() {
               <Card>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>{stats.days}</div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>Days logged</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>{stats.days}</div>
+                    <div style={{ fontSize: '11px', color: '#666666' }}>Days logged</div>
                   </div>
                   {metrics.filter(m => m.goal).slice(0, 2).map(m => {
                     const hits = stats.goalAchievement[m.key] || 0
                     return (
                       <div key={m.key}>
                         <div style={{ fontSize: '24px', fontWeight: '700', color: hits >= 5 ? '#16a34a' : hits >= 3 ? '#d97706' : '#dc2626' }}>{hits}/7</div>
-                        <div style={{ fontSize: '11px', color: '#999' }}>{m.name} goal</div>
+                        <div style={{ fontSize: '11px', color: '#666666' }}>{m.name} goal</div>
                       </div>
                     )
                   })}
@@ -891,7 +891,7 @@ export default function ReportsPage() {
                   <SectionLabel>Day by Day</SectionLabel>
                   {metrics.length > 1 && (
                     <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
-                      style={{ fontSize: '12px', padding: '4px 8px', border: '1px solid #e0e0e0', borderRadius: '6px', color: '#666', backgroundColor: '#fff' }}>
+                      style={{ fontSize: '12px', padding: '4px 8px', border: '1px solid #2C2C2C', borderRadius: '6px', color: '#888888', backgroundColor: '#1A1A1A' }}>
                       {metrics.map(m => <option key={m.key} value={m.key}>{m.icon} {m.name}</option>)}
                     </select>
                   )}
@@ -900,7 +900,7 @@ export default function ReportsPage() {
                 {(() => {
                   const insight = getWeeklyInsight()
                   return insight ? (
-                    <div style={{ marginTop: '12px', padding: '10px 12px', backgroundColor: '#f0f7f8', borderRadius: '8px', fontSize: '12px', color: '#5f8a8f', fontWeight: '500' }}>
+                    <div style={{ marginTop: '12px', padding: '10px 12px', backgroundColor: '#f0f7f8', borderRadius: '8px', fontSize: '12px', color: '#0A84FF', fontWeight: '500' }}>
                       💡 {insight}
                     </div>
                   ) : null
@@ -922,16 +922,16 @@ export default function ReportsPage() {
                 <SectionLabel>Hydration</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
                       {filteredHistory.reduce((s, d) => s + (d.water || 0), 0)}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>Total oz</div>
+                    <div style={{ fontSize: '11px', color: '#666666' }}>Total oz</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
                       {filteredHistory.length > 0 ? Math.round(filteredHistory.reduce((s, d) => s + (d.water || 0), 0) / filteredHistory.length) : 0}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>Avg/day oz</div>
+                    <div style={{ fontSize: '11px', color: '#666666' }}>Avg/day oz</div>
                   </div>
                 </div>
               </Card>
@@ -945,9 +945,9 @@ export default function ReportsPage() {
             {/* Date nav */}
             <Card style={{ padding: '12px 16px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: '#f5f5f5', border: 'none', borderRadius: '6px', color: '#666', fontSize: '16px', cursor: 'pointer' }}>←</button>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a' }}>{formatDateRange()}</div>
-                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: '#f5f5f5', border: 'none', borderRadius: '6px', color: '#666', fontSize: '16px', cursor: 'pointer' }}>→</button>
+                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>←</button>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>{formatDateRange()}</div>
+                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>→</button>
               </div>
             </Card>
 
@@ -955,7 +955,7 @@ export default function ReportsPage() {
             {(() => {
               const insight = getMonthlyInsight()
               return insight ? (
-                <div style={{ marginBottom: '16px', padding: '12px 16px', backgroundColor: '#f0f7f8', borderRadius: '10px', fontSize: '13px', color: '#5f8a8f', fontWeight: '500' }}>
+                <div style={{ marginBottom: '16px', padding: '12px 16px', backgroundColor: '#f0f7f8', borderRadius: '10px', fontSize: '13px', color: '#0A84FF', fontWeight: '500' }}>
                   💡 {insight}
                 </div>
               ) : null
@@ -967,17 +967,17 @@ export default function ReportsPage() {
                 <SectionLabel>Monthly Averages</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                   {metrics.map(metric => (
-                    <div key={metric.key} style={{ padding: '16px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '10px' }}>
+                    <div key={metric.key} style={{ padding: '16px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                         {metric.icon && <span style={{ fontSize: '14px' }}>{metric.icon}</span>}
-                        <span style={{ fontSize: '12px', color: '#666', fontWeight: '500' }}>{metric.name}</span>
+                        <span style={{ fontSize: '12px', color: '#888888', fontWeight: '500' }}>{metric.name}</span>
                       </div>
-                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF', marginBottom: '2px' }}>
                         {stats.averages[metric.key] || 0}
-                        <span style={{ fontSize: '12px', color: '#999', fontWeight: '500' }}> {metric.unit}/day</span>
+                        <span style={{ fontSize: '12px', color: '#666666', fontWeight: '500' }}> {metric.unit}/day</span>
                       </div>
                       {metric.goal && (
-                        <div style={{ fontSize: '11px', color: '#999' }}>Goal: {metric.goal}{metric.unit}</div>
+                        <div style={{ fontSize: '11px', color: '#666666' }}>Goal: {metric.goal}{metric.unit}</div>
                       )}
                     </div>
                   ))}
@@ -995,19 +995,19 @@ export default function ReportsPage() {
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     {metrics.length > 1 && (
                       <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
-                        style={{ fontSize: '12px', padding: '4px 8px', border: '1px solid #e0e0e0', borderRadius: '6px', color: '#666', backgroundColor: '#fff' }}>
+                        style={{ fontSize: '12px', padding: '4px 8px', border: '1px solid #2C2C2C', borderRadius: '6px', color: '#888888', backgroundColor: '#1A1A1A' }}>
                         {metrics.map(m => <option key={m.key} value={m.key}>{m.icon} {m.name}</option>)}
                       </select>
                     )}
                     {/* Granularity toggle */}
-                    <div style={{ display: 'flex', backgroundColor: '#f5f5f5', borderRadius: '6px', padding: '2px' }}>
+                    <div style={{ display: 'flex', backgroundColor: '#222222', borderRadius: '6px', padding: '2px' }}>
                       {[['daily', '30 Day'], ['weekly', '4 Week']].map(([g, label]) => (
                         <button key={g} onClick={() => setMonthlyGranularity(g)}
                           style={{
                             padding: '4px 10px', fontSize: '11px', fontWeight: monthlyGranularity === g ? '600' : '400',
                             backgroundColor: monthlyGranularity === g ? '#fff' : 'transparent',
                             border: 'none', borderRadius: '4px',
-                            color: monthlyGranularity === g ? '#1a1a1a' : '#999', cursor: 'pointer',
+                            color: monthlyGranularity === g ? '#FFFFFF' : '#666666', cursor: 'pointer',
                             boxShadow: monthlyGranularity === g ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
                           }}>
                           {label}
@@ -1045,7 +1045,7 @@ export default function ReportsPage() {
                   <div style={{ fontSize: '32px', fontWeight: '700', color: streaks.trackingStreak > 0 ? '#f59e0b' : '#ccc', lineHeight: '1' }}>
                     {streaks.trackingStreak > 0 && '🔥 '}{streaks.trackingStreak}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>day{streaks.trackingStreak !== 1 ? 's' : ''} in a row</div>
+                  <div style={{ fontSize: '12px', color: '#888888', marginTop: '4px' }}>day{streaks.trackingStreak !== 1 ? 's' : ''} in a row</div>
                 </div>
                 <div style={{ fontSize: '48px', opacity: 0.1 }}>🔥</div>
               </div>
@@ -1057,16 +1057,16 @@ export default function ReportsPage() {
                 <SectionLabel>Hydration</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
                       {filteredHistory.reduce((s, d) => s + (d.water || 0), 0)}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>Total oz</div>
+                    <div style={{ fontSize: '11px', color: '#666666' }}>Total oz</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
                       {filteredHistory.length > 0 ? Math.round(filteredHistory.reduce((s, d) => s + (d.water || 0), 0) / filteredHistory.length) : 0}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>Avg/day oz</div>
+                    <div style={{ fontSize: '11px', color: '#666666' }}>Avg/day oz</div>
                   </div>
                 </div>
               </Card>

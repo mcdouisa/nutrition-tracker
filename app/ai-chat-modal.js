@@ -82,7 +82,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
       zIndex: 1000
     }}>
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: '#1A1A1A',
         borderRadius: '16px 16px 0 0',
         width: '100%',
         maxWidth: '600px',
@@ -96,25 +96,25 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
         {/* Header */}
         <div style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #e0e0e0',
+          borderBottom: '1px solid #2C2C2C',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: '#fafafa'
+          backgroundColor: '#0D0D0D'
         }}>
           <div>
             <h2 style={{
               margin: 0,
               fontSize: '16px',
               fontWeight: '600',
-              color: '#1a1a1a',
+              color: '#FFFFFF',
               letterSpacing: '-0.3px'
             }}>
               🤖 AI Assistant
             </h2>
             <div style={{
               fontSize: '12px',
-              color: viewDate !== null ? '#d97706' : '#999',
+              color: viewDate !== null ? '#d97706' : '#666666',
               marginTop: '2px'
             }}>
               {viewDate !== null
@@ -136,10 +136,10 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
             onClick={onClose}
             style={{
               padding: '6px 14px',
-              backgroundColor: '#fff',
-              border: '1px solid #e0e0e0',
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #2C2C2C',
               borderRadius: '6px',
-              color: '#666',
+              color: '#888888',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -154,16 +154,16 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
           flex: 1,
           overflow: 'auto',
           padding: '16px',
-          backgroundColor: '#fafafa'
+          backgroundColor: '#0D0D0D'
         }}>
           {messages.length === 0 && (
             <div style={{
               textAlign: 'center',
               padding: '32px 16px',
-              color: '#999'
+              color: '#666666'
             }}>
               <div style={{ fontSize: '40px', marginBottom: '12px' }}>💬</div>
-              <div style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '500', color: '#666' }}>
+              <div style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '500', color: '#888888' }}>
                 Ask me about your meals!
               </div>
               <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
@@ -187,8 +187,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               <div style={{
                 maxWidth: '85%',
                 padding: '10px 14px',
-                backgroundColor: msg.role === 'user' ? '#5f8a8f' : '#fff',
-                color: msg.role === 'user' ? '#fff' : '#1a1a1a',
+                backgroundColor: msg.role === 'user' ? '#0A84FF' : '#1A1A1A',
+                color: msg.role === 'user' ? '#fff' : '#FFFFFF',
                 borderRadius: '12px',
                 fontSize: '13px',
                 lineHeight: '1.5',
@@ -215,7 +215,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               {msg.estimates && (
                 <div style={{
                   marginTop: '6px',
-                  backgroundColor: msg.added ? '#f5f5f5' : '#f0fdf4',
+                  backgroundColor: msg.added ? '#222222' : 'rgba(48,209,88,0.1)',
                   border: msg.added ? '1px solid #d1d5db' : '1px solid #bbf7d0',
                   borderRadius: '8px',
                   padding: '10px 12px',
@@ -224,7 +224,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   <div style={{
                     fontSize: '11px',
                     fontWeight: '600',
-                    color: msg.added ? '#6b7280' : '#166534',
+                    color: msg.added ? '#6b7280' : '#30D158',
                     marginBottom: '6px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
@@ -243,10 +243,10 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                       return (
                         <div key={m.key} style={{
                           fontSize: '12px',
-                          color: msg.added ? '#6b7280' : '#1a1a1a',
+                          color: msg.added ? '#6b7280' : '#FFFFFF',
                           fontWeight: '500'
                         }}>
-                          <span style={{ color: msg.added ? '#9ca3af' : (m.color || '#666') }}>{m.name}:</span>{' '}
+                          <span style={{ color: msg.added ? '#9ca3af' : (m.color || '#888888') }}>{m.name}:</span>{' '}
                           {val}{m.unit ? ` ${m.unit}` : ''}
                         </div>
                       )
@@ -261,7 +261,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                       backgroundColor: msg.added ? '#e5e7eb' : '#10b981',
                       border: 'none',
                       borderRadius: '6px',
-                      color: msg.added ? '#9ca3af' : '#fff',
+                      color: msg.added ? '#9ca3af' : '#1A1A1A',
                       fontSize: '12px',
                       fontWeight: '500',
                       cursor: msg.added ? 'not-allowed' : 'pointer',
@@ -281,14 +281,14 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               alignItems: 'center',
               gap: '8px',
               padding: '10px 14px',
-              backgroundColor: '#fff',
+              backgroundColor: '#1A1A1A',
               borderRadius: '12px',
               maxWidth: '85%',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
               <div style={{
                 fontSize: '12px',
-                color: '#999',
+                color: '#666666',
                 fontStyle: 'italic'
               }}>
                 Analyzing...
@@ -301,8 +301,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
         <div style={{
           padding: '12px 16px',
           paddingBottom: '24px',
-          borderTop: '1px solid #e0e0e0',
-          backgroundColor: '#fff'
+          borderTop: '1px solid #2C2C2C',
+          backgroundColor: '#1A1A1A'
         }}>
           {/* Image preview */}
           {pendingImage && (
@@ -319,7 +319,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   width: '72px',
                   objectFit: 'cover',
                   borderRadius: '8px',
-                  border: '2px solid #5f8a8f',
+                  border: '2px solid #0A84FF',
                   display: 'block'
                 }}
               />
@@ -334,7 +334,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   borderRadius: '50%',
                   backgroundColor: '#ef4444',
                   border: 'none',
-                  color: '#fff',
+                  color: '#1A1A1A',
                   fontSize: '12px',
                   fontWeight: '700',
                   cursor: 'pointer',
@@ -367,8 +367,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               title="Take a photo or choose from library"
               style={{
                 padding: '10px 12px',
-                backgroundColor: pendingImage ? '#5f8a8f' : '#f3f4f6',
-                border: `1px solid ${pendingImage ? '#5f8a8f' : '#e0e0e0'}`,
+                backgroundColor: pendingImage ? '#0A84FF' : '#f3f4f6',
+                border: `1px solid ${pendingImage ? '#0A84FF' : '#2C2C2C'}`,
                 borderRadius: '8px',
                 fontSize: '18px',
                 cursor: isThinking ? 'not-allowed' : 'pointer',
@@ -389,10 +389,10 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               style={{
                 flex: 1,
                 padding: '10px 14px',
-                backgroundColor: '#fafafa',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#0D0D0D',
+                border: '1px solid #2C2C2C',
                 borderRadius: '8px',
-                color: '#1a1a1a',
+                color: '#FFFFFF',
                 fontSize: '16px',
                 fontFamily: 'inherit',
                 resize: 'none',
@@ -406,10 +406,10 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               disabled={(!input.trim() && !pendingImage) || isThinking}
               style={{
                 padding: '10px 18px',
-                backgroundColor: (input.trim() || pendingImage) && !isThinking ? '#5f8a8f' : '#e0e0e0',
+                backgroundColor: (input.trim() || pendingImage) && !isThinking ? '#0A84FF' : '#2C2C2C',
                 border: 'none',
                 borderRadius: '8px',
-                color: (input.trim() || pendingImage) && !isThinking ? '#fff' : '#999',
+                color: (input.trim() || pendingImage) && !isThinking ? '#fff' : '#666666',
                 fontSize: '13px',
                 fontWeight: '500',
                 cursor: (input.trim() || pendingImage) && !isThinking ? 'pointer' : 'not-allowed'

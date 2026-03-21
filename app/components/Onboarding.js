@@ -149,7 +149,7 @@ export default function Onboarding({ onComplete, onSkip }) {
       padding: '20px'
     }}>
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: '#1A1A1A',
         borderRadius: '16px',
         maxWidth: '600px',
         width: '100%',
@@ -170,8 +170,8 @@ export default function Onboarding({ onComplete, onSkip }) {
               height: '32px',
               borderRadius: '50%',
               border: 'none',
-              backgroundColor: '#f0f0f0',
-              color: '#666',
+              backgroundColor: '#242424',
+              color: '#888888',
               fontSize: '16px',
               cursor: 'pointer',
               display: 'flex',
@@ -187,13 +187,13 @@ export default function Onboarding({ onComplete, onSkip }) {
         {/* Progress bar */}
         <div style={{
           height: '4px',
-          backgroundColor: '#f0f0f0',
+          backgroundColor: '#242424',
           borderRadius: '16px 16px 0 0'
         }}>
           <div style={{
             height: '100%',
             width: `${(step / totalSteps) * 100}%`,
-            backgroundColor: '#5f8a8f',
+            backgroundColor: '#0A84FF',
             borderRadius: '16px 0 0 0',
             transition: 'width 0.3s'
           }} />
@@ -204,22 +204,22 @@ export default function Onboarding({ onComplete, onSkip }) {
           {step === 1 && (
             <div>
               <div style={{ fontSize: '32px', marginBottom: '8px' }}>👋</div>
-              <h2 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>
+              <h2 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Welcome to Lytz!
               </h2>
-              <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#666', lineHeight: '1.6' }}>
+              <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#888888', lineHeight: '1.6' }}>
                 Your all-in-one daily health tracker. Track nutrition, water, habits, and more - all customizable to your goals.
               </p>
               <div style={{
-                backgroundColor: '#f8f9fa',
+                backgroundColor: '#1A1A1A',
                 borderRadius: '12px',
                 padding: '20px',
                 marginBottom: '24px'
               }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#1a1a1a' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#FFFFFF' }}>
                   What you can track:
                 </h3>
-                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#666', lineHeight: '1.8' }}>
+                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#888888', lineHeight: '1.8' }}>
                   <li>📊 Custom nutrition metrics (calories, protein, carbs, etc.)</li>
                   <li>💧 Daily water intake</li>
                   <li>✅ Daily habit checklist</li>
@@ -228,7 +228,7 @@ export default function Onboarding({ onComplete, onSkip }) {
                   <li>📅 View and edit past days</li>
                 </ul>
               </div>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#999' }}>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#666666' }}>
                 Let's set up your profile to get personalized recommendations.
               </p>
               <button
@@ -236,8 +236,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                 style={{
                   width: '100%',
                   padding: '14px',
-                  backgroundColor: '#5f8a8f',
-                  color: '#fff',
+                  backgroundColor: '#0A84FF',
+                  color: '#1A1A1A',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '15px',
@@ -253,16 +253,16 @@ export default function Onboarding({ onComplete, onSkip }) {
           {/* Step 2: Profile Setup */}
           {step === 2 && (
             <div>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Tell us about yourself
               </h2>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#666' }}>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#888888' }}>
                 This helps us recommend healthy goals based on science-backed guidelines.
               </p>
 
               {/* Age */}
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>
                   Age Range
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -272,9 +272,9 @@ export default function Onboarding({ onComplete, onSkip }) {
                       onClick={() => setProfile({ ...profile, age })}
                       style={{
                         padding: '12px',
-                        backgroundColor: profile.age === age ? '#5f8a8f' : '#f8f9fa',
+                        backgroundColor: profile.age === age ? '#0A84FF' : '#1A1A1A',
                         color: profile.age === age ? '#fff' : '#333',
-                        border: `2px solid ${profile.age === age ? '#5f8a8f' : '#e0e0e0'}`,
+                        border: `2px solid ${profile.age === age ? '#0A84FF' : '#2C2C2C'}`,
                         borderRadius: '8px',
                         fontSize: '14px',
                         fontWeight: '600',
@@ -290,7 +290,7 @@ export default function Onboarding({ onComplete, onSkip }) {
 
               {/* Gender */}
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>
                   Gender
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -304,9 +304,9 @@ export default function Onboarding({ onComplete, onSkip }) {
                       onClick={() => setProfile({ ...profile, gender: g.key })}
                       style={{
                         padding: '12px',
-                        backgroundColor: profile.gender === g.key ? '#5f8a8f' : '#f8f9fa',
+                        backgroundColor: profile.gender === g.key ? '#0A84FF' : '#1A1A1A',
                         color: profile.gender === g.key ? '#fff' : '#333',
-                        border: `2px solid ${profile.gender === g.key ? '#5f8a8f' : '#e0e0e0'}`,
+                        border: `2px solid ${profile.gender === g.key ? '#0A84FF' : '#2C2C2C'}`,
                         borderRadius: '8px',
                         fontSize: '14px',
                         fontWeight: '600',
@@ -322,7 +322,7 @@ export default function Onboarding({ onComplete, onSkip }) {
 
               {/* Activity Level */}
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>
                   Activity Level
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -337,9 +337,9 @@ export default function Onboarding({ onComplete, onSkip }) {
                       onClick={() => setProfile({ ...profile, activity: a.key })}
                       style={{
                         padding: '12px',
-                        backgroundColor: profile.activity === a.key ? '#5f8a8f' : '#f8f9fa',
+                        backgroundColor: profile.activity === a.key ? '#0A84FF' : '#1A1A1A',
                         color: profile.activity === a.key ? '#fff' : '#333',
-                        border: `2px solid ${profile.activity === a.key ? '#5f8a8f' : '#e0e0e0'}`,
+                        border: `2px solid ${profile.activity === a.key ? '#0A84FF' : '#2C2C2C'}`,
                         borderRadius: '8px',
                         fontSize: '13px',
                         fontWeight: '600',
@@ -364,7 +364,7 @@ export default function Onboarding({ onComplete, onSkip }) {
 
               {/* Primary Goal */}
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>
                   Primary Goal
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -379,9 +379,9 @@ export default function Onboarding({ onComplete, onSkip }) {
                       onClick={() => setProfile({ ...profile, goal: g.key })}
                       style={{
                         padding: '12px',
-                        backgroundColor: profile.goal === g.key ? '#5f8a8f' : '#f8f9fa',
+                        backgroundColor: profile.goal === g.key ? '#0A84FF' : '#1A1A1A',
                         color: profile.goal === g.key ? '#fff' : '#333',
-                        border: `2px solid ${profile.goal === g.key ? '#5f8a8f' : '#e0e0e0'}`,
+                        border: `2px solid ${profile.goal === g.key ? '#0A84FF' : '#2C2C2C'}`,
                         borderRadius: '8px',
                         fontSize: '14px',
                         fontWeight: '600',
@@ -398,7 +398,7 @@ export default function Onboarding({ onComplete, onSkip }) {
 
               {/* Optional Weight (for protein calculation) */}
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>
                   Current Weight (optional, for protein recommendation)
                 </label>
                 <input
@@ -415,7 +415,7 @@ export default function Onboarding({ onComplete, onSkip }) {
                     fontFamily: 'inherit'
                   }}
                 />
-                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: '#666666', marginTop: '4px' }}>
                   Used to calculate personalized protein goals
                 </div>
               </div>
@@ -426,8 +426,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                   style={{
                     flex: 1,
                     padding: '14px',
-                    backgroundColor: '#f8f9fa',
-                    color: '#333',
+                    backgroundColor: '#1A1A1A',
+                    color: '#FFFFFF',
                     border: '2px solid #e0e0e0',
                     borderRadius: '8px',
                     fontSize: '15px',
@@ -443,8 +443,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                   style={{
                     flex: 2,
                     padding: '14px',
-                    backgroundColor: (!profile.age || !profile.gender || !profile.activity || !profile.goal) ? '#ccc' : '#5f8a8f',
-                    color: '#fff',
+                    backgroundColor: (!profile.age || !profile.gender || !profile.activity || !profile.goal) ? '#ccc' : '#0A84FF',
+                    color: '#1A1A1A',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '15px',
@@ -461,20 +461,20 @@ export default function Onboarding({ onComplete, onSkip }) {
           {/* Step 3: Recommended Goals */}
           {step === 3 && recommendations && (
             <div>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Your Recommended Goals
               </h2>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#666' }}>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#888888' }}>
                 Based on your profile, here are science-backed daily targets. You can adjust these anytime in Settings.
               </p>
 
               {/* Core metrics (always included) */}
-              <div style={{ marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#666' }}>
+              <div style={{ marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#888888' }}>
                 Core Metrics
               </div>
 
               <div style={{
-                backgroundColor: '#f0fdf4',
+                backgroundColor: 'rgba(48,209,88,0.1)',
                 border: '1px solid #86efac',
                 borderRadius: '12px',
                 padding: '16px',
@@ -482,11 +482,11 @@ export default function Onboarding({ onComplete, onSkip }) {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <span style={{ fontSize: '16px' }}>💧</span>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#166534' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#30D158' }}>
                     Water: {recommendations.water} oz/day
                   </span>
                 </div>
-                <div style={{ fontSize: '12px', color: '#166534', opacity: 0.8 }}>
+                <div style={{ fontSize: '12px', color: '#30D158', opacity: 0.8 }}>
                   Recommended for your activity level
                 </div>
               </div>
@@ -530,7 +530,7 @@ export default function Onboarding({ onComplete, onSkip }) {
               )}
 
               {/* Optional metrics with checkboxes */}
-              <div style={{ marginBottom: '8px', marginTop: '20px', fontSize: '13px', fontWeight: '600', color: '#666' }}>
+              <div style={{ marginBottom: '8px', marginTop: '20px', fontSize: '13px', fontWeight: '600', color: '#888888' }}>
                 Optional Metrics (uncheck to skip)
               </div>
 
@@ -546,8 +546,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                     [metric.key]: !selectedOptionalMetrics[metric.key]
                   })}
                   style={{
-                    backgroundColor: selectedOptionalMetrics[metric.key] ? metric.bg : '#f5f5f5',
-                    border: `2px solid ${selectedOptionalMetrics[metric.key] ? metric.color : '#e0e0e0'}`,
+                    backgroundColor: selectedOptionalMetrics[metric.key] ? metric.bg : '#222222',
+                    border: `2px solid ${selectedOptionalMetrics[metric.key] ? metric.color : '#2C2C2C'}`,
                     borderRadius: '12px',
                     padding: '14px',
                     marginBottom: '8px',
@@ -573,7 +573,7 @@ export default function Onboarding({ onComplete, onSkip }) {
                     <div style={{
                       fontSize: '14px',
                       fontWeight: '600',
-                      color: selectedOptionalMetrics[metric.key] ? metric.color : '#666'
+                      color: selectedOptionalMetrics[metric.key] ? metric.color : '#888888'
                     }}>
                       {metric.label}: {metric.value}{metric.unit}/day
                     </div>
@@ -582,13 +582,13 @@ export default function Onboarding({ onComplete, onSkip }) {
               ))}
 
               <div style={{
-                backgroundColor: '#f8f9fa',
+                backgroundColor: '#1A1A1A',
                 borderRadius: '8px',
                 padding: '12px',
                 marginTop: '16px',
                 marginBottom: '24px',
                 fontSize: '12px',
-                color: '#666',
+                color: '#888888',
                 lineHeight: '1.6'
               }}>
                 ℹ️ These are starting points. You can customize any metric in Settings and add your own custom tracking fields.
@@ -600,8 +600,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                   style={{
                     flex: 1,
                     padding: '14px',
-                    backgroundColor: '#f8f9fa',
-                    color: '#333',
+                    backgroundColor: '#1A1A1A',
+                    color: '#FFFFFF',
                     border: '2px solid #e0e0e0',
                     borderRadius: '8px',
                     fontSize: '15px',
@@ -616,8 +616,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                   style={{
                     flex: 2,
                     padding: '14px',
-                    backgroundColor: '#5f8a8f',
-                    color: '#fff',
+                    backgroundColor: '#0A84FF',
+                    color: '#1A1A1A',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '15px',
@@ -634,10 +634,10 @@ export default function Onboarding({ onComplete, onSkip }) {
           {/* Step 4: Daily Habits */}
           {step === 4 && (
             <div>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Choose Daily Habits to Track
               </h2>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#666' }}>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#888888' }}>
                 Select healthy habits you want to build. Click to select/deselect.
               </p>
 
@@ -659,12 +659,12 @@ export default function Onboarding({ onComplete, onSkip }) {
                       onClick={() => toggleHabit(habit)}
                       style={{
                         padding: '16px',
-                        backgroundColor: selected ? '#f0fdf4' : '#fff',
-                        border: `2px solid ${selected ? '#10b981' : '#e0e0e0'}`,
+                        backgroundColor: selected ? 'rgba(48,209,88,0.1)' : '#1A1A1A',
+                        border: `2px solid ${selected ? '#10b981' : '#2C2C2C'}`,
                         borderRadius: '10px',
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#333',
+                        color: '#FFFFFF',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -690,7 +690,7 @@ export default function Onboarding({ onComplete, onSkip }) {
 
               {/* Custom habit input */}
               <div style={{
-                backgroundColor: '#f8f9fa',
+                backgroundColor: '#1A1A1A',
                 borderRadius: '12px',
                 padding: '16px',
                 marginBottom: '20px'
@@ -698,7 +698,7 @@ export default function Onboarding({ onComplete, onSkip }) {
                 <div style={{
                   fontSize: '14px',
                   fontWeight: '600',
-                  color: '#333',
+                  color: '#FFFFFF',
                   marginBottom: '8px'
                 }}>
                   Add Your Own Habit
@@ -724,8 +724,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                     disabled={!customHabit.trim()}
                     style={{
                       padding: '12px 20px',
-                      backgroundColor: customHabit.trim() ? '#5f8a8f' : '#ccc',
-                      color: '#fff',
+                      backgroundColor: customHabit.trim() ? '#0A84FF' : '#ccc',
+                      color: '#1A1A1A',
                       border: 'none',
                       borderRadius: '8px',
                       fontSize: '14px',
@@ -739,12 +739,12 @@ export default function Onboarding({ onComplete, onSkip }) {
               </div>
 
               <div style={{
-                backgroundColor: '#f8f9fa',
+                backgroundColor: '#1A1A1A',
                 borderRadius: '8px',
                 padding: '12px',
                 marginBottom: '24px',
                 fontSize: '12px',
-                color: '#666'
+                color: '#888888'
               }}>
                 Selected {selectedHabits.length} habit{selectedHabits.length !== 1 ? 's' : ''}. You can always add more or remove these later in Settings.
               </div>
@@ -755,8 +755,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                   style={{
                     flex: 1,
                     padding: '14px',
-                    backgroundColor: '#f8f9fa',
-                    color: '#333',
+                    backgroundColor: '#1A1A1A',
+                    color: '#FFFFFF',
                     border: '2px solid #e0e0e0',
                     borderRadius: '8px',
                     fontSize: '15px',
@@ -771,8 +771,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                   style={{
                     flex: 2,
                     padding: '14px',
-                    backgroundColor: '#5f8a8f',
-                    color: '#fff',
+                    backgroundColor: '#0A84FF',
+                    color: '#1A1A1A',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '15px',
@@ -789,70 +789,70 @@ export default function Onboarding({ onComplete, onSkip }) {
           {/* Step 5: Feature Tour */}
           {step === 5 && (
             <div>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 You're all set! 🎉
               </h2>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#666' }}>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#888888' }}>
                 Here's a quick overview of what you can do:
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                 <div style={{
                   padding: '16px',
-                  backgroundColor: '#f8f9fa',
+                  backgroundColor: '#1A1A1A',
                   borderRadius: '10px',
-                  borderLeft: '4px solid #5f8a8f'
+                  borderLeft: '4px solid #0A84FF'
                 }}>
                   <div style={{ fontSize: '20px', marginBottom: '8px' }}>🤖</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>
                     AI Food Logging
                   </div>
-                  <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
                     Just describe what you ate (e.g., "2 eggs and toast") and AI will estimate the nutrition for you.
                   </div>
                 </div>
 
                 <div style={{
                   padding: '16px',
-                  backgroundColor: '#f8f9fa',
+                  backgroundColor: '#1A1A1A',
                   borderRadius: '10px',
-                  borderLeft: '4px solid #5f8a8f'
+                  borderLeft: '4px solid #0A84FF'
                 }}>
                   <div style={{ fontSize: '20px', marginBottom: '8px' }}>📅</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>
                     Track Past Days
                   </div>
-                  <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
                     Use the date navigation arrows to view and edit data from previous days.
                   </div>
                 </div>
 
                 <div style={{
                   padding: '16px',
-                  backgroundColor: '#f8f9fa',
+                  backgroundColor: '#1A1A1A',
                   borderRadius: '10px',
-                  borderLeft: '4px solid #5f8a8f'
+                  borderLeft: '4px solid #0A84FF'
                 }}>
                   <div style={{ fontSize: '20px', marginBottom: '8px' }}>📊</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>
                     Weekly Reports
                   </div>
-                  <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
                     Check the Reports page to see your weekly progress and export to PDF.
                   </div>
                 </div>
 
                 <div style={{
                   padding: '16px',
-                  backgroundColor: '#f8f9fa',
+                  backgroundColor: '#1A1A1A',
                   borderRadius: '10px',
-                  borderLeft: '4px solid #5f8a8f'
+                  borderLeft: '4px solid #0A84FF'
                 }}>
                   <div style={{ fontSize: '20px', marginBottom: '8px' }}>⚙️</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>
                     Fully Customizable
                   </div>
-                  <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
                     Add custom nutrition metrics, habits, or quick-add meals in Settings.
                   </div>
                 </div>
@@ -876,8 +876,8 @@ export default function Onboarding({ onComplete, onSkip }) {
                 style={{
                   width: '100%',
                   padding: '16px',
-                  backgroundColor: '#5f8a8f',
-                  color: '#fff',
+                  backgroundColor: '#0A84FF',
+                  color: '#1A1A1A',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '16px',
