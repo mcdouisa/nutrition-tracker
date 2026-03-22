@@ -1603,7 +1603,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-        <img src="/logo.png" alt="Lytz" style={{ width: 'min(380px, 92vw)', height: 'auto', display: 'block', mixBlendMode: 'screen' }} />
+        <img src="/logo.png" alt="Lytz" style={{ width: 'min(380px, 92vw)', height: 'auto', display: 'block' }} />
       </div>
     )
   }
@@ -1625,7 +1625,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           width: '100%',
           textAlign: 'center'
         }}>
-          <img src="/logo.png" alt="Lytz" style={{ width: '100%', maxWidth: '420px', height: 'auto', display: 'block', marginBottom: '8px', mixBlendMode: 'screen' }} />
+          <img src="/logo.png" alt="Lytz" style={{ width: '100%', maxWidth: '420px', height: 'auto', display: 'block', marginBottom: '8px' }} />
           <div style={{ padding: '0 24px 32px' }}>
           <p style={{
             margin: '0 0 24px 0',
