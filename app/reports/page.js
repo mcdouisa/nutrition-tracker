@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, createContext, useContext } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
 import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr } from '../../lib/dataSync'
 
 const DARK  = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#242424', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888' }
 const LIGHT = { bg: '#F5F5F5', card: '#FFFFFF',  card2: '#EBEBEB', border: '#E0E0E0', text: '#1A1A1A', muted: '#666666' }
+const ThemeContext = createContext(DARK)
 
 // ── Time-of-day line chart ────────────────────────────────────────────────────
 function TimeOfDayChart({ filteredHistory, metrics }) {
+  const T = useContext(ThemeContext)
   const timeBlocks = [
     { label: '5-8am', start: 5, end: 8 },
     { label: '8-11am', start: 8, end: 11 },
@@ -164,11 +166,13 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
         Averaged across {daysWithData} day{daysWithData !== 1 ? 's' : ''} with meal data
       </div>
     </div>
+    </ThemeContext.Provider>
   )
 }
 
 // ── Bar chart ─────────────────────────────────────────────────────────────────
 function BarChart({ bars, goal, scrollable = false }) {
+  const T = useContext(ThemeContext)
   if (!bars || bars.length === 0) return null
   const maxVal = Math.max(...bars.map(b => b.value), goal || 1, 1)
   const barW = scrollable ? 18 : Math.max(12, Math.floor(260 / bars.length))
@@ -231,6 +235,7 @@ function BarChart({ bars, goal, scrollable = false }) {
 
 // ── Export view ───────────────────────────────────────────────────────────────
 function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
+  const T = useContext(ThemeContext)
   const today = new Date()
   const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   const generatedAt = today.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
@@ -333,6 +338,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
 
 // ── Weekly strip (7-day color dots) ──────────────────────────────────────────
 function WeeklyStrip({ history, metrics }) {
+  const T = useContext(ThemeContext)
   const calMetric = metrics.find(m => m.key === 'calories') || metrics[0]
   if (!calMetric || !calMetric.goal) return null
 
@@ -391,6 +397,7 @@ function WeeklyStrip({ history, metrics }) {
 
 // ── Shared section header ─────────────────────────────────────────────────────
 function SectionLabel({ children }) {
+  const T = useContext(ThemeContext)
   return (
     <div style={{ fontSize: '11px', fontWeight: '600', color: '#666666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
       {children}
@@ -399,6 +406,7 @@ function SectionLabel({ children }) {
 }
 
 function Card({ children, style }) {
+  const T = useContext(ThemeContext)
   return (
     <div style={{ backgroundColor: T.card, borderRadius: '12px', border: `1px solid ${T.border}`, padding: '16px', marginBottom: '16px', ...style }}>
       {children}
@@ -677,13 +685,16 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: T.muted }}>Loading...</div>
-      </div>
+      <ThemeContext.Provider value={T}>
+        <div style={{ minHeight: '100vh', backgroundColor: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ color: T.muted }}>Loading...</div>
+        </div>
+      </ThemeContext.Provider>
     )
   }
 
   return (
+    <ThemeContext.Provider value={T}>
     <div style={{ minHeight: '100vh', backgroundColor: T.bg, padding: '16px 12px', paddingBottom: '40px' }}>
       {showExport && (
         <ExportView
