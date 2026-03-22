@@ -2205,11 +2205,12 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             }}>
               <h2 style={{
                 margin: 0,
-                fontSize: '12px',
-                fontWeight: '600',
-                color: T.faint,
+                fontSize: '13px',
+                fontWeight: '700',
+                color: T.muted,
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '1px',
+                fontFamily: "'Barlow Condensed', sans-serif"
               }}>
                 Daily Habits
               </h2>
@@ -2219,7 +2220,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   if ((item.frequency || 'daily') === 'multiple') return (item.count || 0) >= (item.targetCount || 1)
                   return item.checked
                 }).length
-                return <span style={{ fontSize: '12px', color: T.faint }}>{completed}/{displayItems.length}</span>
+                return <span style={{ fontSize: '12px', color: T.muted }}>{completed}/{displayItems.length}</span>
               })()}
             </div>
             {/* Progress bar */}
@@ -2237,7 +2238,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               )
             })()}
             {loadingPastDay ? (
-              <div style={{ textAlign: 'center', padding: '20px', color: T.faint, fontSize: '13px' }}>
+              <div style={{ textAlign: 'center', padding: '20px', color: T.muted, fontSize: '13px' }}>
                 Loading...
               </div>
             ) : (
@@ -2330,11 +2331,12 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           <div style={{ marginBottom: '24px' }}>
             <h2 style={{
               margin: '0 0 12px 0',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: T.faint,
+              fontSize: '13px',
+              fontWeight: '700',
+              color: T.muted,
               textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '1px',
+              fontFamily: "'Barlow Condensed', sans-serif"
             }}>
               Hydration
             </h2>
@@ -2396,7 +2398,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   </div>
                   <div style={{
                     fontSize: '12px',
-                    color: T.faint,
+                    color: T.muted,
                     fontWeight: '500',
                     letterSpacing: '0.5px',
                     marginBottom: waterGoal > 0 ? '4px' : '0'
@@ -2488,11 +2490,12 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             }}>
               <h2 style={{
                 margin: '0',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: T.faint,
+                fontSize: '13px',
+                fontWeight: '700',
+                color: T.muted,
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '1px',
+                fontFamily: "'Barlow Condensed', sans-serif"
               }}>
                 Nutrition
               </h2>
@@ -2502,7 +2505,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     padding: '4px 10px',
                     backgroundColor: 'transparent',
                     border: 'none',
-                    color: T.faint,
+                    color: T.muted,
                     fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -2514,7 +2517,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     padding: '4px 10px',
                     backgroundColor: 'transparent',
                     border: 'none',
-                    color: showNutritionLog ? '#FFFFFF' : '#666666',
+                    color: showNutritionLog ? T.text : T.muted,
                     fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -2561,7 +2564,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     return (
                       <div key={entryIndex} style={{
                         padding: '10px 14px',
-                        borderBottom: reverseIdx < displayNutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                        borderBottom: reverseIdx < displayNutritionHistory.length - 1 ? `1px solid ${T.border}` : 'none',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -2591,7 +2594,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           }}>
                             {valuesList.join(', ')}
                           </div>
-                          <div style={{ fontSize: '11px', color: T.faint, marginTop: '2px' }}>
+                          <div style={{ fontSize: '11px', color: T.muted, marginTop: '2px' }}>
                             Manual <span style={{ marginLeft: '6px' }}>{time}</span>
                           </div>
                         </div>
@@ -2655,7 +2658,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           whiteSpace: 'nowrap'
                         }}>
                           {entryType}
-                          <span style={{ color: T.faint, fontWeight: '400', marginLeft: '6px', fontSize: '11px' }}>{time}</span>
+                          <span style={{ color: T.muted, fontWeight: '400', marginLeft: '6px', fontSize: '11px' }}>{time}</span>
                         </div>
                         <div style={{
                           fontSize: '12px',
@@ -2704,41 +2707,41 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
 
                 // Calculate progress and colors based on goal type
                 let progress = 0
-                let fillColor = '#f0f9ff'
-                let statusColor = '#666666'
+                let fillColor = 'rgba(10,132,255,0.10)'
+                let statusColor = T.muted
                 let goalLabel = ''
 
                 if (goal > 0) {
                   if (goalType === 'min') {
                     progress = Math.min(value / goal * 100, 100)
-                    fillColor = progress >= 100 ? '#dcfce7' : '#f0f9ff'
-                    statusColor = progress >= 100 ? '#10b981' : '#666666'
+                    fillColor = progress >= 100 ? 'rgba(48,209,88,0.12)' : 'rgba(10,132,255,0.10)'
+                    statusColor = progress >= 100 ? '#30D158' : T.muted
                     goalLabel = `Goal: ${goal}+`
                   } else if (goalType === 'max') {
                     progress = Math.min(value / goal * 100, 100)
                     const ratio = value / goal
                     if (ratio > 1) {
-                      fillColor = '#fee2e2'
-                      statusColor = '#ef4444'
+                      fillColor = 'rgba(255,69,58,0.12)'
+                      statusColor = '#FF453A'
                     } else if (ratio > 0.8) {
-                      fillColor = '#fef9c3'
-                      statusColor = '#f59e0b'
+                      fillColor = 'rgba(255,159,10,0.12)'
+                      statusColor = '#FF9F0A'
                     } else {
-                      fillColor = '#dcfce7'
-                      statusColor = '#10b981'
+                      fillColor = 'rgba(48,209,88,0.12)'
+                      statusColor = '#30D158'
                     }
                     goalLabel = `Limit: ${goal}`
                   } else if (goalType === 'range' && goalMax > 0) {
                     progress = Math.min(value / goalMax * 100, 100)
                     if (value >= goal && value <= goalMax) {
-                      fillColor = '#dcfce7'
-                      statusColor = '#10b981'
+                      fillColor = 'rgba(48,209,88,0.12)'
+                      statusColor = '#30D158'
                     } else if (value < goal) {
-                      fillColor = '#f0f9ff'
-                      statusColor = '#666666'
+                      fillColor = 'rgba(10,132,255,0.10)'
+                      statusColor = T.muted
                     } else {
-                      fillColor = '#fee2e2'
-                      statusColor = '#ef4444'
+                      fillColor = 'rgba(255,69,58,0.12)'
+                      statusColor = '#FF453A'
                     }
                     goalLabel = `Range: ${goal}–${goalMax}`
                   }
@@ -2753,7 +2756,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   }} style={{
                     padding: '16px',
                     backgroundColor: T.card,
-                    border: isEditing ? '1px solid #3b82f6' : '1px solid #2C2C2C',
+                    border: isEditing ? '1px solid #0A84FF' : `1px solid ${T.border}`,
                     borderRadius: '10px',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     position: 'relative',
@@ -2786,9 +2789,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                         )}
                         <div style={{
                           fontSize: '11px',
-                          color: T.faint,
-                          fontWeight: '500',
-                          letterSpacing: '0.5px'
+                          color: T.muted,
+                          fontWeight: '600',
+                          letterSpacing: '0.8px',
+                          textTransform: 'uppercase',
+                          fontFamily: "'Barlow Condensed', sans-serif"
                         }}>
                           {metric.name}
                         </div>
@@ -2838,7 +2843,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                             letterSpacing: '-1px'
                           }}>
                             {value}
-                            {metric.unit && <span style={{ fontSize: '14px', color: T.faint, fontWeight: '500' }}> {metric.unit}</span>}
+                            {metric.unit && <span style={{ fontSize: '14px', color: T.muted, fontWeight: '500' }}> {metric.unit}</span>}
                           </div>
                           {goal > 0 && (
                             <div style={{
