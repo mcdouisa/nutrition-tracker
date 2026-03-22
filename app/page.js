@@ -1851,9 +1851,9 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 onClick={() => user ? setShowUserMenu(!showUserMenu) : router.push('/login')}
                 style={{
                   padding: '8px 12px',
-                  backgroundColor: user ? 'rgba(48,209,88,0.12)' : '#1A1A1A',
+                  backgroundColor: user ? 'rgba(48,209,88,0.12)' : T.card,
                   border: '1px solid',
-                  borderColor: user ? 'rgba(48,209,88,0.35)' : '#2C2C2C',
+                  borderColor: user ? 'rgba(48,209,88,0.35)' : T.border,
                   borderRadius: '8px',
                   color: user ? '#30D158' : '#888888',
                   fontSize: '12px',
@@ -2043,8 +2043,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowChat(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: showChat ? '#0A84FF' : '#1A1A1A',
-                border: `1px solid ${showChat ? '#0A84FF' : '#2C2C2C'}`,
+                backgroundColor: showChat ? '#0A84FF' : T.card,
+                border: `1px solid ${showChat ? '#0A84FF' : T.border}`,
                 borderRadius: '8px',
                 color: T.text,
                 fontSize: '12px',
@@ -2082,8 +2082,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowSettings(true)}
               style={{
                 padding: '10px 8px',
-                backgroundColor: showSettings ? '#0A84FF' : '#1A1A1A',
-                border: `1px solid ${showSettings ? '#0A84FF' : '#2C2C2C'}`,
+                backgroundColor: showSettings ? '#0A84FF' : T.card,
+                border: `1px solid ${showSettings ? '#0A84FF' : T.border}`,
                 borderRadius: '8px',
                 color: T.text,
                 fontSize: '12px',
