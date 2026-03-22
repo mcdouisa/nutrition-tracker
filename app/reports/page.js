@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
 import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr } from '../../lib/dataSync'
 
+const DARK  = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#242424', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888' }
+const LIGHT = { bg: '#F5F5F5', card: '#FFFFFF',  card2: '#EBEBEB', border: '#E0E0E0', text: '#1A1A1A', muted: '#666666' }
+
 // ── Time-of-day line chart ────────────────────────────────────────────────────
 function TimeOfDayChart({ filteredHistory, metrics }) {
   const timeBlocks = [
@@ -57,7 +60,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
     return (
       <div style={{ padding: '32px 16px', textAlign: 'center', color: '#666666' }}>
         <div style={{ fontSize: '28px', marginBottom: '8px', opacity: 0.3 }}>📈</div>
-        <div style={{ fontSize: '13px', color: '#888888' }}>
+        <div style={{ fontSize: '13px', color: T.muted }}>
           No meal timing data yet — log meals with the AI to see patterns
         </div>
       </div>
@@ -146,7 +149,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
           const hasValues = blockData[metric.key].some(v => v > 0)
           if (!hasValues) return null
           return (
-            <div key={metric.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#888888' }}>
+            <div key={metric.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: T.muted }}>
               <span style={{
                 width: '10px', height: '3px',
                 backgroundColor: metric.color || colors[mi % colors.length],
@@ -233,13 +236,13 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
   const generatedAt = today.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: '#1A1A1A', overflowY: 'auto', padding: '32px 24px' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: T.card, overflowY: 'auto', padding: '32px 24px' }}>
       <style>{`@media print { .no-print { display: none !important; } body { background: white !important; } }`}</style>
       <div className="no-print" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginBottom: '28px' }}>
         <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#0A84FF', border: 'none', borderRadius: '8px', color: '#1A1A1A', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
           Print / Save as PDF
         </button>
-        <button onClick={onClose} style={{ padding: '10px 20px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '8px', color: '#888888', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
+        <button onClick={onClose} style={{ padding: '10px 20px', backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '8px', color: T.muted, fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
           Close
         </button>
       </div>
@@ -248,7 +251,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
           <div style={{ fontSize: '11px', fontWeight: '700', color: '#0A84FF', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '6px' }}>
             Lytz · Daily Health Report
           </div>
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#FFFFFF', letterSpacing: '-0.5px' }}>{dateLabel}</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: T.text, letterSpacing: '-0.5px' }}>{dateLabel}</div>
         </div>
         {!todayEntry ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: '#666666', fontSize: '15px' }}>No data recorded for today yet.</div>
@@ -259,7 +262,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
                 <div style={{ fontSize: '12px', fontWeight: '700', color: '#666666', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Nutrition</div>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #2C2C2C' }}>
+                    <tr style={{ borderBottom: `1px solid ${T.border}` }}>
                       {['Metric', 'Value', 'Goal', 'Progress'].map(h => (
                         <th key={h} style={{ textAlign: h === 'Metric' ? 'left' : 'right', padding: '6px 8px', fontSize: '11px', fontWeight: '600', color: '#666666' }}>{h}</th>
                       ))}
@@ -282,8 +285,8 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
                       }
                       return (
                         <tr key={metric.key} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                          <td style={{ padding: '8px', fontSize: '14px', color: '#FFFFFF', fontWeight: '500' }}>{metric.name}</td>
-                          <td style={{ padding: '8px', fontSize: '14px', color: '#FFFFFF', textAlign: 'right', fontWeight: '600' }}>{val}{metric.unit || ''}</td>
+                          <td style={{ padding: '8px', fontSize: '14px', color: T.text, fontWeight: '500' }}>{metric.name}</td>
+                          <td style={{ padding: '8px', fontSize: '14px', color: T.text, textAlign: 'right', fontWeight: '600' }}>{val}{metric.unit || ''}</td>
                           <td style={{ padding: '8px', fontSize: '14px', color: '#666666', textAlign: 'right' }}>{goalDisplay}</td>
                           <td style={{ padding: '8px', textAlign: 'right' }}>
                             {pct !== null ? <span style={{ fontSize: '12px', fontWeight: '600', color: pct >= 100 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626' }}>{pct}%</span> : '—'}
@@ -298,8 +301,8 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
             <div style={{ marginBottom: '28px' }}>
               <div style={{ fontSize: '12px', fontWeight: '700', color: '#666666', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>Hydration</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f5f5f5' }}>
-                <span style={{ fontSize: '14px', fontWeight: '500', color: '#FFFFFF' }}>Water Intake</span>
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: T.text }}>Water Intake</span>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>
                   {todayEntry.water || 0} oz
                   {waterGoal > 0 && <span style={{ fontWeight: '400', color: '#666666' }}> / {waterGoal} oz ({Math.min(Math.round(((todayEntry.water || 0) / waterGoal) * 100), 100)}%)</span>}
                 </span>
@@ -359,7 +362,7 @@ function WeeklyStrip({ history, metrics }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#1A1A1A', borderRadius: '12px', border: '1px solid #2C2C2C', padding: '16px', marginBottom: '16px' }}>
+    <div style={{ backgroundColor: T.card, borderRadius: '12px', border: `1px solid ${T.border}`, padding: '16px', marginBottom: '16px' }}>
       <div style={{ fontSize: '11px', fontWeight: '600', color: '#666666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px' }}>
         This Week — {calMetric.name}
       </div>
@@ -397,7 +400,7 @@ function SectionLabel({ children }) {
 
 function Card({ children, style }) {
   return (
-    <div style={{ backgroundColor: '#1A1A1A', borderRadius: '12px', border: '1px solid #2C2C2C', padding: '16px', marginBottom: '16px', ...style }}>
+    <div style={{ backgroundColor: T.card, borderRadius: '12px', border: `1px solid ${T.border}`, padding: '16px', marginBottom: '16px', ...style }}>
       {children}
     </div>
   )
@@ -406,6 +409,12 @@ function Card({ children, style }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ReportsPage() {
   const { user, isConfigured } = useAuth()
+  const [darkMode, setDarkMode] = useState(true)
+  useEffect(() => {
+    const saved = localStorage.getItem('lytz-darkMode')
+    if (saved !== null) setDarkMode(saved === 'true')
+  }, [])
+  const T = darkMode ? DARK : LIGHT
   const [history, setHistory] = useState([])
   const [metrics, setMetrics] = useState([])
   const [viewMode, setViewMode] = useState('daily') // 'daily' | 'weekly' | 'monthly'
@@ -668,14 +677,14 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#888888' }}>Loading...</div>
+      <div style={{ minHeight: '100vh', backgroundColor: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: T.muted }}>Loading...</div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', padding: '16px 12px', paddingBottom: '40px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: T.bg, padding: '16px 12px', paddingBottom: '40px' }}>
       {showExport && (
         <ExportView
           todayEntry={history.find(d => d.date === toLocalDateStr()) || null}
@@ -687,28 +696,28 @@ export default function ReportsPage() {
       {/* Edit Modal */}
       {editingDay && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-          <div style={{ backgroundColor: '#1A1A1A', borderRadius: '16px', padding: '24px', maxWidth: '400px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#FFFFFF' }}>Edit Entry</h3>
-            <div style={{ fontSize: '13px', color: '#888888', marginBottom: '20px' }}>
+          <div style={{ backgroundColor: T.card, borderRadius: '16px', padding: '24px', maxWidth: '400px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: T.text }}>Edit Entry</h3>
+            <div style={{ fontSize: '13px', color: T.muted, marginBottom: '20px' }}>
               {parseLocalDate(editingDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </div>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#888888', marginBottom: '6px' }}>💧 Water (oz)</label>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: T.muted, marginBottom: '6px' }}>💧 Water (oz)</label>
               <input type="number" value={editValues.water || ''} onChange={e => setEditValues({ ...editValues, water: e.target.value })}
-                style={{ width: '100%', padding: '12px', backgroundColor: '#0D0D0D', border: '1px solid #2C2C2C', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '12px', backgroundColor: T.bg, border: `1px solid ${T.border}`, borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
             </div>
             {metrics.map(metric => (
               <div key={metric.key} style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#888888', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: T.muted, marginBottom: '6px' }}>
                   {metric.icon} {metric.name} ({metric.unit})
                 </label>
                 <input type="number" value={editValues[metric.key] || ''} onChange={e => setEditValues({ ...editValues, [metric.key]: e.target.value })}
-                  style={{ width: '100%', padding: '12px', backgroundColor: '#0D0D0D', border: '1px solid #2C2C2C', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '12px', backgroundColor: T.bg, border: `1px solid ${T.border}`, borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
             ))}
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
               <button onClick={() => { setEditingDay(null); setEditValues({}) }}
-                style={{ flex: 1, padding: '12px', backgroundColor: '#222222', border: 'none', borderRadius: '8px', color: '#888888', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
+                style={{ flex: 1, padding: '12px', backgroundColor: T.card2, border: 'none', borderRadius: '8px', color: T.muted, fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
                 Cancel
               </button>
               <button onClick={saveEditedDay}
@@ -725,15 +734,15 @@ export default function ReportsPage() {
         {/* Header */}
         <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ margin: '0 0 4px 0', fontSize: '22px', fontWeight: '600', color: '#FFFFFF', letterSpacing: '-0.5px' }}>Reports</h1>
-            <div style={{ color: '#888888', fontSize: '13px' }}>Track your progress</div>
+            <h1 style={{ margin: '0 0 4px 0', fontSize: '22px', fontWeight: '600', color: T.text, letterSpacing: '-0.5px' }}>Reports</h1>
+            <div style={{ color: T.muted, fontSize: '13px' }}>Track your progress</div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button onClick={() => setShowExport(true)}
               style={{ padding: '8px 14px', backgroundColor: '#f0f7f8', border: '1px solid #0A84FF', borderRadius: '8px', color: '#0A84FF', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
               Export Today
             </button>
-            <Link href="/" style={{ padding: '8px 14px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '8px', color: '#FFFFFF', fontSize: '13px', fontWeight: '500', textDecoration: 'none' }}>
+            <Link href="/" style={{ padding: '8px 14px', backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '8px', color: T.text, fontSize: '13px', fontWeight: '500', textDecoration: 'none' }}>
               ← Back
             </Link>
           </div>
@@ -771,12 +780,12 @@ export default function ReportsPage() {
                     return (
                       <div key={m.key}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '13px', color: '#FFFFFF' }}>{m.icon} {m.name}</span>
+                          <span style={{ fontSize: '13px', color: T.text }}>{m.icon} {m.name}</span>
                           <span style={{ fontSize: '13px', fontWeight: '600', color: pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626' }}>
                             {hits}/{stats.days} days
                           </span>
                         </div>
-                        <div style={{ height: '6px', backgroundColor: '#242424', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '6px', backgroundColor: T.card2, borderRadius: '3px', overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626', borderRadius: '3px', transition: 'width 0.3s' }} />
                         </div>
                       </div>
@@ -792,12 +801,12 @@ export default function ReportsPage() {
                 <SectionLabel>Daily Averages</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                   {metrics.map(metric => (
-                    <div key={metric.key} style={{ padding: '16px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '10px' }}>
+                    <div key={metric.key} style={{ padding: '16px', backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                         {metric.icon && <span style={{ fontSize: '14px' }}>{metric.icon}</span>}
-                        <span style={{ fontSize: '12px', color: '#888888', fontWeight: '500' }}>{metric.name}</span>
+                        <span style={{ fontSize: '12px', color: T.muted, fontWeight: '500' }}>{metric.name}</span>
                       </div>
-                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: '600', color: T.text, marginBottom: '2px' }}>
                         {stats.averages[metric.key] || 0}
                         <span style={{ fontSize: '12px', color: '#666666', fontWeight: '500' }}> {metric.unit}/day</span>
                       </div>
@@ -820,7 +829,7 @@ export default function ReportsPage() {
                   <div style={{ fontSize: '32px', fontWeight: '700', color: streaks.trackingStreak > 0 ? '#f59e0b' : '#ccc', lineHeight: '1' }}>
                     {streaks.trackingStreak > 0 && '🔥 '}{streaks.trackingStreak}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#888888', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: T.muted, marginTop: '4px' }}>
                     day{streaks.trackingStreak !== 1 ? 's' : ''} in a row
                   </div>
                 </div>
@@ -842,7 +851,7 @@ export default function ReportsPage() {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {['Yesterday', '2 days ago', '3 days ago'].map((label, i) => (
                   <button key={i} onClick={() => addToPreviousDay(i + 1)}
-                    style={{ padding: '8px 14px', backgroundColor: '#222222', border: '1px solid #2C2C2C', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
+                    style={{ padding: '8px 14px', backgroundColor: T.card2, border: `1px solid ${T.border}`, borderRadius: '6px', color: T.text, fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
                     {label}
                   </button>
                 ))}
@@ -857,9 +866,9 @@ export default function ReportsPage() {
             {/* Date nav */}
             <Card style={{ padding: '12px 16px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>←</button>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>{formatDateRange()}</div>
-                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>→</button>
+                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: T.card2, border: 'none', borderRadius: '6px', color: T.muted, fontSize: '16px', cursor: 'pointer' }}>←</button>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>{formatDateRange()}</div>
+                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: T.card2, border: 'none', borderRadius: '6px', color: T.muted, fontSize: '16px', cursor: 'pointer' }}>→</button>
               </div>
             </Card>
 
@@ -868,7 +877,7 @@ export default function ReportsPage() {
               <Card>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>{stats.days}</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: T.text }}>{stats.days}</div>
                     <div style={{ fontSize: '11px', color: '#666666' }}>Days logged</div>
                   </div>
                   {metrics.filter(m => m.goal).slice(0, 2).map(m => {
@@ -891,7 +900,7 @@ export default function ReportsPage() {
                   <SectionLabel>Day by Day</SectionLabel>
                   {metrics.length > 1 && (
                     <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
-                      style={{ fontSize: '12px', padding: '4px 8px', border: '1px solid #2C2C2C', borderRadius: '6px', color: '#888888', backgroundColor: '#1A1A1A' }}>
+                      style={{ fontSize: '12px', padding: '4px 8px', border: `1px solid ${T.border}`, borderRadius: '6px', color: T.muted, backgroundColor: T.card }}>
                       {metrics.map(m => <option key={m.key} value={m.key}>{m.icon} {m.name}</option>)}
                     </select>
                   )}
@@ -922,13 +931,13 @@ export default function ReportsPage() {
                 <SectionLabel>Hydration</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: T.text }}>
                       {filteredHistory.reduce((s, d) => s + (d.water || 0), 0)}
                     </div>
                     <div style={{ fontSize: '11px', color: '#666666' }}>Total oz</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: T.text }}>
                       {filteredHistory.length > 0 ? Math.round(filteredHistory.reduce((s, d) => s + (d.water || 0), 0) / filteredHistory.length) : 0}
                     </div>
                     <div style={{ fontSize: '11px', color: '#666666' }}>Avg/day oz</div>
@@ -945,9 +954,9 @@ export default function ReportsPage() {
             {/* Date nav */}
             <Card style={{ padding: '12px 16px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>←</button>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>{formatDateRange()}</div>
-                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: '#222222', border: 'none', borderRadius: '6px', color: '#888888', fontSize: '16px', cursor: 'pointer' }}>→</button>
+                <button onClick={() => navigate(-1)} style={{ padding: '8px 12px', backgroundColor: T.card2, border: 'none', borderRadius: '6px', color: T.muted, fontSize: '16px', cursor: 'pointer' }}>←</button>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>{formatDateRange()}</div>
+                <button onClick={() => navigate(1)} style={{ padding: '8px 12px', backgroundColor: T.card2, border: 'none', borderRadius: '6px', color: T.muted, fontSize: '16px', cursor: 'pointer' }}>→</button>
               </div>
             </Card>
 
@@ -967,12 +976,12 @@ export default function ReportsPage() {
                 <SectionLabel>Monthly Averages</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                   {metrics.map(metric => (
-                    <div key={metric.key} style={{ padding: '16px', backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: '10px' }}>
+                    <div key={metric.key} style={{ padding: '16px', backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                         {metric.icon && <span style={{ fontSize: '14px' }}>{metric.icon}</span>}
-                        <span style={{ fontSize: '12px', color: '#888888', fontWeight: '500' }}>{metric.name}</span>
+                        <span style={{ fontSize: '12px', color: T.muted, fontWeight: '500' }}>{metric.name}</span>
                       </div>
-                      <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: '600', color: T.text, marginBottom: '2px' }}>
                         {stats.averages[metric.key] || 0}
                         <span style={{ fontSize: '12px', color: '#666666', fontWeight: '500' }}> {metric.unit}/day</span>
                       </div>
@@ -995,12 +1004,12 @@ export default function ReportsPage() {
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     {metrics.length > 1 && (
                       <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
-                        style={{ fontSize: '12px', padding: '4px 8px', border: '1px solid #2C2C2C', borderRadius: '6px', color: '#888888', backgroundColor: '#1A1A1A' }}>
+                        style={{ fontSize: '12px', padding: '4px 8px', border: `1px solid ${T.border}`, borderRadius: '6px', color: T.muted, backgroundColor: T.card }}>
                         {metrics.map(m => <option key={m.key} value={m.key}>{m.icon} {m.name}</option>)}
                       </select>
                     )}
                     {/* Granularity toggle */}
-                    <div style={{ display: 'flex', backgroundColor: '#222222', borderRadius: '6px', padding: '2px' }}>
+                    <div style={{ display: 'flex', backgroundColor: T.card2, borderRadius: '6px', padding: '2px' }}>
                       {[['daily', '30 Day'], ['weekly', '4 Week']].map(([g, label]) => (
                         <button key={g} onClick={() => setMonthlyGranularity(g)}
                           style={{
@@ -1045,7 +1054,7 @@ export default function ReportsPage() {
                   <div style={{ fontSize: '32px', fontWeight: '700', color: streaks.trackingStreak > 0 ? '#f59e0b' : '#ccc', lineHeight: '1' }}>
                     {streaks.trackingStreak > 0 && '🔥 '}{streaks.trackingStreak}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#888888', marginTop: '4px' }}>day{streaks.trackingStreak !== 1 ? 's' : ''} in a row</div>
+                  <div style={{ fontSize: '12px', color: T.muted, marginTop: '4px' }}>day{streaks.trackingStreak !== 1 ? 's' : ''} in a row</div>
                 </div>
                 <div style={{ fontSize: '48px', opacity: 0.1 }}>🔥</div>
               </div>
@@ -1057,13 +1066,13 @@ export default function ReportsPage() {
                 <SectionLabel>Hydration</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: T.text }}>
                       {filteredHistory.reduce((s, d) => s + (d.water || 0), 0)}
                     </div>
                     <div style={{ fontSize: '11px', color: '#666666' }}>Total oz</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '600', color: T.text }}>
                       {filteredHistory.length > 0 ? Math.round(filteredHistory.reduce((s, d) => s + (d.water || 0), 0) / filteredHistory.length) : 0}
                     </div>
                     <div style={{ fontSize: '11px', color: '#666666' }}>Avg/day oz</div>

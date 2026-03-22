@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/AuthContext'
+
+const DARK  = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#242424', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888' }
+const LIGHT = { bg: '#F5F5F5', card: '#FFFFFF',  card2: '#EBEBEB', border: '#E0E0E0', text: '#1A1A1A', muted: '#666666' }
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -14,6 +17,12 @@ export default function LoginPage() {
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const { signIn, signUp, resetPassword, isConfigured } = useAuth()
+  const [darkMode, setDarkMode] = useState(true)
+  useEffect(() => {
+    const saved = localStorage.getItem('lytz-darkMode')
+    if (saved !== null) setDarkMode(saved === 'true')
+  }, [])
+  const T = darkMode ? DARK : LIGHT
   const router = useRouter()
 
   const handleSubmit = async (e) => {
@@ -126,14 +135,14 @@ export default function LoginPage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#1A1A1A',
+        backgroundColor: T.card,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px'
       }}>
         <div style={{
-          backgroundColor: '#1A1A1A',
+          backgroundColor: T.card,
           borderRadius: '16px',
           padding: '32px 24px',
           maxWidth: '400px',
@@ -155,18 +164,18 @@ export default function LoginPage() {
           <p style={{
             margin: '0 0 20px 0',
             fontSize: '14px',
-            color: '#888888',
+            color: T.muted,
             lineHeight: '1.6'
           }}>
             To enable cloud sync and accounts, please set up Firebase:
           </p>
           <div style={{
             textAlign: 'left',
-            backgroundColor: '#222222',
+            backgroundColor: T.card2,
             borderRadius: '8px',
             padding: '16px',
             fontSize: '13px',
-            color: '#FFFFFF',
+            color: T.text,
             lineHeight: '1.8'
           }}>
             <strong>1.</strong> Go to console.firebase.google.com<br />
@@ -201,14 +210,14 @@ export default function LoginPage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#1A1A1A',
+        backgroundColor: T.card,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px'
       }}>
         <div style={{
-          backgroundColor: '#1A1A1A',
+          backgroundColor: T.card,
           borderRadius: '16px',
           padding: '32px 24px',
           maxWidth: '400px',
@@ -230,7 +239,7 @@ export default function LoginPage() {
             <p style={{
               margin: 0,
               fontSize: '14px',
-              color: '#888888'
+              color: T.muted
             }}>
               Enter your email to receive a reset link
             </p>
@@ -275,7 +284,7 @@ export default function LoginPage() {
                 display: 'block',
                 fontSize: '12px',
                 fontWeight: '500',
-                color: '#888888',
+                color: T.muted,
                 marginBottom: '6px'
               }}>
                 Email
@@ -288,10 +297,10 @@ export default function LoginPage() {
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  backgroundColor: '#0D0D0D',
-                  border: '1px solid #2C2C2C',
+                  backgroundColor: T.bg,
+                  border: `1px solid ${T.border}`,
                   borderRadius: '8px',
-                  color: '#FFFFFF',
+                  color: T.text,
                   fontSize: '16px',
                   boxSizing: 'border-box',
                   outline: 'none'
@@ -353,7 +362,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#0D0D0D',
+      backgroundColor: T.bg,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -405,7 +414,7 @@ export default function LoginPage() {
               display: 'block',
               fontSize: '12px',
               fontWeight: '500',
-              color: '#888888',
+              color: T.muted,
               marginBottom: '6px'
             }}>
               Email
@@ -418,10 +427,10 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                backgroundColor: '#0D0D0D',
-                border: '1px solid #2C2C2C',
+                backgroundColor: T.bg,
+                border: `1px solid ${T.border}`,
                 borderRadius: '8px',
-                color: '#FFFFFF',
+                color: T.text,
                 fontSize: '16px',
                 boxSizing: 'border-box',
                 outline: 'none'
@@ -434,7 +443,7 @@ export default function LoginPage() {
               display: 'block',
               fontSize: '12px',
               fontWeight: '500',
-              color: '#888888',
+              color: T.muted,
               marginBottom: '6px'
             }}>
               Password
@@ -447,10 +456,10 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                backgroundColor: '#0D0D0D',
-                border: '1px solid #2C2C2C',
+                backgroundColor: T.bg,
+                border: `1px solid ${T.border}`,
                 borderRadius: '8px',
-                color: '#FFFFFF',
+                color: T.text,
                 fontSize: '16px',
                 boxSizing: 'border-box',
                 outline: 'none'
@@ -470,7 +479,7 @@ export default function LoginPage() {
                 style={{
                   backgroundColor: 'transparent',
                   border: 'none',
-                  color: '#888888',
+                  color: T.muted,
                   fontSize: '12px',
                   fontWeight: '500',
                   cursor: 'pointer',
@@ -488,7 +497,7 @@ export default function LoginPage() {
                 display: 'block',
                 fontSize: '12px',
                 fontWeight: '500',
-                color: '#888888',
+                color: T.muted,
                 marginBottom: '6px'
               }}>
                 Confirm Password
@@ -501,10 +510,10 @@ export default function LoginPage() {
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  backgroundColor: '#0D0D0D',
-                  border: '1px solid #2C2C2C',
+                  backgroundColor: T.bg,
+                  border: `1px solid ${T.border}`,
                   borderRadius: '8px',
-                  color: '#FFFFFF',
+                  color: T.text,
                   fontSize: '16px',
                   boxSizing: 'border-box',
                   outline: 'none'
@@ -540,7 +549,7 @@ export default function LoginPage() {
           paddingTop: '24px',
           borderTop: '1px solid #2C2C2C'
         }}>
-          <span style={{ fontSize: '13px', color: '#888888' }}>
+          <span style={{ fontSize: '13px', color: T.muted }}>
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}
           </span>
           <button
@@ -571,9 +580,9 @@ export default function LoginPage() {
             marginTop: '16px',
             padding: '12px',
             backgroundColor: 'transparent',
-            border: '1px solid #2C2C2C',
+            border: `1px solid ${T.border}`,
             borderRadius: '8px',
-            color: '#888888',
+            color: T.muted,
             fontSize: '13px',
             fontWeight: '500',
             cursor: 'pointer'
