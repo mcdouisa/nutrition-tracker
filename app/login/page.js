@@ -377,7 +377,7 @@ export default function LoginPage() {
           <img
             src="/logo.png"
             alt="Lytz"
-            style={{ width: '100%', maxWidth: '420px', height: 'auto', display: 'block', margin: '0 auto 4px' }}
+            style={{ width: '100%', maxWidth: '420px', height: 'auto', display: 'block', margin: '0 auto 4px', mixBlendMode: 'screen' }}
           />
           <p style={{
             margin: 0,
