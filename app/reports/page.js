@@ -166,7 +166,6 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
         Averaged across {daysWithData} day{daysWithData !== 1 ? 's' : ''} with meal data
       </div>
     </div>
-    </ThemeContext.Provider>
   )
 }
 
@@ -1096,5 +1095,6 @@ export default function ReportsPage() {
 
       </div>
     </div>
+    </ThemeContext.Provider>
   )
 }
