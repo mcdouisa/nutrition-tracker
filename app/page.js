@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AIChatModal } from './ai-chat-modal'
@@ -45,6 +45,9 @@ const LIGHT = {
   muted:  '#666666',
   faint:  '#999999',
 }
+
+// Theme context — makes T available to all sub-components without prop drilling
+const ThemeContext = createContext(DARK)
 
 export default function NutritionTracker() {
   const { user, loading: authLoading, signOut, isConfigured } = useAuth()
@@ -1683,6 +1686,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
   }
 
   return (
+    <ThemeContext.Provider value={T}>
     <div style={{
       minHeight: '100vh',
       backgroundColor: T.bg,
@@ -1821,26 +1825,6 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               </div>
             </div>
 
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              style={{
-                padding: '7px 10px',
-                backgroundColor: T.card2,
-                border: `1px solid ${T.border}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                lineHeight: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-
             {/* Return to Today button — only shown when viewing a past day */}
             {viewDate !== null && (
               <button
@@ -1927,6 +1911,30 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       {user.email}
                     </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false)
+                      setSettingsTab('appSettings')
+                      setShowSettings(true)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderBottom: `1px solid ${T.border}`,
+                      color: T.text,
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span>⚙️</span> Settings
+                  </button>
                   <button
                     onClick={() => {
                       setShowUserMenu(false)
@@ -3094,6 +3102,20 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           onClose={() => setShowSettings(false)}
           settingsTab={settingsTab}
           setSettingsTab={setSettingsTab}
+          darkMode={darkMode}
+          onToggleTheme={toggleTheme}
+          onSignOut={async () => {
+            setSigningOut(true)
+            try {
+              await saveTodayData(user.uid, { date: new Date().toDateString(), checklistItems, nutritionMetrics, water, waterHistory, nutritionHistory })
+              await signOut()
+            } catch(e) { console.error(e) }
+            localStorage.removeItem('nutrition-data')
+            localStorage.removeItem('nutrition-history')
+            localStorage.removeItem('firebase-migrated')
+            setSigningOut(false)
+            setShowSettings(false)
+          }}
         />
       )}
 
@@ -3115,11 +3137,13 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         />
       )}
     </div>
+    </ThemeContext.Provider>
   )
 }
 
 // Water Bottle Component with delayed wave animation (smaller for mobile)
 function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
+  const T = useContext(ThemeContext)
   const [showWaves, setShowWaves] = useState(true)
   const [displayedWaterTop, setDisplayedWaterTop] = useState(waterTop)
 
@@ -3246,8 +3270,12 @@ function SettingsModal({
   onResetDay,
   onClose,
   settingsTab,
-  setSettingsTab
+  setSettingsTab,
+  darkMode,
+  onToggleTheme,
+  onSignOut
 }) {
+  const T = useContext(ThemeContext)
   const [tempChecklist, setTempChecklist] = useState([...checklistItems])
   const [tempMetrics, setTempMetrics] = useState([...nutritionMetrics])
   const [tempWater, setTempWater] = useState([...waterButtons])
@@ -3431,7 +3459,8 @@ function SettingsModal({
             { id: 'nutrition', label: 'Nutrition' },
             { id: 'water', label: 'Water' },
             { id: 'meals', label: 'Meals' },
-            { id: 'feedback', label: 'Feedback' }
+            { id: 'feedback', label: 'Feedback' },
+            { id: 'appSettings', label: '⚙️ Settings' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -3546,6 +3575,67 @@ function SettingsModal({
           {settingsTab === 'feedback' && (
             <FeedbackForm user={user} />
           )}
+
+          {settingsTab === 'appSettings' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Appearance */}
+              <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '1.5px' }}>APPEARANCE</div>
+                </div>
+                <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>
+                      {darkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: T.muted, marginTop: '2px' }}>
+                      {darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={onToggleTheme}
+                    style={{
+                      width: '52px', height: '30px', borderRadius: '15px', border: 'none', cursor: 'pointer',
+                      backgroundColor: darkMode ? '#0A84FF' : T.card2,
+                      position: 'relative', transition: 'background-color 0.2s',
+                      boxShadow: darkMode ? '0 0 10px rgba(10,132,255,0.4)' : 'none',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: '3px',
+                      left: darkMode ? '25px' : '3px',
+                      width: '24px', height: '24px', borderRadius: '50%',
+                      backgroundColor: '#fff', transition: 'left 0.2s',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                    }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Account */}
+              {user && (
+                <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '1.5px' }}>ACCOUNT</div>
+                  </div>
+                  <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ fontSize: '11px', color: T.muted, marginBottom: '2px' }}>Signed in as</div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>{user.email}</div>
+                  </div>
+                  <button
+                    onClick={onSignOut}
+                    style={{
+                      width: '100%', padding: '14px 16px', backgroundColor: 'transparent',
+                      border: 'none', color: '#ef4444', fontSize: '14px', fontWeight: '600',
+                      cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    <span>🚪</span> Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           </div>
         </div>
 
@@ -3617,6 +3707,7 @@ function SettingsModal({
 
 // Feedback Form Component
 function FeedbackForm({ user }) {
+  const T = useContext(ThemeContext)
   const [type, setType] = useState('bug')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -3746,6 +3837,7 @@ function FeedbackForm({ user }) {
 
 // Notification banner for resolved feedback
 function NotificationBanner({ notification, onDismiss }) {
+  const T = useContext(ThemeContext)
   const getNotificationContent = (notif) => {
     if (notif.type === 'feedback_resolved') {
       const typeLabel = notif.feedbackType === 'bug' ? 'bug report' :
@@ -3862,6 +3954,7 @@ function NotificationBanner({ notification, onDismiss }) {
 
 // Checklist Settings Component
 function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
+  const T = useContext(ThemeContext)
   return (
     <div>
       <div style={{ fontSize: '13px', color: T.muted, marginBottom: '16px' }}>
@@ -4009,6 +4102,7 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
 
 // Nutrition Settings Component
 function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
+  const T = useContext(ThemeContext)
   // Common food/nutrition emojis to choose from
   const iconOptions = ['📊', '🔥', '💪', '🥩', '🥚', '🥛', '🍗', '🥤', '🧈', '🥜', '🌾']
 
@@ -4207,6 +4301,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
 
 // Water Settings Component
 function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove, onMove }) {
+  const T = useContext(ThemeContext)
   return (
     <div>
       <div style={{ fontSize: '11px', color: T.muted, marginBottom: '6px', fontWeight: '500' }}>
@@ -4328,6 +4423,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
 
 // Meal Settings Component
 function MealSettings({ meals, metrics, onUpdate, onRemove }) {
+  const T = useContext(ThemeContext)
   const mealIcons = ['🍽️', '🍕', '🍔', '🥗', '🍜', '🍱', '🥪', '🌮', '🌯', '🥙', '🍳', '🥞', '🍞', '🥐', '🥓']
 
   return (
