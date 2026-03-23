@@ -2036,7 +2036,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '8px'
           }}>
             <button
@@ -2095,6 +2095,28 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             >
               Your Goals
             </button>
+            <Link
+              href="/workout"
+              style={{
+                padding: '10px 8px',
+                backgroundColor: T.card,
+                border: `1px solid ${T.border}`,
+                borderRadius: '8px',
+                color: T.text,
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              💪 Workout
+            </Link>
           </div>
         </div>
 
