@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getPrograms, savePrograms, getCurrentWorkout,
-  syncProgramsToFirestore,
+  syncProgramsToFirestore, PROGRAM_TYPES,
 } from '../../../lib/workoutSync';
 import { useAuth } from '../../../lib/AuthContext';
 
@@ -17,13 +17,22 @@ const font = { heading:"'Barlow Condensed', sans-serif", body:"'DM Sans', sans-s
 const SET_COLORS = { working:'#0A84FF', drop:'#FF9F0A', amrap:'#BF5AF2' };
 const SET_LABELS = { working:'W', drop:'D', amrap:'A' };
 
-// ─── EXERCISE MODAL (add + edit) ──────────────────────────────────────────────
-function ExerciseModal({ initial, onSave, onClose }) {
+// ─── EXERCISE MODAL (add + edit, type-aware) ─────────────────────────────────
+function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
+  const type = programType || 'strength';
+
+  const defaultSet = () => {
+    if (type === 'running')    return { distance:'1', pace:'', rest:'60' };
+    if (type === 'stretching') return { duration:'30', rest:'10' };
+    if (type === 'bodyweight') return { type:'working', reps:'8-10', weight:'BW', rest:'60' };
+    return { type:'working', reps:'8-10', weight:'', rest:'90' };
+  };
+
   const [name, setName] = useState(initial?.name || '');
   const [sets, setSets] = useState(
     initial?.sets?.length
       ? initial.sets.map(s => ({ ...s }))
-      : [{ type:'working', reps:'8-10', weight:'', rest:'90' }]
+      : [defaultSet()]
   );
 
   function updateSet(i, field, val) {
@@ -31,12 +40,146 @@ function ExerciseModal({ initial, onSave, onClose }) {
   }
   function addSet() {
     const last = sets[sets.length - 1];
-    setSets(prev => [...prev, { type: last?.type || 'working', reps: last?.reps || '8-10', weight: last?.weight || '', rest: last?.rest || '90' }]);
+    setSets(prev => [...prev, { ...last }]);
   }
   function removeSet(i) {
     if (sets.length === 1) return;
     setSets(prev => prev.filter((_, idx) => idx !== i));
   }
+
+  // Render rows based on type
+  function renderSetRows() {
+    if (type === 'running') {
+      return (
+        <>
+          <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, padding:'0 2px' }}>
+            {['#', 'DISTANCE (mi)', 'PACE (min/mi)', ''].map(h => (
+              <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+            ))}
+          </div>
+          {sets.map((s, i) => (
+            <div key={i} style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, alignItems:'center' }}>
+              <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
+              <input value={s.distance || ''} onChange={e => updateSet(i, 'distance', e.target.value)}
+                placeholder="1.0" inputMode="decimal"
+                style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 8px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
+              <input value={s.pace || ''} onChange={e => updateSet(i, 'pace', e.target.value)}
+                placeholder="8:30"
+                style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 8px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
+              <button onClick={() => removeSet(i)} disabled={sets.length === 1} style={{
+                background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,69,58,0.4)'}`,
+                borderRadius:8, width:36, height:36, color: sets.length === 1 ? C.faint : C.danger, fontSize:18,
+                display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+              }}>×</button>
+            </div>
+          ))}
+          <div style={{ marginTop:4, marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>REST BETWEEN INTERVALS (seconds)</label>
+            <input value={sets[0]?.rest || '60'} onChange={e => setSets(prev => prev.map(s => ({ ...s, rest: e.target.value })))}
+              placeholder="60" inputMode="numeric"
+              style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
+          </div>
+        </>
+      );
+    }
+
+    if (type === 'stretching') {
+      return (
+        <>
+          <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, padding:'0 2px' }}>
+            {['#', 'HOLD (sec)', 'SIDES', ''].map(h => (
+              <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+            ))}
+          </div>
+          {sets.map((s, i) => (
+            <div key={i} style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, alignItems:'center' }}>
+              <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
+              <input value={s.duration || ''} onChange={e => updateSet(i, 'duration', e.target.value)}
+                placeholder="30" inputMode="numeric"
+                style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 8px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
+              <select value={s.sides || 'both'} onChange={e => updateSet(i, 'sides', e.target.value)}
+                style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 6px', fontSize:12, color:C.white, outline:'none' }}>
+                <option value="both">Both</option>
+                <option value="each">Each Side</option>
+              </select>
+              <button onClick={() => removeSet(i)} disabled={sets.length === 1} style={{
+                background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,69,58,0.4)'}`,
+                borderRadius:8, width:36, height:36, color: sets.length === 1 ? C.faint : C.danger, fontSize:18,
+                display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+              }}>×</button>
+            </div>
+          ))}
+          <div style={{ marginTop:4, marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>REST BETWEEN SETS (seconds)</label>
+            <input value={sets[0]?.rest || '10'} onChange={e => setSets(prev => prev.map(s => ({ ...s, rest: e.target.value })))}
+              placeholder="10" inputMode="numeric"
+              style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
+          </div>
+        </>
+      );
+    }
+
+    // strength or bodyweight
+    const showWeight = type !== 'bodyweight';
+    const cols = showWeight ? '32px 1fr 80px 72px 36px' : '32px 1fr 90px 36px';
+    const headers = showWeight ? ['#', 'TYPE', 'REPS', 'WT (lbs)', ''] : ['#', 'TYPE', 'REPS', ''];
+    return (
+      <>
+        <div style={{ display:'grid', gridTemplateColumns:cols, gap:6, marginBottom:8, padding:'0 2px' }}>
+          {headers.map(h => <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>)}
+        </div>
+        {sets.map((s, i) => (
+          <div key={i} style={{ display:'grid', gridTemplateColumns:cols, gap:6, marginBottom:8, alignItems:'center' }}>
+            <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
+            <select value={s.type} onChange={e => updateSet(i, 'type', e.target.value)} style={{
+              background:C.card2, border:`1px solid ${SET_COLORS[s.type]}55`,
+              borderRadius:8, padding:'9px 6px', fontSize:12, fontWeight:700,
+              color:SET_COLORS[s.type], outline:'none',
+            }}>
+              <option value="working">Working</option>
+              {type !== 'bodyweight' && <option value="drop">Drop</option>}
+              <option value="amrap">AMRAP</option>
+            </select>
+            <input value={s.reps} onChange={e => updateSet(i, 'reps', e.target.value)}
+              placeholder="8-10"
+              style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 6px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
+            {showWeight && (
+              <input value={s.weight} onChange={e => updateSet(i, 'weight', e.target.value)}
+                placeholder="—"
+                style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 6px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
+            )}
+            <button onClick={() => removeSet(i)} disabled={sets.length === 1} style={{
+              background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,69,58,0.4)'}`,
+              borderRadius:8, width:36, height:36, color: sets.length === 1 ? C.faint : C.danger, fontSize:18,
+              display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+            }}>×</button>
+          </div>
+        ))}
+        <div style={{ marginTop:4, marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>REST (seconds, applies to all sets)</label>
+          <input value={sets[0]?.rest || '90'} onChange={e => setSets(prev => prev.map(s => ({ ...s, rest: e.target.value })))}
+            placeholder="90"
+            style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
+        </div>
+      </>
+    );
+  }
+
+  // Normalise sets before saving (bodyweight → weight='BW')
+  function handleSave() {
+    if (!name.trim()) return;
+    const normalised = sets.map(s =>
+      type === 'bodyweight' ? { ...s, weight: 'BW' } : s
+    );
+    onSave(name.trim(), normalised);
+  }
+
+  const placeholder = {
+    strength: 'e.g. Barbell Bench Press',
+    bodyweight: 'e.g. Pull-ups',
+    running: 'e.g. Tempo Intervals',
+    stretching: 'e.g. Hip Flexor Stretch',
+  }[type] || 'Exercise name';
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.88)', backdropFilter:'blur(8px)', zIndex:300, display:'flex', alignItems:'flex-end', justifyContent:'center' }}
@@ -48,59 +191,20 @@ function ExerciseModal({ initial, onSave, onClose }) {
           {initial ? 'EDIT EXERCISE' : 'ADD EXERCISE'}
         </h3>
 
-        {/* Name */}
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>EXERCISE NAME</label>
+          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>
+            {type === 'running' ? 'SEGMENT NAME' : type === 'stretching' ? 'STRETCH NAME' : 'EXERCISE NAME'}
+          </label>
           <input value={name} onChange={e => setName(e.target.value)}
-            placeholder="e.g. Barbell Bench Press" autoFocus
+            placeholder={placeholder} autoFocus
             style={{ width:'100%', background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:'12px 14px', fontSize:15, color:C.white, outline:'none' }}/>
         </div>
 
-        {/* Sets */}
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:10 }}>SETS</label>
-
-          {/* Column headers */}
-          <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 80px 72px 36px', gap:6, marginBottom:8, padding:'0 2px' }}>
-            {['#', 'TYPE', 'REPS', 'WT (lbs)', ''].map(h => (
-              <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
-            ))}
-          </div>
-
-          {sets.map((s, i) => (
-            <div key={i} style={{ display:'grid', gridTemplateColumns:'32px 1fr 80px 72px 36px', gap:6, marginBottom:8, alignItems:'center' }}>
-              <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
-              <select value={s.type} onChange={e => updateSet(i, 'type', e.target.value)} style={{
-                background:C.card2, border:`1px solid ${SET_COLORS[s.type]}55`,
-                borderRadius:8, padding:'9px 6px', fontSize:12, fontWeight:700,
-                color:SET_COLORS[s.type], outline:'none',
-              }}>
-                <option value="working">Working</option>
-                <option value="drop">Drop</option>
-                <option value="amrap">AMRAP</option>
-              </select>
-              <input value={s.reps} onChange={e => updateSet(i, 'reps', e.target.value)}
-                placeholder="8-10"
-                style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 6px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
-              <input value={s.weight} onChange={e => updateSet(i, 'weight', e.target.value)}
-                placeholder="—"
-                style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 6px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
-              <button onClick={() => removeSet(i)} disabled={sets.length === 1} style={{
-                background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,69,58,0.4)'}`,
-                borderRadius:8, width:36, height:36, color: sets.length === 1 ? C.faint : C.danger, fontSize:18,
-                display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
-              }}>×</button>
-            </div>
-          ))}
-
-          {/* Rest time row */}
-          <div style={{ marginTop:4, marginBottom:12 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>REST (seconds, applies to all sets)</label>
-            <input value={sets[0]?.rest || '90'} onChange={e => setSets(prev => prev.map(s => ({ ...s, rest: e.target.value })))}
-              placeholder="90"
-              style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
-          </div>
-
+          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:10 }}>
+            {type === 'running' ? 'INTERVALS' : type === 'stretching' ? 'SETS / HOLDS' : 'SETS'}
+          </label>
+          {renderSetRows()}
           <button onClick={addSet} style={{
             width:'100%', background:'none', border:`1px dashed ${C.border}`,
             borderRadius:8, padding:'10px', color:C.muted, fontSize:13, fontWeight:600,
@@ -109,7 +213,7 @@ function ExerciseModal({ initial, onSave, onClose }) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            Add Set
+            Add {type === 'running' ? 'Interval' : type === 'stretching' ? 'Hold' : 'Set'}
           </button>
         </div>
 
@@ -118,7 +222,7 @@ function ExerciseModal({ initial, onSave, onClose }) {
             flex:1, background:'none', border:`1px solid ${C.border}`,
             borderRadius:12, padding:'13px', color:C.muted, fontSize:14, fontWeight:600, cursor:'pointer',
           }}>Cancel</button>
-          <button onClick={() => name.trim() && onSave(name.trim(), sets)} disabled={!name.trim()} style={{
+          <button onClick={handleSave} disabled={!name.trim()} style={{
             flex:2,
             background: name.trim() ? `linear-gradient(90deg,${C.accent},#5856D6)` : C.faint,
             border:'none', borderRadius:12, padding:'13px',
@@ -336,7 +440,12 @@ export default function WorkoutDetail() {
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:15, fontWeight:600, color:C.white }}>{ex.name}</div>
                     <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>
-                      {ex.sets.length} sets · {ex.sets.map(s => SET_LABELS[s.type] || 'W').join(', ')}
+                      {program?.type === 'running'
+                        ? `${ex.sets.length} intervals · ${ex.sets.reduce((t,s) => t + parseFloat(s.distance||0), 0).toFixed(1)} mi`
+                        : program?.type === 'stretching'
+                          ? `${ex.sets.length} sets · ${ex.sets[0]?.duration || 30}s hold`
+                          : `${ex.sets.length} sets · ${ex.sets.map(s => SET_LABELS[s.type] || 'W').join(', ')}`
+                      }
                     </div>
                   </div>
 
@@ -379,27 +488,71 @@ export default function WorkoutDetail() {
 
                 {/* Set breakdown */}
                 <div style={{ borderTop:`1px solid ${C.border}`, padding:'10px 14px 14px' }}>
-                  <div style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 1fr 60px', gap:6, marginBottom:6 }}>
-                    {['', 'TYPE', 'REPS', 'WEIGHT', 'REST'].map(h => (
-                      <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
-                    ))}
-                  </div>
-                  {ex.sets.map((set, si) => {
-                    const col = SET_COLORS[set.type] || C.accent;
-                    return (
-                      <div key={si} style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 1fr 60px', gap:6, marginBottom:6, alignItems:'center' }}>
-                        <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
-                        <span style={{ background:`${col}22`, border:`1px solid ${col}44`, borderRadius:6, padding:'4px 0', textAlign:'center', fontSize:11, fontWeight:700, color:col }}>
-                          {SET_LABELS[set.type] || 'W'} · {set.type}
-                        </span>
-                        <span style={{ fontSize:13, fontWeight:600, color:C.white, textAlign:'center' }}>{set.reps || '—'}</span>
-                        <span style={{ fontSize:13, fontWeight:600, color:C.muted, textAlign:'center' }}>
-                          {set.weight === 'BW' ? 'BW' : set.weight ? `${set.weight}` : '—'}
-                        </span>
-                        <span style={{ fontSize:11, fontWeight:600, color:C.faint, textAlign:'center' }}>{set.rest || '90'}s</span>
+                  {program?.type === 'running' ? (
+                    <>
+                      <div style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6 }}>
+                        {['', 'DIST (mi)', 'PACE', 'REST'].map(h => (
+                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+                        ))}
                       </div>
-                    );
-                  })}
+                      {ex.sets.map((set, si) => (
+                        <div key={si} style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6, alignItems:'center' }}>
+                          <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
+                          <span style={{ fontSize:13, fontWeight:600, color:C.white, textAlign:'center' }}>{set.distance || '—'}</span>
+                          <span style={{ fontSize:13, fontWeight:600, color:C.muted, textAlign:'center' }}>{set.pace || '—'}</span>
+                          <span style={{ fontSize:11, fontWeight:600, color:C.faint, textAlign:'center' }}>{set.rest || '60'}s</span>
+                        </div>
+                      ))}
+                    </>
+                  ) : program?.type === 'stretching' ? (
+                    <>
+                      <div style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6 }}>
+                        {['', 'HOLD (s)', 'SIDES', 'REST'].map(h => (
+                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+                        ))}
+                      </div>
+                      {ex.sets.map((set, si) => (
+                        <div key={si} style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6, alignItems:'center' }}>
+                          <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
+                          <span style={{ fontSize:13, fontWeight:600, color:C.white, textAlign:'center' }}>{set.duration || '30'}s</span>
+                          <span style={{ fontSize:12, fontWeight:600, color:C.muted, textAlign:'center', textTransform:'capitalize' }}>{set.sides || 'both'}</span>
+                          <span style={{ fontSize:11, fontWeight:600, color:C.faint, textAlign:'center' }}>{set.rest || '10'}s</span>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display:'grid', gridTemplateColumns:`24px 1fr 1fr ${program?.type !== 'bodyweight' ? '1fr ' : ''}60px`, gap:6, marginBottom:6 }}>
+                        {(program?.type === 'bodyweight'
+                          ? ['', 'TYPE', 'REPS', 'REST']
+                          : ['', 'TYPE', 'REPS', 'WEIGHT', 'REST']
+                        ).map(h => (
+                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+                        ))}
+                      </div>
+                      {ex.sets.map((set, si) => {
+                        const col = SET_COLORS[set.type] || C.accent;
+                        const cols = program?.type === 'bodyweight'
+                          ? '24px 1fr 1fr 60px'
+                          : '24px 1fr 1fr 1fr 60px';
+                        return (
+                          <div key={si} style={{ display:'grid', gridTemplateColumns:cols, gap:6, marginBottom:6, alignItems:'center' }}>
+                            <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
+                            <span style={{ background:`${col}22`, border:`1px solid ${col}44`, borderRadius:6, padding:'4px 0', textAlign:'center', fontSize:11, fontWeight:700, color:col }}>
+                              {SET_LABELS[set.type] || 'W'} · {set.type}
+                            </span>
+                            <span style={{ fontSize:13, fontWeight:600, color:C.white, textAlign:'center' }}>{set.reps || '—'}</span>
+                            {program?.type !== 'bodyweight' && (
+                              <span style={{ fontSize:13, fontWeight:600, color:C.muted, textAlign:'center' }}>
+                                {set.weight === 'BW' ? 'BW' : set.weight ? `${set.weight}` : '—'}
+                              </span>
+                            )}
+                            <span style={{ fontSize:11, fontWeight:600, color:C.faint, textAlign:'center' }}>{set.rest || '90'}s</span>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -425,6 +578,7 @@ export default function WorkoutDetail() {
       {showAddEx && (
         <ExerciseModal
           initial={editingEx != null ? day.exercises[editingEx] : null}
+          programType={program?.type || 'strength'}
           onSave={(name, sets) => saveExercise(name, sets, editingEx)}
           onClose={() => { setShowAddEx(false); setEditingEx(null); }}
         />

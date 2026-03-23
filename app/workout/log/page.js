@@ -97,6 +97,12 @@ export default function WorkoutLog() {
         rest: parseInt(s.rest) || 90,
         actualReps: s.reps?.replace(/[^0-9∞]/g, '') || '',
         actualWeight: s.weight === 'BW' ? 'BW' : (s.weight || ''),
+        // running fields
+        targetDistance: s.distance || '', targetPace: s.pace || '',
+        actualDistance: s.distance || '', actualTime: '',
+        // stretching fields
+        targetDuration: s.duration || '30', sides: s.sides || 'both',
+        actualDuration: s.duration || '30',
         logged: false,
       })),
     })));
@@ -157,7 +163,12 @@ export default function WorkoutLog() {
       duration: elapsed,
       exercises: exercises.map(ex => ({
         name: ex.name,
-        sets: ex.sets.map(s => ({ type:s.type, reps:s.actualReps, weight:s.actualWeight, logged:s.logged })),
+        sets: ex.sets.map(s => ({
+          type: s.type, logged: s.logged,
+          reps: s.actualReps, weight: s.actualWeight,
+          distance: s.actualDistance, time: s.actualTime,
+          duration: s.actualDuration, sides: s.sides,
+        })),
       })),
     };
     saveSession(session);
@@ -283,8 +294,12 @@ export default function WorkoutLog() {
       <main style={{ padding:'12px 16px 200px', display:'flex', flexDirection:'column', gap:12 }}>
         {currentEx?.sets.map((set, idx) => {
           const type = SET_TYPES[set.type] || SET_TYPES.working;
+          const progType = program?.type || 'strength';
           if (set.logged) {
-            // Compact logged row
+            let summary = '';
+            if (progType === 'running') summary = `${set.actualDistance || set.targetDistance || '—'} mi${set.actualTime ? ' · ' + set.actualTime : ''}`;
+            else if (progType === 'stretching') summary = `${set.actualDuration || set.targetDuration}s${set.sides === 'each' ? ' each side' : ''}`;
+            else summary = `${set.actualReps || set.targetReps} reps · ${set.actualWeight || set.targetWeight || '—'} ${progType === 'bodyweight' ? '(BW)' : useKg ? 'kg' : 'lbs'}`;
             return (
               <div key={set.id} style={{
                 background:C.successBg, border:`1px solid rgba(48,209,88,0.25)`,
@@ -296,10 +311,8 @@ export default function WorkoutLog() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
                 <div style={{ flex:1 }}>
-                  <span style={{ fontSize:13, fontWeight:700, color:C.success }}>Set {idx+1} logged</span>
-                  <span style={{ fontSize:12, color:C.muted, marginLeft:10 }}>
-                    {set.actualReps || set.targetReps} reps · {set.actualWeight || set.targetWeight || '—'} {useKg ? 'kg' : 'lbs'}
-                  </span>
+                  <span style={{ fontSize:13, fontWeight:700, color:C.success }}>{progType === 'running' ? 'Interval' : progType === 'stretching' ? 'Hold' : 'Set'} {idx+1} logged</span>
+                  <span style={{ fontSize:12, color:C.muted, marginLeft:10 }}>{summary}</span>
                 </div>
               </div>
             );
@@ -332,29 +345,76 @@ export default function WorkoutLog() {
                 }}>×</button>
               </div>
 
-              {/* Inputs */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
-                <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>REPS</div>
-                  <input
-                    type="text" inputMode="numeric"
-                    value={set.actualReps}
-                    onChange={e => updateSet(activeEx, set.id, 'actualReps', e.target.value)}
-                    placeholder={set.targetReps || '—'}
-                    style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}
-                  />
+              {/* Inputs — type-aware */}
+              {progType === 'running' ? (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>DISTANCE (mi)</div>
+                    <input type="text" inputMode="decimal"
+                      value={set.actualDistance}
+                      onChange={e => updateSet(activeEx, set.id, 'actualDistance', e.target.value)}
+                      placeholder={set.targetDistance || '1.0'}
+                      style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
+                  </div>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>TIME (mm:ss)</div>
+                    <input type="text"
+                      value={set.actualTime}
+                      onChange={e => updateSet(activeEx, set.id, 'actualTime', e.target.value)}
+                      placeholder={set.targetPace ? `~${set.targetPace}/mi` : 'mm:ss'}
+                      style={{ fontSize:24, fontWeight:700, textAlign:'center', color:C.white }}/>
+                  </div>
                 </div>
-                <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>{useKg ? 'KG' : 'LBS'}</div>
-                  <input
-                    type="text" inputMode="decimal"
-                    value={set.actualWeight}
-                    onChange={e => updateSet(activeEx, set.id, 'actualWeight', e.target.value)}
-                    placeholder={set.targetWeight || '—'}
-                    style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}
-                  />
+              ) : progType === 'stretching' ? (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>DURATION (sec)</div>
+                    <input type="text" inputMode="numeric"
+                      value={set.actualDuration}
+                      onChange={e => updateSet(activeEx, set.id, 'actualDuration', e.target.value)}
+                      placeholder={set.targetDuration || '30'}
+                      style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
+                  </div>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>SIDES</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:C.white, textTransform:'capitalize' }}>{set.sides || 'both'}</div>
+                  </div>
                 </div>
-              </div>
+              ) : progType === 'bodyweight' ? (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>REPS</div>
+                    <input type="text" inputMode="numeric"
+                      value={set.actualReps}
+                      onChange={e => updateSet(activeEx, set.id, 'actualReps', e.target.value)}
+                      placeholder={set.targetReps || '—'}
+                      style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
+                  </div>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>WEIGHT</div>
+                    <div style={{ fontSize:22, fontWeight:900, color:C.accent }}>BW</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>REPS</div>
+                    <input type="text" inputMode="numeric"
+                      value={set.actualReps}
+                      onChange={e => updateSet(activeEx, set.id, 'actualReps', e.target.value)}
+                      placeholder={set.targetReps || '—'}
+                      style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
+                  </div>
+                  <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>{useKg ? 'KG' : 'LBS'}</div>
+                    <input type="text" inputMode="decimal"
+                      value={set.actualWeight}
+                      onChange={e => updateSet(activeEx, set.id, 'actualWeight', e.target.value)}
+                      placeholder={set.targetWeight || '—'}
+                      style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
+                  </div>
+                </div>
+              )}
 
               {/* Log button */}
               <div style={{ padding:'0 16px 16px' }}>

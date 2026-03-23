@@ -5,6 +5,7 @@ import {
   getPrograms, savePrograms, getActiveProgramId, setActiveProgramId,
   getSessions, getCompletedDaysThisWeek, setCurrentWorkout,
   syncProgramsToFirestore, loadProgramsFromFirestore,
+  PROGRAM_TYPES, publishProgram, unpublishProgram,
 } from '../../lib/workoutSync';
 import { useAuth } from '../../lib/AuthContext';
 
@@ -74,6 +75,7 @@ export default function WorkoutHome() {
   const [newDesc,         setNewDesc]         = useState('');
   const [newDays,         setNewDays]         = useState([{ name: 'Day 1' }]);
   const [newDayName,      setNewDayName]      = useState('');
+  const [newType,        setNewType]        = useState('strength');
   const [showAiBuilder,  setShowAiBuilder]  = useState(false);
   const [aiPrompt,       setAiPrompt]       = useState('');
   const [aiLoading,      setAiLoading]      = useState(false);
@@ -120,7 +122,7 @@ export default function WorkoutHome() {
     if (!newName.trim() || newDays.length === 0) return;
     const id = `prog-${Date.now()}`;
     const program = {
-      id, name: newName.trim(), description: newDesc.trim(),
+      id, type: newType, name: newName.trim(), description: newDesc.trim(),
       createdAt: new Date().toISOString(),
       days: newDays.map((d, i) => ({
         id: `${id}-d${i + 1}`, dayNumber: i + 1, name: d.name,
@@ -135,7 +137,7 @@ export default function WorkoutHome() {
     setActivePId(id);
     if (user) syncProgramsToFirestore(user.uid, updated);
     setShowCreateModal(false);
-    setNewName(''); setNewDesc(''); setNewDays([{ name: 'Day 1' }]);
+    setNewName(''); setNewDesc(''); setNewDays([{ name: 'Day 1' }]); setNewType('strength');
   }
 
   function addDayToForm() {
@@ -163,6 +165,20 @@ export default function WorkoutHome() {
       setAiError('Network error. Please try again.');
     } finally {
       setAiLoading(false);
+    }
+  }
+
+  async function togglePublic(programId) {
+    const prog = programs.find(p => p.id === programId);
+    if (!prog) return;
+    const nowPublic = !prog.isPublic;
+    const updated = programs.map(p => p.id === programId ? { ...p, isPublic: nowPublic } : p);
+    setPrograms(updated);
+    savePrograms(updated);
+    if (user) {
+      syncProgramsToFirestore(user.uid, updated);
+      if (nowPublic) await publishProgram(user.uid, { ...prog, isPublic: true });
+      else await unpublishProgram(programId);
     }
   }
 
@@ -229,6 +245,14 @@ export default function WorkoutHome() {
         </button>
         <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, letterSpacing:4, color:C.white }}>LYTZ</span>
         <div style={{ display:'flex', gap:8 }}>
+          <button onClick={() => router.push('/workout/discover')} style={{
+            background:'rgba(48,209,88,0.1)', border:'1px solid rgba(48,209,88,0.3)',
+            borderRadius:10, padding:'6px 12px',
+            fontSize:12, fontWeight:700, color:C.success,
+            display:'flex', alignItems:'center', gap:5,
+          }}>
+            🌐 Discover
+          </button>
           <button onClick={() => setShowAiBuilder(true)} style={{
             background:'rgba(191,90,242,0.12)', border:'1px solid rgba(191,90,242,0.3)',
             borderRadius:10, padding:'6px 12px',
@@ -279,9 +303,15 @@ export default function WorkoutHome() {
                   <h2 style={{ fontFamily:font.heading, fontWeight:900, fontSize:28, letterSpacing:0.5, lineHeight:1.1, marginBottom:4, color:C.white }}>
                     {activeProgram.name.toUpperCase()}
                   </h2>
-                  {activeProgram.description && (
-                    <p style={{ fontSize:12, color:C.muted, fontWeight:500 }}>{activeProgram.description}</p>
-                  )}
+                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                    {activeProgram.description && (
+                      <p style={{ fontSize:12, color:C.muted, fontWeight:500 }}>{activeProgram.description}</p>
+                    )}
+                    {(() => { const pt = PROGRAM_TYPES[activeProgram.type || 'strength']; return (
+                      <span style={{ fontSize:11, color:C.muted, fontWeight:600 }}>{pt?.emoji} {pt?.label}</span>
+                    ); })()}
+                    {activeProgram.isPublic && <span style={{ fontSize:11, color:C.success, fontWeight:700 }}>🌐 Public</span>}
+                  </div>
                 </div>
                 <ProgressRing pct={pct}/>
               </div>
@@ -435,19 +465,30 @@ export default function WorkoutHome() {
             <div style={{ width:36, height:4, background:C.border, borderRadius:2, margin:'0 auto 20px' }}/>
             <h3 style={{ fontFamily:font.heading, fontWeight:700, fontSize:18, letterSpacing:1, marginBottom:16, color:C.white }}>PROGRAMS</h3>
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:16 }}>
-              {programs.map((p) => (
-                <button key={p.id} onClick={() => switchProgram(p.id)} style={{
-                  background: p.id === activeProgramId ? C.accentBg : C.card2,
-                  border:`1px solid ${p.id === activeProgramId ? 'rgba(10,132,255,0.4)' : C.border}`,
-                  borderRadius:12, padding:'14px 16px',
-                  display:'flex', alignItems:'center', justifyContent:'space-between',
-                  color: p.id === activeProgramId ? C.accent : C.white,
-                  fontSize:14, fontWeight:600, textAlign:'left',
-                }}>
-                  <span>{p.name}</span>
-                  <span style={{ fontSize:12, color:C.muted }}>{p.days.length} days</span>
-                </button>
-              ))}
+              {programs.map((p) => {
+                const pt = PROGRAM_TYPES[p.type || 'strength'];
+                return (
+                  <div key={p.id} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <button onClick={() => switchProgram(p.id)} style={{
+                      flex:1, background: p.id === activeProgramId ? C.accentBg : C.card2,
+                      border:`1px solid ${p.id === activeProgramId ? 'rgba(10,132,255,0.4)' : C.border}`,
+                      borderRadius:12, padding:'12px 14px',
+                      display:'flex', alignItems:'center', justifyContent:'space-between',
+                      color: p.id === activeProgramId ? C.accent : C.white,
+                      fontSize:14, fontWeight:600, textAlign:'left', cursor:'pointer',
+                    }}>
+                      <span>{pt?.emoji} {p.name}</span>
+                      <span style={{ fontSize:11, color:C.muted }}>{p.days.length}d</span>
+                    </button>
+                    <button onClick={() => togglePublic(p.id)} title={p.isPublic ? 'Make private' : 'Make public'} style={{
+                      width:40, height:40, borderRadius:10, flexShrink:0, cursor:'pointer',
+                      background: p.isPublic ? 'rgba(48,209,88,0.12)' : C.card2,
+                      border:`1px solid ${p.isPublic ? 'rgba(48,209,88,0.4)' : C.border}`,
+                      fontSize:15, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center',
+                    }}>{p.isPublic ? '🌐' : '🔒'}</button>
+                  </div>
+                );
+              })}
             </div>
             <button onClick={() => { setShowProgramMenu(false); setShowCreateModal(true); }} style={{
               width:'100%', background:'none', border:`1px dashed ${C.border}`,
@@ -481,6 +522,24 @@ export default function WorkoutHome() {
               <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>DESCRIPTION (optional)</label>
               <input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="e.g. 5-day strength split"
                 style={{ width:'100%', background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:'11px 14px', fontSize:14, color:C.white }}/>
+            </div>
+
+            {/* TYPE SELECTOR */}
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:10 }}>WORKOUT TYPE</label>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                {Object.entries(PROGRAM_TYPES).map(([id, t]) => (
+                  <button key={id} onClick={() => setNewType(id)} style={{
+                    background: newType === id ? `rgba(10,132,255,0.12)` : C.card2,
+                    border:`1.5px solid ${newType === id ? C.accent : C.border}`,
+                    borderRadius:12, padding:'12px 10px', textAlign:'left', cursor:'pointer',
+                  }}>
+                    <div style={{ fontSize:22, marginBottom:4 }}>{t.emoji}</div>
+                    <div style={{ fontSize:13, fontWeight:700, color: newType === id ? C.accent : C.white, marginBottom:2 }}>{t.label}</div>
+                    <div style={{ fontSize:10, color:C.muted, lineHeight:1.3 }}>{t.desc}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div style={{ marginBottom:24 }}>
