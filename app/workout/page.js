@@ -74,6 +74,11 @@ export default function WorkoutHome() {
   const [newDesc,         setNewDesc]         = useState('');
   const [newDays,         setNewDays]         = useState([{ name: 'Day 1' }]);
   const [newDayName,      setNewDayName]      = useState('');
+  const [showAiBuilder,  setShowAiBuilder]  = useState(false);
+  const [aiPrompt,       setAiPrompt]       = useState('');
+  const [aiLoading,      setAiLoading]      = useState(false);
+  const [aiError,        setAiError]        = useState('');
+  const [aiPreview,      setAiPreview]      = useState(null); // parsed program preview
 
   useEffect(() => {
     const progs = getPrograms();
@@ -140,6 +145,64 @@ export default function WorkoutHome() {
     setShowAddDay(false);
   }
 
+  async function buildWithAI() {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    setAiError('');
+    setAiPreview(null);
+    try {
+      const res = await fetch('/api/workout-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      const data = await res.json();
+      if (data.error) { setAiError(data.error); return; }
+      setAiPreview(data.program);
+    } catch (e) {
+      setAiError('Network error. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function saveAiProgram() {
+    if (!aiPreview) return;
+    const id = `prog-${Date.now()}`;
+    const program = {
+      id,
+      name: aiPreview.name || 'AI Program',
+      description: aiPreview.description || '',
+      createdAt: new Date().toISOString(),
+      days: (aiPreview.days || []).map((d, i) => ({
+        id: `${id}-d${i+1}`,
+        dayNumber: i + 1,
+        name: d.name,
+        grad: GRAD_OPTIONS[i % 5].grad,
+        accent: GRAD_OPTIONS[i % 5].accent,
+        exercises: (d.exercises || []).map((ex, ei) => ({
+          id: `${id}-d${i+1}-e${ei+1}`,
+          name: ex.name,
+          sets: (ex.sets || []).map(s => ({
+            type: s.type || 'working',
+            reps: s.reps || '8-10',
+            weight: s.weight || '',
+            rest: s.rest || '90',
+          })),
+        })),
+      })),
+    };
+    const updated = [...programs, program];
+    setPrograms(updated);
+    savePrograms(updated);
+    setActiveProgramId(id);
+    setActivePId(id);
+    if (user) syncProgramsToFirestore(user.uid, updated);
+    setShowAiBuilder(false);
+    setAiPrompt('');
+    setAiPreview(null);
+  }
+
   return (
     <div style={{ fontFamily:font.body, background:C.bg, minHeight:'100dvh', color:C.white, overflowX:'hidden' }}>
       <style>{`
@@ -165,13 +228,23 @@ export default function WorkoutHome() {
           </svg>
         </button>
         <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, letterSpacing:4, color:C.white }}>LYTZ</span>
-        <button onClick={() => setShowProgramMenu(true)} style={{
-          background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'6px 12px',
-          fontSize:12, fontWeight:600, color:C.muted, display:'flex', alignItems:'center', gap:5,
-        }}>
-          Programs
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={() => setShowAiBuilder(true)} style={{
+            background:'rgba(191,90,242,0.12)', border:'1px solid rgba(191,90,242,0.3)',
+            borderRadius:10, padding:'6px 12px',
+            fontSize:12, fontWeight:700, color:'#BF5AF2',
+            display:'flex', alignItems:'center', gap:5,
+          }}>
+            ✨ AI
+          </button>
+          <button onClick={() => setShowProgramMenu(true)} style={{
+            background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'6px 12px',
+            fontSize:12, fontWeight:600, color:C.muted, display:'flex', alignItems:'center', gap:5,
+          }}>
+            Programs
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
       </header>
 
       <main style={{ padding:'20px 16px 120px' }}>
@@ -470,6 +543,108 @@ export default function WorkoutHome() {
                 boxShadow: newName.trim() ? `0 4px 20px ${C.accentGlow}` : 'none',
               }}>CREATE</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI BUILDER MODAL */}
+      {showAiBuilder && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.88)', backdropFilter:'blur(8px)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}
+          onClick={() => { if (!aiLoading) { setShowAiBuilder(false); setAiPreview(null); setAiError(''); } }}>
+          <div style={{ background:C.card, borderRadius:22, width:'100%', maxWidth:500, padding:'28px 24px', maxHeight:'88vh', overflowY:'auto' }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
+              <div style={{ width:42, height:42, borderRadius:12, background:'rgba(191,90,242,0.15)', border:'1px solid rgba(191,90,242,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>✨</div>
+              <div>
+                <h3 style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, color:C.white, letterSpacing:1 }}>AI PROGRAM BUILDER</h3>
+                <p style={{ fontSize:12, color:C.muted, marginTop:2 }}>Describe your workout and AI will build it</p>
+              </div>
+            </div>
+
+            {!aiPreview ? (
+              <>
+                <div style={{ marginBottom:16 }}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:8 }}>DESCRIBE YOUR PROGRAM</label>
+                  <textarea
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    placeholder={"e.g. I do a 5-day Push Pull Legs split. Push day is chest, shoulders, triceps with bench press 4x6-8, overhead press 4x8, lateral raises 3x15, tricep pushdowns 3x12. Pull day is back and biceps..."}
+                    rows={6}
+                    style={{
+                      width:'100%', background:C.card2, border:`1px solid ${C.border}`,
+                      borderRadius:12, padding:'14px', fontSize:14, color:C.white,
+                      lineHeight:'1.5', resize:'vertical', outline:'none', fontFamily:font.body,
+                    }}
+                  />
+                </div>
+
+                {aiError && (
+                  <div style={{ background:'rgba(255,69,58,0.1)', border:'1px solid rgba(255,69,58,0.3)', borderRadius:10, padding:'10px 14px', marginBottom:14, fontSize:13, color:'#FF453A' }}>
+                    {aiError}
+                  </div>
+                )}
+
+                <div style={{ display:'flex', gap:10 }}>
+                  <button onClick={() => { setShowAiBuilder(false); setAiError(''); }} style={{
+                    flex:1, background:'none', border:`1px solid ${C.border}`,
+                    borderRadius:12, padding:'13px', color:C.muted, fontSize:14, fontWeight:600, cursor:'pointer',
+                  }}>Cancel</button>
+                  <button onClick={buildWithAI} disabled={!aiPrompt.trim() || aiLoading} style={{
+                    flex:2,
+                    background: aiPrompt.trim() && !aiLoading ? 'linear-gradient(90deg,#BF5AF2,#5856D6)' : C.faint,
+                    border:'none', borderRadius:12, padding:'13px',
+                    fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  }}>
+                    {aiLoading ? (
+                      <>
+                        <div style={{ width:16, height:16, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.3)', borderTopColor:C.white, animation:'spin 0.7s linear infinite' }}/>
+                        Building...
+                      </>
+                    ) : '✨ BUILD PROGRAM'}
+                  </button>
+                </div>
+                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+              </>
+            ) : (
+              <>
+                {/* Preview */}
+                <div style={{ background:'rgba(48,209,88,0.08)', border:'1px solid rgba(48,209,88,0.25)', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.success, letterSpacing:1.5, marginBottom:4 }}>✓ PROGRAM READY</div>
+                  <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, color:C.white }}>{aiPreview.name}</div>
+                  {aiPreview.description && <div style={{ fontSize:13, color:C.muted, marginTop:3 }}>{aiPreview.description}</div>}
+                </div>
+
+                <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
+                  {(aiPreview.days || []).map((d, i) => (
+                    <div key={i} style={{
+                      background:GRAD_OPTIONS[i%5].grad, border:`1px solid ${C.border}`,
+                      borderRadius:12, padding:'12px 14px',
+                    }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:GRAD_OPTIONS[i%5].accent, letterSpacing:1, marginBottom:2 }}>DAY {i+1}</div>
+                      <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:18, color:C.white }}>{d.name}</div>
+                      <div style={{ fontSize:12, color:C.muted, marginTop:3 }}>
+                        {(d.exercises||[]).length} exercises · {(d.exercises||[]).reduce((s,e) => s+(e.sets||[]).length, 0)} sets
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display:'flex', gap:10 }}>
+                  <button onClick={() => setAiPreview(null)} style={{
+                    flex:1, background:'none', border:`1px solid ${C.border}`,
+                    borderRadius:12, padding:'13px', color:C.muted, fontSize:14, fontWeight:600, cursor:'pointer',
+                  }}>Regenerate</button>
+                  <button onClick={saveAiProgram} style={{
+                    flex:2, background:`linear-gradient(90deg,${C.success},#20b857)`,
+                    border:'none', borderRadius:12, padding:'13px',
+                    fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer',
+                  }}>SAVE PROGRAM</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
