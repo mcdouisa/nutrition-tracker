@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   getPrograms, savePrograms, getActiveProgramId, setActiveProgramId,
   syncProgramsToFirestore, getPublicPrograms, PROGRAM_TYPES,
+  incrementProgramCopies,
 } from '../../../lib/workoutSync';
 import { useAuth } from '../../../lib/AuthContext';
 
@@ -141,15 +142,27 @@ export default function DiscoverPage() {
   const [publicPrograms, setPublicPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [copied, setCopied] = useState(null); // id of recently copied program
+  const [copied, setCopied] = useState(null);
   const [myPrograms, setMyPrograms] = useState([]);
+  const [firestoreStatus, setFirestoreStatus] = useState(''); // '' | 'ok' | 'unavailable'
 
   useEffect(() => {
-    setMyPrograms(getPrograms());
+    const mine = getPrograms();
+    setMyPrograms(mine);
+
+    // Always show demo programs; merge in Firestore public programs on top
     getPublicPrograms().then(remote => {
-      setPublicPrograms(remote.length > 0 ? remote : DEMO_PROGRAMS);
+      setFirestoreStatus(remote.length >= 0 ? 'ok' : 'unavailable');
+      // Merge: real published programs first, then demo fill-ins (deduplicated)
+      const remoteIds = new Set(remote.map(r => r.id));
+      const merged = [
+        ...remote,
+        ...DEMO_PROGRAMS.filter(d => !remoteIds.has(d.id)),
+      ];
+      setPublicPrograms(merged);
       setLoading(false);
     }).catch(() => {
+      setFirestoreStatus('unavailable');
       setPublicPrograms(DEMO_PROGRAMS);
       setLoading(false);
     });
@@ -167,8 +180,6 @@ export default function DiscoverPage() {
       ...prog,
       id: newId,
       copiedFromId: prog.id,
-      name: prog.name,
-      description: prog.description,
       isPublic: false,
       createdAt: new Date().toISOString(),
       days: prog.days.map((d, i) => ({
@@ -183,8 +194,25 @@ export default function DiscoverPage() {
     savePrograms(updated);
     setActiveProgramId(newId);
     if (user) syncProgramsToFirestore(user.uid, updated);
+    // Increment copy counter on the public program
+    incrementProgramCopies(prog.id, 1);
+    // Optimistically update local count
+    setPublicPrograms(prev => prev.map(p => p.id === prog.id ? { ...p, copies: (p.copies || 0) + 1 } : p));
     setCopied(prog.id);
     setTimeout(() => setCopied(null), 2500);
+  }
+
+  function removeProgram(prog) {
+    // Remove from my library
+    const copiedVersion = myPrograms.find(p => p.id === prog.id || p.copiedFromId === prog.id);
+    if (!copiedVersion) return;
+    const updated = myPrograms.filter(p => p.id !== copiedVersion.id);
+    setMyPrograms(updated);
+    savePrograms(updated);
+    if (user) syncProgramsToFirestore(user.uid, updated);
+    // Decrement copy counter
+    incrementProgramCopies(prog.id, -1);
+    setPublicPrograms(prev => prev.map(p => p.id === prog.id ? { ...p, copies: Math.max(0, (p.copies || 0) - 1) } : p));
   }
 
   return (
@@ -230,6 +258,13 @@ export default function DiscoverPage() {
           </button>
         ))}
       </div>
+
+      {/* STATUS BANNER */}
+      {firestoreStatus === 'unavailable' && (
+        <div style={{ margin:'12px 16px 0', background:'rgba(255,159,10,0.1)', border:'1px solid rgba(255,159,10,0.3)', borderRadius:12, padding:'10px 14px', fontSize:12, color:'#FF9F0A', lineHeight:1.5 }}>
+          ⚠️ Could not load community programs — showing demo programs only. Make sure you're signed in and Firestore rules allow reads on <code>publicWorkouts</code>.
+        </div>
+      )}
 
       {/* CONTENT */}
       <main style={{ padding:'16px 16px 100px' }}>
@@ -291,11 +326,11 @@ export default function DiscoverPage() {
                       {[
                         { v: prog.days.length, l: 'DAYS' },
                         { v: totalExercises, l: 'EXERCISES' },
-                        { v: totalSets, l: 'TOTAL SETS' },
+                        { v: prog.copies || 0, l: 'PEOPLE ADDED', highlight: true },
                       ].map((stat, i, arr) => (
                         <div key={stat.l} style={{ display:'flex', alignItems:'stretch', gap:16 }}>
                           <div>
-                            <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, color:typeColor, lineHeight:1 }}>{stat.v}</div>
+                            <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, color: stat.highlight ? C.success : typeColor, lineHeight:1 }}>{stat.v}</div>
                             <div style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1.5 }}>{stat.l}</div>
                           </div>
                           {i < arr.length-1 && <div style={{ width:1, background:C.border }}/>}
@@ -319,30 +354,42 @@ export default function DiscoverPage() {
                     ))}
                   </div>
 
-                  {/* Copy button */}
-                  <div style={{ padding:'0 18px 18px' }}>
-                    <button onClick={() => !have && copyProgram(prog)} style={{
-                      width:'100%', height:48,
-                      background: justCopied
-                        ? `linear-gradient(90deg, ${C.success}, #20b857)`
-                        : have
-                          ? C.card2
+                  {/* Copy / Remove buttons */}
+                  <div style={{ padding:'0 18px 18px', display:'flex', gap:8 }}>
+                    {have ? (
+                      <>
+                        <div style={{
+                          flex:1, height:48, background:C.successBg,
+                          border:`1px solid rgba(48,209,88,0.3)`,
+                          borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          <span style={{ fontFamily:font.heading, fontSize:16, fontWeight:700, letterSpacing:1, color:C.success }}>IN LIBRARY</span>
+                        </div>
+                        <button onClick={() => removeProgram(prog)} style={{
+                          width:48, height:48, borderRadius:12, flexShrink:0,
+                          background:'rgba(255,69,58,0.1)', border:'1px solid rgba(255,69,58,0.3)',
+                          color:'#FF453A', fontSize:20, lineHeight:1,
+                          display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+                        }} title="Remove from my library">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                        </button>
+                      </>
+                    ) : (
+                      <button onClick={() => copyProgram(prog)} style={{
+                        flex:1, height:48,
+                        background: justCopied
+                          ? `linear-gradient(90deg, ${C.success}, #20b857)`
                           : `linear-gradient(90deg, ${typeColor}, ${typeColor}cc)`,
-                      border: have && !justCopied ? `1px solid ${C.border}` : 'none',
-                      borderRadius:12,
-                      fontFamily:font.heading, fontSize:17, fontWeight:700, letterSpacing:1.5,
-                      color: have && !justCopied ? C.muted : C.white,
-                      cursor: have ? 'default' : 'pointer',
-                      display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                      transition:'all 0.3s ease',
-                    }}>
-                      {justCopied
-                        ? '✓ ADDED TO YOUR PROGRAMS'
-                        : have
-                          ? '✓ ALREADY IN LIBRARY'
-                          : '+ ADD TO MY PROGRAMS'
-                      }
-                    </button>
+                        border:'none', borderRadius:12,
+                        fontFamily:font.heading, fontSize:17, fontWeight:700, letterSpacing:1.5,
+                        color:C.white, cursor:'pointer',
+                        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                        transition:'all 0.3s ease',
+                      }}>
+                        {justCopied ? '✓ ADDED!' : '+ ADD TO MY PROGRAMS'}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
