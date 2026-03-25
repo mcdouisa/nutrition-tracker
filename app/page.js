@@ -2405,7 +2405,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 {/* Water Bottle Visualization */}
                 {waterGoal > 0 && (() => {
                   const fillPercent = Math.min(displayWater / waterGoal, 1)
-                  // Bottle body goes from y=30 (top) to y=190 (bottom) = 160 units
+                  // Bottle body goes from y=30 (top) to y=190 (bottom) = 160 fillable units
                   const bottleBottom = 190
                   const fillableHeight = 160
                   const waterHeight = fillPercent * fillableHeight
@@ -3227,112 +3227,187 @@ function ProgressRing({ pct = 0, size = 52, sw = 4, color = '#0A84FF' }) {
   )
 }
 
-// Water Bottle Component with delayed wave animation (smaller for mobile)
+// Water Bottle Component — redesigned with gradient fill, glass shine, level marks, adaptive color
 function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
   const T = useContext(ThemeContext)
   const [showWaves, setShowWaves] = useState(true)
   const [displayedWaterTop, setDisplayedWaterTop] = useState(waterTop)
 
-  // When water changes, hide waves and wait for fill animation to complete
   useEffect(() => {
     setShowWaves(false)
-
-    // Show waves after the fill animation completes (1.5s)
     const timer = setTimeout(() => {
       setDisplayedWaterTop(waterTop)
       setShowWaves(true)
     }, 1600)
-
     return () => clearTimeout(timer)
   }, [water])
 
+  // Adaptive colors based on fill level
+  const waterTop2  = isFull ? '#5ced8a' : fillPercent > 0.6 ? '#5ac8fa' : '#93c5fd'
+  const waterBot   = isFull ? '#20b857' : fillPercent > 0.6 ? '#0A84FF' : '#3b82f6'
+  const outlineClr = isFull ? 'rgba(48,209,88,0.7)' : 'rgba(255,255,255,0.14)'
+  const glowClr    = isFull ? 'rgba(48,209,88,0.18)' : 'rgba(10,132,255,0.12)'
+
+  // Bottle shape path (same coordinate space as parent calculations)
+  const BOTTLE = "M 46 22 L 46 12 Q 46 5 60 5 Q 74 5 74 12 L 74 22 Q 86 27 88 38 L 88 182 Q 88 192 76 192 L 44 192 Q 32 192 32 182 L 32 38 Q 34 27 46 22 Z"
+
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: 'center', position: 'relative', display: 'inline-block' }}>
       <style>{`
-        @keyframes waveFlow {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-25px); }
+        @keyframes waveScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-40px); }
+        }
+        @keyframes waveScroll2 {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(40px); }
         }
       `}</style>
+
+      {/* Outer glow — grows with fill, blooms green when full */}
+      {water > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '110px', height: '190px',
+          borderRadius: '50%',
+          background: `radial-gradient(ellipse, ${glowClr} 0%, transparent 70%)`,
+          pointerEvents: 'none',
+          transition: 'background 1s ease'
+        }}/>
+      )}
+
       <svg
-        width="80"
-        height="150"
+        width="88"
+        height="160"
         viewBox="0 0 120 200"
-        style={{ display: 'block', overflow: 'hidden' }}
+        style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}
       >
         <defs>
           <clipPath id="bottleClip">
-            <path d="M 40 20 L 40 10 L 80 10 L 80 20 L 85 30 L 85 180 Q 85 190 75 190 L 45 190 Q 35 190 35 180 L 35 30 Z" />
+            <path d={BOTTLE}/>
           </clipPath>
+          {/* Gradient for water fill — bottom-to-top */}
+          <linearGradient id="waterGrad" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%"   stopColor={waterBot} stopOpacity="1"/>
+            <stop offset="100%" stopColor={waterTop2} stopOpacity="0.85"/>
+          </linearGradient>
+          {/* Glass gloss overlay */}
+          <linearGradient id="glassGloss" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"   stopColor="rgba(255,255,255,0.07)"/>
+            <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
+          </linearGradient>
         </defs>
 
-        {/* Bottle outline */}
-        <path
-          d="M 40 20 L 40 10 L 80 10 L 80 20 L 85 30 L 85 180 Q 85 190 75 190 L 45 190 Q 35 190 35 180 L 35 30 Z"
-          fill="none"
-          stroke="#2C2C2C"
-          strokeWidth="2"
-        />
+        {/* Bottle background (dark, subtle) */}
+        <path d={BOTTLE} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" strokeWidth="1.5"/>
 
-        {/* Water fill */}
+        {/* Water fill clipped to bottle */}
         {water > 0 && (
           <g clipPath="url(#bottleClip)">
             {/* Main water body */}
             <rect
-              x="30"
-              y={waterTop + 3}
-              width="60"
-              height={200 - waterTop}
-              fill="#7dd3fc"
+              x="28" y={waterTop + 3} width="64" height={200 - waterTop}
+              fill="url(#waterGrad)"
               style={{ transition: 'y 1.5s ease-out, height 1.5s ease-out' }}
             />
 
-            {/* Animated wave on top - only shows after fill completes */}
+            {/* Primary wave */}
             {showWaves && (
-              <g style={{
-                animation: 'waveFlow 4s linear infinite',
-              }}>
+              <g style={{ animation: 'waveScroll 3s linear infinite' }}>
                 <path
-                  d={`M 10 ${displayedWaterTop + 3}
-                      Q 17 ${displayedWaterTop}, 25 ${displayedWaterTop + 3}
-                      T 40 ${displayedWaterTop + 3}
-                      T 55 ${displayedWaterTop + 3}
+                  d={`M -10 ${displayedWaterTop + 3}
+                      Q 0  ${displayedWaterTop - 3}, 10 ${displayedWaterTop + 3}
+                      T 30 ${displayedWaterTop + 3}
+                      T 50 ${displayedWaterTop + 3}
                       T 70 ${displayedWaterTop + 3}
-                      T 85 ${displayedWaterTop + 3}
-                      T 100 ${displayedWaterTop + 3}
-                      T 115 ${displayedWaterTop + 3}
+                      T 90 ${displayedWaterTop + 3}
+                      T 110 ${displayedWaterTop + 3}
                       T 130 ${displayedWaterTop + 3}
-                      L 130 ${displayedWaterTop + 10}
-                      L 10 ${displayedWaterTop + 10} Z`}
-                  fill="#7dd3fc"
+                      L 130 ${displayedWaterTop + 14}
+                      L -10 ${displayedWaterTop + 14} Z`}
+                  fill={waterTop2}
+                  opacity="0.6"
                 />
               </g>
             )}
 
-            {/* Subtle highlight for depth */}
+            {/* Secondary wave (opposite direction, slower) */}
+            {showWaves && (
+              <g style={{ animation: 'waveScroll2 4.5s linear infinite' }}>
+                <path
+                  d={`M -10 ${displayedWaterTop + 7}
+                      Q 5  ${displayedWaterTop + 2}, 20 ${displayedWaterTop + 7}
+                      T 50 ${displayedWaterTop + 7}
+                      T 80 ${displayedWaterTop + 7}
+                      T 110 ${displayedWaterTop + 7}
+                      T 140 ${displayedWaterTop + 7}
+                      L 140 ${displayedWaterTop + 16}
+                      L -10 ${displayedWaterTop + 16} Z`}
+                  fill={waterBot}
+                  opacity="0.4"
+                />
+              </g>
+            )}
+
+            {/* Inner shine strip — left side */}
             <rect
-              x="38"
-              y={waterTop + 10}
-              width="6"
-              height={Math.max(waterHeight - 15, 0)}
-              fill="#a5f3fc"
-              opacity="0.5"
-              rx="3"
+              x="37" y={waterTop + 10} width="5" height={Math.max(waterHeight - 20, 0)}
+              fill="rgba(255,255,255,0.22)" rx="2.5"
               style={{ transition: 'y 1.5s ease-out, height 1.5s ease-out' }}
             />
           </g>
         )}
 
+        {/* Bottle outline — adaptive color */}
+        <path
+          d={BOTTLE} fill="none"
+          stroke={outlineClr} strokeWidth="1.8"
+          style={{ transition: 'stroke 0.8s ease' }}
+        />
+
+        {/* Glass gloss overlay (always on top) */}
+        <path d={BOTTLE} fill="url(#glassGloss)"/>
+
+        {/* Left-edge shine streak */}
+        <path
+          d="M 38 42 Q 37 110 38 175"
+          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" strokeLinecap="round"
+        />
+
+        {/* Fill-level tick marks (right side, at 25 / 50 / 75%) */}
+        {[
+          { pct: 0.25, y: 182 - 0.25 * 160 },
+          { pct: 0.50, y: 182 - 0.50 * 160 },
+          { pct: 0.75, y: 182 - 0.75 * 160 },
+        ].map(({ pct, y }) => (
+          <line
+            key={pct}
+            x1="82" y1={y} x2="87" y2={y}
+            stroke={fillPercent >= pct ? outlineClr : 'rgba(255,255,255,0.1)'}
+            strokeWidth="1.5" strokeLinecap="round"
+            style={{ transition: 'stroke 0.8s ease' }}
+          />
+        ))}
+
         {/* Cap */}
-        <rect x="40" y="10" width="40" height="10" fill="#2C2C2C" rx="2" />
+        <rect x="47" y="3" width="26" height="9" rx="3"
+          fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+        <rect x="50" y="5" width="20" height="5" rx="2" fill="rgba(255,255,255,0.06)"/>
       </svg>
+
+      {/* Percentage label */}
       <div style={{
-        marginTop: '8px',
-        fontSize: '11px',
-        color: isFull ? '#10b981' : '#888888',
-        fontWeight: '500'
+        marginTop: '6px',
+        fontSize: '12px',
+        fontWeight: '700',
+        fontFamily: "'Barlow Condensed', sans-serif",
+        letterSpacing: '1.5px',
+        color: isFull ? '#30D158' : water > 0 ? '#0A84FF' : '#3A3A3A',
+        transition: 'color 0.8s ease'
       }}>
-        {Math.round(fillPercent * 100)}% {isFull && '🎉'}
+        {water > 0 ? `${Math.round(fillPercent * 100)}%${isFull ? ' ✓' : ''}` : '—'}
       </div>
     </div>
   )
