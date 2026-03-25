@@ -1744,14 +1744,15 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 display: 'block',
                 width: '100%',
                 padding: '14px',
-                backgroundColor: '#0A84FF',
+                background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 fontSize: '15px',
-                fontWeight: '600',
+                fontWeight: '700',
                 cursor: 'pointer',
-                marginBottom: '10px'
+                marginBottom: '10px',
+                boxShadow: '0 4px 20px rgba(10,132,255,0.35)'
               }}
             >
               Go to Yesterday
@@ -1800,37 +1801,49 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             marginBottom: '12px'
           }}>
             <div>
+              <div style={{ fontSize: '10px', fontWeight: '700', color: T.muted, letterSpacing: '2.5px', marginBottom: '3px', fontFamily: "'Barlow Condensed', sans-serif" }}>
+                {greeting()}
+              </div>
               <h1 style={{
-                margin: '0 0 4px 0',
+                margin: '0 0 3px 0',
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontSize: '26px',
                 fontWeight: '900',
                 color: T.text,
                 letterSpacing: '4px',
-                textTransform: 'uppercase'
+                textTransform: 'uppercase',
+                lineHeight: 1
               }}>
                 LYTZ
               </h1>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '6px'
               }}>
                 <span style={{
                   color: T.muted,
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: '600',
-                  letterSpacing: '1px'
+                  letterSpacing: '0.5px'
                 }}>
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
                 {syncStatus && (
-                  <span style={{
-                    fontSize: '11px',
-                    color: syncStatus === 'synced' ? '#10b981' : syncStatus === 'error' ? '#ef4444' : '#888888',
-                    fontWeight: '500'
-                  }}>
-                    {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'synced' ? 'Synced' : 'Sync error'}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{
+                      width: '6px', height: '6px', borderRadius: '50%',
+                      backgroundColor: syncStatus === 'synced' ? '#30D158' : syncStatus === 'error' ? '#FF453A' : '#888888',
+                      boxShadow: syncStatus === 'synced' ? '0 0 5px #30D158' : 'none',
+                      display: 'inline-block'
+                    }}/>
+                    <span style={{
+                      fontSize: '10px',
+                      color: syncStatus === 'synced' ? '#30D158' : syncStatus === 'error' ? '#FF453A' : '#888888',
+                      fontWeight: '600'
+                    }}>
+                      {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'synced' ? 'Synced' : 'Error'}
+                    </span>
                   </span>
                 )}
               </div>
@@ -1841,15 +1854,17 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               <button
                 onClick={() => { setViewDate(null); setPastDayData(null) }}
                 style={{
-                  padding: '8px 12px',
-                  backgroundColor: '#0A84FF',
+                  padding: '8px 14px',
+                  background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   color: '#fff',
                   fontSize: '12px',
-                  fontWeight: '600',
+                  fontWeight: '700',
                   cursor: 'pointer',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  letterSpacing: '0.3px',
+                  boxShadow: '0 2px 12px rgba(10,132,255,0.4)'
                 }}
               >
                 Today
@@ -1897,8 +1912,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   marginTop: '4px',
                   backgroundColor: T.card,
                   border: `1px solid ${T.border}`,
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  borderRadius: '14px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                   minWidth: '180px',
                   zIndex: 100,
                   overflow: 'hidden'
@@ -2054,15 +2069,14 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               onClick={() => setShowChat(true)}
               style={{
                 padding: '11px 8px',
-                backgroundColor: showChat ? '#0A84FF' : T.card,
-                border: `1px solid ${showChat ? '#0A84FF' : T.border}`,
+                backgroundColor: showChat ? '#0A84FF' : 'rgba(191,90,242,0.1)',
+                border: `1px solid ${showChat ? '#0A84FF' : 'rgba(191,90,242,0.3)'}`,
                 borderRadius: '12px',
-                color: T.text,
+                color: showChat ? '#fff' : '#BF5AF2',
                 fontSize: '13px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 whiteSpace: 'nowrap',
                 letterSpacing: '0.5px'
               }}
@@ -2073,15 +2087,14 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               href="/reports"
               style={{
                 padding: '11px 8px',
-                backgroundColor: T.card,
-                border: `1px solid ${T.border}`,
+                backgroundColor: 'rgba(10,132,255,0.1)',
+                border: '1px solid rgba(10,132,255,0.3)',
                 borderRadius: '12px',
-                color: T.text,
+                color: '#0A84FF',
                 fontSize: '13px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 textDecoration: 'none',
                 display: 'flex',
                 alignItems: 'center',
@@ -2089,39 +2102,37 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 letterSpacing: '0.5px'
               }}
             >
-              Reports
+              📊 Reports
             </Link>
             <button
               onClick={() => setShowSettings(true)}
               style={{
                 padding: '11px 8px',
-                backgroundColor: showSettings ? '#0A84FF' : T.card,
-                border: `1px solid ${showSettings ? '#0A84FF' : T.border}`,
+                backgroundColor: showSettings ? '#0A84FF' : 'rgba(48,209,88,0.1)',
+                border: `1px solid ${showSettings ? '#0A84FF' : 'rgba(48,209,88,0.3)'}`,
                 borderRadius: '12px',
-                color: T.text,
+                color: showSettings ? '#fff' : '#30D158',
                 fontSize: '13px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 letterSpacing: '0.5px'
               }}
             >
-              Your Goals
+              🎯 Goals
             </button>
             <Link
               href="/workout"
               style={{
                 padding: '11px 8px',
-                backgroundColor: T.card,
-                border: `1px solid ${T.border}`,
+                backgroundColor: 'rgba(255,159,10,0.1)',
+                border: '1px solid rgba(255,159,10,0.3)',
                 borderRadius: '12px',
-                color: T.text,
+                color: '#FF9F0A',
                 fontSize: '13px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 textDecoration: 'none',
                 display: 'flex',
                 alignItems: 'center',
@@ -2158,7 +2169,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           padding: '12px 16px',
           backgroundColor: viewDate !== null ? (darkMode ? '#1a1228' : '#f0ebff') : T.card,
           borderRadius: '14px',
-          marginBottom: '16px',
+          marginBottom: '20px',
           border: `1px solid ${viewDate !== null ? '#BF5AF2' : '#0A84FF'}`
         }}>
           {/* Back arrow */}
@@ -2237,34 +2248,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
 
         {/* Daily Checklist */}
         {checklistItems.length > 0 && (
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '8px'
-            }}>
-              <h2 style={{
-                margin: 0,
-                fontSize: '15px',
-                fontWeight: '700',
-                color: T.muted,
-                textTransform: 'uppercase',
-                letterSpacing: '2.5px',
-                fontFamily: "'Barlow Condensed', sans-serif"
-              }}>
-                Daily Habits
-              </h2>
-              {(() => {
-                const displayItems = viewDate !== null && pastDayData?.checklistItems ? pastDayData.checklistItems : checklistItems
-                const completed = displayItems.filter(item => {
-                  if ((item.frequency || 'daily') === 'multiple') return (item.count || 0) >= (item.targetCount || 1)
-                  return item.checked
-                }).length
-                return <span style={{ fontSize: '12px', color: T.muted }}>{completed}/{displayItems.length}</span>
-              })()}
-            </div>
-            {/* Progress bar */}
+          <div style={{ marginBottom: '28px' }}>
             {(() => {
               const displayItems = viewDate !== null && pastDayData?.checklistItems ? pastDayData.checklistItems : checklistItems
               const completed = displayItems.filter(item => {
@@ -2272,9 +2256,21 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 return item.checked
               }).length
               const pct = displayItems.length > 0 ? Math.round(completed / displayItems.length * 100) : 0
+              const ringColor = pct === 100 ? '#30D158' : '#0A84FF'
               return (
-                <div style={{ height: '5px', borderRadius: '3px', overflow: 'hidden', marginBottom: '10px' }}>
-                  <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? 'linear-gradient(90deg,#30D158,#20b857)' : 'linear-gradient(90deg,#0A84FF,#5856D6)', borderRadius: '3px', transition: 'width 0.3s ease' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                      background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
+                    }}>✅</div>
+                    <h2 style={{
+                      margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
+                      textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
+                    }}>Daily Habits</h2>
+                  </div>
+                  <ProgressRing pct={pct} size={52} sw={4} color={ringColor} />
                 </div>
               )
             })()}
@@ -2369,18 +2365,18 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
 
         {/* Water Tracker */}
         {waterButtons.length > 0 && (
-          <div style={{ marginBottom: '24px' }}>
-            <h2 style={{
-              margin: '0 0 12px 0',
-              fontSize: '15px',
-              fontWeight: '700',
-              color: T.muted,
-              textTransform: 'uppercase',
-              letterSpacing: '2.5px',
-              fontFamily: "'Barlow Condensed', sans-serif"
-            }}>
-              Hydration
-            </h2>
+          <div style={{ marginBottom: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
+              }}>💧</div>
+              <h2 style={{
+                margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
+                textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
+              }}>Hydration</h2>
+            </div>
             <div style={{
               background: 'linear-gradient(145deg,' + T.card + ' 0%,' + T.card2 + ' 100%)',
               borderRadius: '18px',
@@ -2429,11 +2425,12 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 {/* Stats */}
                 <div style={{ textAlign: 'center' }}>
                   <div style={{
-                    fontSize: '48px',
-                    fontWeight: '600',
+                    fontSize: '52px',
+                    fontWeight: '900',
                     color: T.text,
                     marginBottom: '2px',
-                    letterSpacing: '-2px'
+                    letterSpacing: '-1px',
+                    fontFamily: "'Barlow Condensed', sans-serif"
                   }}>
                     {displayWater}
                   </div>
@@ -2511,7 +2508,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
 
         {/* Nutrition Totals */}
         {nutritionMetrics.length > 0 && (
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '28px' }}>
             {(() => {
               // Determine which data to display (past day or today)
               const displayNutritionMetrics = viewDate !== null && pastDayData
@@ -2529,40 +2526,42 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               alignItems: 'center',
               marginBottom: '12px'
             }}>
-              <h2 style={{
-                margin: '0',
-                fontSize: '15px',
-                fontWeight: '700',
-                color: T.muted,
-                textTransform: 'uppercase',
-                letterSpacing: '2.5px',
-                fontFamily: "'Barlow Condensed', sans-serif"
-              }}>
-                Nutrition
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                  background: 'rgba(48,209,88,0.12)', border: '1px solid rgba(48,209,88,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
+                }}>🥗</div>
+                <h2 style={{
+                  margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
+                  textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
+                }}>Nutrition</h2>
+              </div>
               {displayNutritionHistory.length > 0 && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={undoNutrition} style={{
-                    padding: '4px 10px',
+                    padding: '5px 12px',
                     backgroundColor: 'transparent',
-                    border: 'none',
+                    border: `1px solid ${T.border}`,
+                    borderRadius: '20px',
                     color: T.muted,
-                    fontSize: '12px',
-                    fontWeight: '500',
+                    fontSize: '11px',
+                    fontWeight: '600',
                     cursor: 'pointer',
-                    textDecoration: 'underline'
+                    letterSpacing: '0.3px'
                   }}>
                     Undo
                   </button>
                   <button onClick={() => setShowNutritionLog(!showNutritionLog)} style={{
-                    padding: '4px 10px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: showNutritionLog ? T.text : T.muted,
-                    fontSize: '12px',
-                    fontWeight: '500',
+                    padding: '5px 12px',
+                    backgroundColor: showNutritionLog ? 'rgba(10,132,255,0.12)' : 'transparent',
+                    border: `1px solid ${showNutritionLog ? 'rgba(10,132,255,0.4)' : T.border}`,
+                    borderRadius: '20px',
+                    color: showNutritionLog ? '#0A84FF' : T.muted,
+                    fontSize: '11px',
+                    fontWeight: '600',
                     cursor: 'pointer',
-                    textDecoration: 'underline'
+                    letterSpacing: '0.3px'
                   }}>
                     {showNutritionLog ? 'Hide Log' : 'Log'}
                   </button>
@@ -2576,7 +2575,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 marginBottom: '12px',
                 backgroundColor: T.card,
                 border: `1px solid ${T.border}`,
-                borderRadius: '10px',
+                borderRadius: '14px',
                 overflow: 'hidden'
               }}>
                 <div style={{
@@ -2683,7 +2682,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   return (
                     <div key={entryIndex} style={{
                       padding: '10px 14px',
-                      borderBottom: reverseIdx < displayNutritionHistory.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      borderBottom: reverseIdx < displayNutritionHistory.length - 1 ? `1px solid ${T.border}` : 'none',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -2866,12 +2865,12 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           />
                           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                             <button onClick={() => saveMetricEdit(i)} style={{
-                              flex: 1, padding: '6px', backgroundColor: '#10b981', border: 'none',
-                              borderRadius: '4px', color: '#1A1A1A', fontSize: '11px', fontWeight: '600', cursor: 'pointer'
+                              flex: 1, padding: '8px', backgroundColor: '#30D158', border: 'none',
+                              borderRadius: '8px', color: '#0D0D0D', fontSize: '12px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.3px'
                             }}>Save</button>
                             <button onClick={() => { setEditingMetric(null); setEditMetricValue('') }} style={{
-                              flex: 1, padding: '6px', backgroundColor: T.card2, border: `1px solid ${T.border}`,
-                              borderRadius: '4px', color: T.muted, fontSize: '11px', fontWeight: '500', cursor: 'pointer'
+                              flex: 1, padding: '8px', backgroundColor: 'transparent', border: `1px solid ${T.border}`,
+                              borderRadius: '8px', color: T.muted, fontSize: '12px', fontWeight: '600', cursor: 'pointer'
                             }}>Cancel</button>
                           </div>
                         </div>
@@ -2924,18 +2923,18 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         )}
 
         {/* Quick Add — meal buttons only when configured; custom entry always shown */}
-        {(meals.some(m => m) || nutritionMetrics.length > 0) && <div style={{ marginBottom: '24px' }}>
-          <h2 style={{
-            margin: '0 0 12px 0',
-            fontSize: '15px',
-            fontWeight: '700',
-            color: T.muted,
-            textTransform: 'uppercase',
-            letterSpacing: '2.5px',
-            fontFamily: "'Barlow Condensed', sans-serif"
-          }}>
-            Quick Add
-          </h2>
+        {(meals.some(m => m) || nutritionMetrics.length > 0) && <div style={{ marginBottom: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+              background: 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
+            }}>⚡</div>
+            <h2 style={{
+              margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
+              textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
+            }}>Quick Add</h2>
+          </div>
           {meals.some(m => m) && <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
@@ -2951,7 +2950,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     padding: '14px 12px',
                     backgroundColor: T.card,
                     border: `1px solid ${T.border}`,
-                    borderRadius: '10px',
+                    borderRadius: '14px',
                     color: T.text,
                     fontSize: '13px',
                     fontWeight: '500',
@@ -3004,7 +3003,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               padding: '16px',
               backgroundColor: T.card,
               border: `1px solid ${T.border}`,
-              borderRadius: '10px',
+              borderRadius: '14px',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }}>
               <div style={{
@@ -3027,7 +3026,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                   width: '100%',
                   padding: '10px 12px',
                   fontSize: '14px',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   border: `1px solid ${T.border}`,
                   marginBottom: '12px',
                   backgroundColor: T.bg,
@@ -3064,17 +3063,20 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               </div>
               <button onClick={addCustomEntry} style={{
                 width: '100%',
-                padding: '10px',
-                backgroundColor: '#0A84FF',
+                padding: '12px',
+                background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
                 border: 'none',
-                borderRadius: '8px',
-                color: '#1A1A1A',
+                borderRadius: '10px',
+                color: '#fff',
                 fontSize: '14px',
-                fontWeight: '500',
+                fontWeight: '700',
                 cursor: 'pointer',
-                transition: 'all 0.15s'
+                transition: 'all 0.15s',
+                letterSpacing: '0.5px',
+                fontFamily: "'Barlow Condensed', sans-serif",
+                boxShadow: '0 2px 12px rgba(10,132,255,0.35)'
               }}>
-                Add Entry
+                ADD ENTRY
               </button>
             </div>
           )}
@@ -3085,46 +3087,54 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           <div style={{
             textAlign: 'center',
             padding: '60px 24px',
-            backgroundColor: T.card,
-            borderRadius: '12px',
-            border: `1px solid ${T.border}`
+            background: 'linear-gradient(145deg,#0a0f1e 0%,#111827 55%,#0d0d0d 100%)',
+            borderRadius: '22px',
+            border: `1px solid ${T.border}`,
+            position: 'relative',
+            overflow: 'hidden'
           }}>
+            <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle,rgba(10,132,255,0.09) 0%,transparent 70%)', pointerEvents: 'none' }}/>
             <div style={{
               fontSize: '48px',
-              marginBottom: '20px',
-              opacity: 0.2
+              marginBottom: '16px'
             }}>
               📊
             </div>
             <div style={{
-              fontSize: '18px',
-              fontWeight: '600',
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: '28px',
+              fontWeight: '900',
               color: T.text,
-              marginBottom: '6px'
+              letterSpacing: '1px',
+              marginBottom: '8px'
             }}>
-              Ready to Track
+              READY TO TRACK
             </div>
             <div style={{
               fontSize: '14px',
-              color: T.faint,
-              marginBottom: '20px'
+              color: T.muted,
+              marginBottom: '28px',
+              lineHeight: '1.5'
             }}>
               Configure your tracker to get started
             </div>
             <button
               onClick={() => setShowSettings(true)}
               style={{
-                padding: '10px 20px',
-                backgroundColor: '#0A84FF',
+                padding: '12px 28px',
+                background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
                 border: 'none',
-                borderRadius: '8px',
-                color: '#1A1A1A',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer'
+                borderRadius: '14px',
+                color: '#fff',
+                fontSize: '15px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                fontFamily: "'Barlow Condensed', sans-serif",
+                letterSpacing: '1px',
+                boxShadow: '0 4px 20px rgba(10,132,255,0.35)'
               }}
             >
-              Open Your Goals
+              OPEN YOUR GOALS
             </button>
           </div>
         )}
@@ -3186,6 +3196,34 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
       )}
     </div>
     </ThemeContext.Provider>
+  )
+}
+
+// Greeting helper
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'GOOD MORNING'
+  if (h < 17) return 'GOOD AFTERNOON'
+  return 'GOOD EVENING'
+}
+
+// Circular progress ring (mirrors workout platform)
+function ProgressRing({ pct = 0, size = 52, sw = 4, color = '#0A84FF' }) {
+  const r = (size - sw) / 2
+  const circ = 2 * Math.PI * r
+  const dash = circ - (pct / 100) * circ
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={sw}/>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw}
+          strokeDasharray={circ} strokeDashoffset={dash} strokeLinecap="round"
+          style={{ filter: `drop-shadow(0 0 4px ${color}99)`, transition: 'stroke-dashoffset 0.6s ease' }}/>
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 13, color: '#fff', lineHeight: 1 }}>{pct}%</span>
+      </div>
+    </div>
   )
 }
 
