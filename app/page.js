@@ -1690,8 +1690,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
     <div style={{
       minHeight: '100vh',
       backgroundColor: T.bg,
-      padding: '16px 12px',
-      paddingBottom: '32px',
+      padding: '0 0 80px 0',
       fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
       color: T.text,
     }}>
@@ -1777,12 +1776,22 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         </div>
       )}
 
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 16px' }}>
         {/* Header */}
         <div style={{
-          marginBottom: '24px',
-          paddingBottom: '16px',
-          borderBottom: `1px solid ${T.border}`
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          backgroundColor: T.bg + 'ee',
+          borderBottom: '1px solid ' + T.border,
+          marginBottom: '20px',
+          padding: '12px 0 14px',
+          marginLeft: '-16px',
+          marginRight: '-16px',
+          paddingLeft: '16px',
+          paddingRight: '16px'
         }}>
           <div style={{
             display: 'flex',
@@ -1793,12 +1802,14 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             <div>
               <h1 style={{
                 margin: '0 0 4px 0',
-                fontSize: '22px',
-                fontWeight: '600',
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: '26px',
+                fontWeight: '900',
                 color: T.text,
-                letterSpacing: '-0.5px'
+                letterSpacing: '4px',
+                textTransform: 'uppercase'
               }}>
-                Daily Tracker
+                LYTZ
               </h1>
               <div style={{
                 display: 'flex',
@@ -1807,9 +1818,9 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               }}>
                 <span style={{
                   color: T.muted,
-                  fontSize: '13px',
-                  fontWeight: '400',
-                  letterSpacing: '0'
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  letterSpacing: '1px'
                 }}>
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </span>
@@ -1850,11 +1861,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               <button
                 onClick={() => user ? setShowUserMenu(!showUserMenu) : router.push('/login')}
                 style={{
-                  padding: '8px 12px',
+                  padding: '9px 14px',
                   backgroundColor: user ? 'rgba(48,209,88,0.12)' : T.card,
                   border: '1px solid',
                   borderColor: user ? 'rgba(48,209,88,0.35)' : T.border,
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   color: user ? '#30D158' : '#888888',
                   fontSize: '12px',
                   fontWeight: '500',
@@ -2042,17 +2053,18 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             <button
               onClick={() => setShowChat(true)}
               style={{
-                padding: '10px 8px',
+                padding: '11px 8px',
                 backgroundColor: showChat ? '#0A84FF' : T.card,
                 border: `1px solid ${showChat ? '#0A84FF' : T.border}`,
-                borderRadius: '8px',
+                borderRadius: '12px',
                 color: T.text,
-                fontSize: '12px',
-                fontWeight: '500',
+                fontSize: '13px',
+                fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                letterSpacing: '0.5px'
               }}
             >
               🤖 AI
@@ -2060,51 +2072,13 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             <Link
               href="/reports"
               style={{
-                padding: '10px 8px',
+                padding: '11px 8px',
                 backgroundColor: T.card,
                 border: `1px solid ${T.border}`,
-                borderRadius: '8px',
+                borderRadius: '12px',
                 color: T.text,
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              Reports
-            </Link>
-            <button
-              onClick={() => setShowSettings(true)}
-              style={{
-                padding: '10px 8px',
-                backgroundColor: showSettings ? '#0A84FF' : T.card,
-                border: `1px solid ${showSettings ? '#0A84FF' : T.border}`,
-                borderRadius: '8px',
-                color: T.text,
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-              }}
-            >
-              Your Goals
-            </button>
-            <Link
-              href="/workout"
-              style={{
-                padding: '10px 8px',
-                backgroundColor: T.card,
-                border: `1px solid ${T.border}`,
-                borderRadius: '8px',
-                color: T.text,
-                fontSize: '12px',
-                fontWeight: '500',
+                fontSize: '13px',
+                fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
@@ -2112,7 +2086,48 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                whiteSpace: 'nowrap'
+                letterSpacing: '0.5px'
+              }}
+            >
+              Reports
+            </Link>
+            <button
+              onClick={() => setShowSettings(true)}
+              style={{
+                padding: '11px 8px',
+                backgroundColor: showSettings ? '#0A84FF' : T.card,
+                border: `1px solid ${showSettings ? '#0A84FF' : T.border}`,
+                borderRadius: '12px',
+                color: T.text,
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                letterSpacing: '0.5px'
+              }}
+            >
+              Your Goals
+            </button>
+            <Link
+              href="/workout"
+              style={{
+                padding: '11px 8px',
+                backgroundColor: T.card,
+                border: `1px solid ${T.border}`,
+                borderRadius: '12px',
+                color: T.text,
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                whiteSpace: 'nowrap',
+                letterSpacing: '0.5px'
               }}
             >
               💪 Workout
@@ -2142,7 +2157,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           justifyContent: 'space-between',
           padding: '12px 16px',
           backgroundColor: viewDate !== null ? (darkMode ? '#1a1228' : '#f0ebff') : T.card,
-          borderRadius: '10px',
+          borderRadius: '14px',
           marginBottom: '16px',
           border: `1px solid ${viewDate !== null ? '#BF5AF2' : '#0A84FF'}`
         }}>
@@ -2154,9 +2169,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               padding: '8px 12px',
               backgroundColor: 'transparent',
               border: '1px solid #0A84FF',
-              borderRadius: '6px',
+              borderRadius: '8px',
               color: '#0A84FF',
-              fontSize: '16px',
+              fontSize: '18px',
+              fontWeight: '700',
               cursor: loadingPastDay ? 'not-allowed' : 'pointer',
               opacity: loadingPastDay ? 0.5 : 1
             }}
@@ -2168,8 +2184,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           <div style={{
             flex: 1,
             textAlign: 'center',
-            fontSize: '15px',
-            fontWeight: '600',
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: '700',
+            fontSize: '16px',
+            letterSpacing: '1px',
             color: T.text
           }}>
             {loadingPastDay ? (
@@ -2205,9 +2223,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               padding: '8px 12px',
               backgroundColor: 'transparent',
               border: `1px solid ${viewDate === null ? '#ddd' : '#0A84FF'}`,
-              borderRadius: '6px',
+              borderRadius: '8px',
               color: viewDate === null ? '#ddd' : '#0A84FF',
-              fontSize: '16px',
+              fontSize: '18px',
+              fontWeight: '700',
               cursor: viewDate === null || loadingPastDay ? 'not-allowed' : 'pointer',
               opacity: viewDate === null || loadingPastDay ? 0.5 : 1
             }}
@@ -2227,11 +2246,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             }}>
               <h2 style={{
                 margin: 0,
-                fontSize: '13px',
+                fontSize: '15px',
                 fontWeight: '700',
                 color: T.muted,
                 textTransform: 'uppercase',
-                letterSpacing: '1px',
+                letterSpacing: '2.5px',
                 fontFamily: "'Barlow Condensed', sans-serif"
               }}>
                 Daily Habits
@@ -2254,8 +2273,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               }).length
               const pct = displayItems.length > 0 ? Math.round(completed / displayItems.length * 100) : 0
               return (
-                <div style={{ height: '4px', backgroundColor: T.card2, borderRadius: '2px', marginBottom: '10px' }}>
-                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#4caf50' : '#0A84FF', borderRadius: '2px', transition: 'width 0.3s ease' }} />
+                <div style={{ height: '5px', borderRadius: '3px', overflow: 'hidden', marginBottom: '10px' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? 'linear-gradient(90deg,#30D158,#20b857)' : 'linear-gradient(90deg,#0A84FF,#5856D6)', borderRadius: '3px', transition: 'width 0.3s ease' }} />
                 </div>
               )
             })()}
@@ -2281,11 +2300,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       key={i}
                       onClick={() => viewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
                       style={{
-                        padding: '12px 14px',
-                        backgroundColor: T.card,
+                        padding: '14px 14px',
+                        backgroundColor: isDone ? 'rgba(10,132,255,0.08)' : T.card,
                         border: '1px solid',
                         borderColor: isDone ? '#0A84FF' : '#2C2C2C',
-                        borderRadius: '10px',
+                        borderRadius: '14px',
                         color: isDone ? '#0A84FF' : '#888888',
                         fontSize: '13px',
                         fontWeight: '500',
@@ -2353,21 +2372,21 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           <div style={{ marginBottom: '24px' }}>
             <h2 style={{
               margin: '0 0 12px 0',
-              fontSize: '13px',
+              fontSize: '15px',
               fontWeight: '700',
               color: T.muted,
               textTransform: 'uppercase',
-              letterSpacing: '1px',
+              letterSpacing: '2.5px',
               fontFamily: "'Barlow Condensed', sans-serif"
             }}>
               Hydration
             </h2>
             <div style={{
-              backgroundColor: T.card,
-              borderRadius: '12px',
+              background: 'linear-gradient(145deg,' + T.card + ' 0%,' + T.card2 + ' 100%)',
+              borderRadius: '18px',
               padding: '20px 16px',
               border: `1px solid ${T.border}`,
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+              boxShadow: 'none'
             }}>
               {(() => {
                 // Determine which data to display (past day or today)
@@ -2451,13 +2470,13 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     key={i}
                     onClick={() => addWater(amount)}
                     style={{
-                      padding: '10px 16px',
+                      padding: '12px 18px',
                       backgroundColor: T.card2,
                       border: `1px solid ${T.border}`,
-                      borderRadius: '8px',
+                      borderRadius: '12px',
                       color: T.text,
-                      fontSize: '14px',
-                      fontWeight: '500',
+                      fontSize: '15px',
+                      fontWeight: '700',
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                       minWidth: '60px'
@@ -2512,11 +2531,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             }}>
               <h2 style={{
                 margin: '0',
-                fontSize: '13px',
+                fontSize: '15px',
                 fontWeight: '700',
                 color: T.muted,
                 textTransform: 'uppercase',
-                letterSpacing: '1px',
+                letterSpacing: '2.5px',
                 fontFamily: "'Barlow Condensed', sans-serif"
               }}>
                 Nutrition
@@ -2776,10 +2795,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       setEditMetricValue(String(value))
                     }
                   }} style={{
-                    padding: '16px',
+                    padding: '18px',
                     backgroundColor: T.card,
                     border: isEditing ? '1px solid #0A84FF' : `1px solid ${T.border}`,
-                    borderRadius: '10px',
+                    borderRadius: '16px',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     position: 'relative',
                     overflow: 'hidden',
@@ -2810,10 +2829,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           <span style={{ fontSize: '14px' }}>{metric.icon}</span>
                         )}
                         <div style={{
-                          fontSize: '11px',
+                          fontSize: '12px',
                           color: T.muted,
                           fontWeight: '600',
-                          letterSpacing: '0.8px',
+                          letterSpacing: '1.5px',
                           textTransform: 'uppercase',
                           fontFamily: "'Barlow Condensed', sans-serif"
                         }}>
@@ -2859,10 +2878,11 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                       ) : (
                         <>
                           <div style={{
-                            fontSize: '28px',
-                            fontWeight: '600',
+                            fontSize: '32px',
+                            fontWeight: '900',
                             color: T.text,
-                            letterSpacing: '-1px'
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            letterSpacing: '-0.5px'
                           }}>
                             {value}
                             {metric.unit && <span style={{ fontSize: '14px', color: T.muted, fontWeight: '500' }}> {metric.unit}</span>}
@@ -2907,11 +2927,12 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         {(meals.some(m => m) || nutritionMetrics.length > 0) && <div style={{ marginBottom: '24px' }}>
           <h2 style={{
             margin: '0 0 12px 0',
-            fontSize: '12px',
-            fontWeight: '600',
-            color: T.faint,
+            fontSize: '15px',
+            fontWeight: '700',
+            color: T.muted,
             textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            letterSpacing: '2.5px',
+            fontFamily: "'Barlow Condensed', sans-serif"
           }}>
             Quick Add
           </h2>
