@@ -1037,14 +1037,18 @@ export default function AdminPage() {
                           {announcementTitle.trim() || 'NEW FEATURE'}
                         </span>
                       </div>
-                      <p style={{
+                      <div style={{
                         margin: 0,
                         fontSize: '14px',
                         color: '#1e40af',
                         lineHeight: '1.5'
                       }}>
-                        {announcementMessage}
-                      </p>
+                        {announcementMessage.split('\n').map((line, i, arr) =>
+                          line.trim() === ''
+                            ? <br key={i}/>
+                            : <p key={i} style={{ margin: i < arr.length - 1 ? '0 0 6px 0' : 0 }}>{line}</p>
+                        )}
+                      </div>
                     </div>
                     <div style={{
                       color: '#2563eb',

@@ -3950,14 +3950,18 @@ function NotificationBanner({ notification, onDismiss }) {
             {content.label}
           </span>
         </div>
-        <p style={{
+        <div style={{
           margin: 0,
           fontSize: '14px',
           color: content.colors.text,
           lineHeight: '1.5'
         }}>
-          {content.message}
-        </p>
+          {content.message.split('\n').map((line, i, arr) =>
+            line.trim() === ''
+              ? <br key={i}/>
+              : <p key={i} style={{ margin: i < arr.length - 1 ? '0 0 6px 0' : 0 }}>{line}</p>
+          )}
+        </div>
       </div>
       <button
         onClick={onDismiss}
