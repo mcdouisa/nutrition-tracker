@@ -22,6 +22,7 @@ import {
   updateUserProfile,
   subscribeNotifications,
   dismissNotification,
+  loadArchivedAnnouncements,
   completeOnboarding,
   loadUserProfile
 } from '../lib/dataSync'
@@ -110,6 +111,8 @@ export default function NutritionTracker() {
 
   // Notifications
   const [notifications, setNotifications] = useState([])
+  const [archivedAnnouncements, setArchivedAnnouncements] = useState([])
+  const [showCatchUp, setShowCatchUp] = useState(false)
 
   // Onboarding
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -305,8 +308,20 @@ export default function NutritionTracker() {
           }
         })
 
-        unsubscribeNotifications = subscribeNotifications(user.uid, (notifs) => {
-          setNotifications(notifs)
+        unsubscribeNotifications = subscribeNotifications(user.uid, async (notifs) => {
+          const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          const fresh = [], stale = []
+          notifs.forEach(n => {
+            const age = new Date(n.createdAt)
+            if (age < cutoff) stale.push(n)
+            else fresh.push(n)
+          })
+          // Auto-expire stale notifications (fire-and-forget, mark autoExpired so they're retrievable)
+          stale.forEach(n => dismissNotification(user.uid, n.id, true))
+          setNotifications(fresh)
+          // Reload the archived list whenever fresh subscription fires
+          const archived = await loadArchivedAnnouncements(user.uid)
+          setArchivedAnnouncements(archived)
         })
 
         setDataLoaded(true)
@@ -2158,6 +2173,79 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 }}
               />
             ))}
+          </div>
+        )}
+
+        {/* Catch Up — older archived announcements */}
+        {archivedAnnouncements.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={() => setShowCatchUp(v => !v)}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                backgroundColor: showCatchUp ? 'rgba(10,132,255,0.1)' : T.card,
+                border: `1px solid ${showCatchUp ? 'rgba(10,132,255,0.35)' : T.border}`,
+                borderRadius: '12px',
+                color: showCatchUp ? '#0A84FF' : T.muted,
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                letterSpacing: '0.5px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📬</span>
+                <span>{archivedAnnouncements.length} older update{archivedAnnouncements.length !== 1 ? 's' : ''} — Catch up</span>
+              </span>
+              <span style={{ fontSize: '14px' }}>{showCatchUp ? '▲' : '▼'}</span>
+            </button>
+
+            {showCatchUp && (
+              <div style={{
+                marginTop: '6px',
+                backgroundColor: T.card,
+                border: `1px solid ${T.border}`,
+                borderRadius: '12px',
+                overflow: 'hidden'
+              }}>
+                {archivedAnnouncements.map((notif, i) => {
+                  const date = new Date(notif.createdAt)
+                  const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  return (
+                    <div key={notif.id} style={{
+                      padding: '14px 16px',
+                      borderBottom: i < archivedAnnouncements.length - 1 ? `1px solid ${T.border}` : 'none'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '14px' }}>🎉</span>
+                          <span style={{
+                            fontSize: '12px', fontWeight: '700', color: '#0A84FF',
+                            textTransform: 'uppercase', letterSpacing: '0.5px',
+                            fontFamily: "'Barlow Condensed', sans-serif"
+                          }}>
+                            {notif.title || 'Announcement'}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '11px', color: T.muted }}>{dateLabel}</span>
+                      </div>
+                      <div style={{ fontSize: '13px', color: T.muted, lineHeight: '1.5' }}>
+                        {notif.message.split('\n').map((line, j, arr) =>
+                          line.trim() === ''
+                            ? <br key={j}/>
+                            : <p key={j} style={{ margin: j < arr.length - 1 ? '0 0 4px 0' : 0 }}>{line}</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -4026,11 +4114,11 @@ function NotificationBanner({ notification, onDismiss }) {
         label: notif.title || 'NEW FEATURE',
         message: notif.message,
         colors: {
-          bg: '#eff6ff',
-          border: 'rgba(10,132,255,0.4)',
-          icon: '#2563eb',
-          label: '#2563eb',
-          text: '#1e40af'
+          bg: 'rgba(10,132,255,0.08)',
+          border: 'rgba(10,132,255,0.35)',
+          icon: '#0A84FF',
+          label: '#0A84FF',
+          text: T.text
         }
       }
     }
@@ -4040,11 +4128,11 @@ function NotificationBanner({ notification, onDismiss }) {
       label: 'Notification',
       message: 'You have a new notification.',
       colors: {
-        bg: '#f0f9ff',
-        border: 'rgba(10,132,255,0.3)',
-        icon: '#0284c7',
-        label: '#0284c7',
-        text: '#075985'
+        bg: 'rgba(10,132,255,0.08)',
+        border: 'rgba(10,132,255,0.25)',
+        icon: '#0A84FF',
+        label: '#0A84FF',
+        text: T.muted
       }
     }
   }
