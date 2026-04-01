@@ -1,6 +1,6 @@
 // AI Chat Modal Component (mobile optimized)
 import { useRef, useState, useEffect } from 'react'
-import { CameraIcon, BarcodeIcon } from '../lib/icons'
+import { CameraIcon, BarcodeIcon, MicIcon } from '../lib/icons'
 
 // ── Barcode lookup via Open Food Facts (free, no API key) ────────────────────
 async function lookupBarcode(barcode, metrics) {
@@ -210,6 +210,15 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
           50% { opacity: 0.6; top: 72%; }
         }
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes recPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.75); }
+        }
+        @keyframes recRing {
+          0% { box-shadow: 0 0 0 0 rgba(255,69,58,0.5); }
+          70% { box-shadow: 0 0 0 8px rgba(255,69,58,0); }
+          100% { box-shadow: 0 0 0 0 rgba(255,69,58,0); }
+        }
       `}</style>
 
       {/* Camera feed */}
@@ -410,6 +419,79 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
   const fileInputRef = useRef(null)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
 
+  // Voice recording
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
+  const recordingTimerRef = useRef(null)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [voiceError, setVoiceError] = useState('')
+
+  const formatRecordingTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+
+  const transcribeAudio = async (blob, mimeType) => {
+    setIsTranscribing(true)
+    setVoiceError('')
+    try {
+      const ext = mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a'
+               : mimeType.includes('ogg') ? 'ogg'
+               : 'webm'
+      const formData = new FormData()
+      formData.append('audio', blob, `recording.${ext}`)
+      const res = await fetch('/api/transcribe', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.text) {
+        onInputChange(data.text)
+      } else {
+        setVoiceError(data.error || 'Could not transcribe audio. Please try again.')
+      }
+    } catch {
+      setVoiceError('Network error. Please try again.')
+    } finally {
+      setIsTranscribing(false)
+    }
+  }
+
+  const startRecording = async () => {
+    setVoiceError('')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+                     : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+                     : 'audio/mp4'
+      const recorder = new MediaRecorder(stream, { mimeType })
+      audioChunksRef.current = []
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType })
+        transcribeAudio(blob, recorder.mimeType)
+      }
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+      setRecordingSeconds(0)
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds(s => {
+          if (s >= 59) { stopRecording(); return 0 }
+          return s + 1
+        })
+      }, 1000)
+    } catch {
+      setVoiceError('Microphone access denied. Please allow microphone access and try again.')
+    }
+  }
+
+  const stopRecording = () => {
+    clearInterval(recordingTimerRef.current)
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop()
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop())
+    }
+    setIsRecording(false)
+    setRecordingSeconds(0)
+  }
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -474,6 +556,18 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
         boxShadow: '0 -4px 30px rgba(0,0,0,0.2)',
         position: 'relative',
       }}>
+        <style>{`
+          @keyframes recPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.75); }
+          }
+          @keyframes recRing {
+            0% { box-shadow: 0 0 0 0 rgba(255,69,58,0.5); }
+            70% { box-shadow: 0 0 0 8px rgba(255,69,58,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,69,58,0); }
+          }
+        `}</style>
+
         {/* Barcode scanner overlay */}
         {showBarcodeScanner && (
           <BarcodeScanner
@@ -699,6 +793,31 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
           borderTop: '1px solid #2C2C2C',
           backgroundColor: '#1A1A1A'
         }}>
+          {/* Voice recording / transcribing indicator */}
+          {(isRecording || isTranscribing) && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 4px 10px',
+            }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                backgroundColor: isTranscribing ? '#FF9F0A' : '#FF453A',
+                animation: isRecording ? 'recPulse 1s ease-in-out infinite' : 'none',
+              }} />
+              <span style={{ color: '#aaa', fontSize: 13 }}>
+                {isTranscribing ? 'Transcribing...' : `Recording ${formatRecordingTime(recordingSeconds)}`}
+              </span>
+              {isRecording && (
+                <span style={{ color: '#555', fontSize: 12, marginLeft: 'auto' }}>tap mic to stop</span>
+              )}
+            </div>
+          )}
+
+          {/* Voice error */}
+          {voiceError && !isRecording && !isTranscribing && (
+            <div style={{ color: '#FF453A', fontSize: 12, padding: '4px 4px 8px' }}>{voiceError}</div>
+          )}
+
           {/* Image preview */}
           {pendingImage && (
             <div style={{
@@ -797,6 +916,30 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               }}
             >
               <BarcodeIcon size={20} color="#888888" strokeWidth={1.75} />
+            </button>
+
+            {/* Voice record button */}
+            <button
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isThinking || isTranscribing}
+              title={isRecording ? 'Stop recording' : 'Record what you ate'}
+              style={{
+                padding: '10px 12px',
+                backgroundColor: isRecording ? '#FF453A' : 'transparent',
+                border: `1px solid ${isRecording ? '#FF453A' : '#2C2C2C'}`,
+                borderRadius: '8px',
+                cursor: (isThinking || isTranscribing) ? 'not-allowed' : 'pointer',
+                lineHeight: 1,
+                flexShrink: 0,
+                opacity: (isThinking || isTranscribing) ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: isRecording ? 'recRing 1.2s ease-in-out infinite' : 'none',
+                boxShadow: isRecording ? '0 0 0 0 rgba(255,69,58,0.4)' : 'none',
+              }}
+            >
+              <MicIcon size={20} color={isRecording ? '#fff' : '#888888'} strokeWidth={1.75} />
             </button>
 
             <textarea
