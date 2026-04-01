@@ -58,10 +58,12 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
   const streamRef = useRef(null)
   const rafRef = useRef(null)
   const detectorRef = useRef(null)
-  const [status, setStatus] = useState('starting') // starting | scanning | found | error | unsupported | notfound
+  const photoInputRef = useRef(null)
+  const [status, setStatus] = useState('starting') // starting | scanning | found | error | unsupported | notfound | reading-photo | photo-error
   const [errorMsg, setErrorMsg] = useState('')
   const [manualCode, setManualCode] = useState('')
   const [submittingManual, setSubmittingManual] = useState(false)
+  const [showManualInput, setShowManualInput] = useState(false)
 
   const stopCamera = () => {
     cancelAnimationFrame(rafRef.current)
@@ -91,6 +93,51 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
     setSubmittingManual(true)
     await handleBarcode(manualCode.trim())
     setSubmittingManual(false)
+  }
+
+  const readBarcodeFromPhoto = async (dataUrl) => {
+    setStatus('reading-photo')
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a barcode reader. When shown an image, find the barcode and return ONLY its numeric digits — nothing else. No spaces, no explanation. If no barcode is visible, return NONE.',
+            },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Read the barcode number from this image. Return ONLY the digits.' },
+                { type: 'image_url', image_url: { url: dataUrl } },
+              ],
+            },
+          ],
+        }),
+      })
+      const data = await response.json()
+      const raw = (data.content || '').trim()
+      const digits = raw.replace(/\D/g, '')
+      if (!digits || raw === 'NONE' || digits.length < 6) {
+        setStatus('photo-error')
+        setErrorMsg("Couldn't read a barcode from that photo. Try again or enter the number manually.")
+        return
+      }
+      await handleBarcode(digits)
+    } catch {
+      setStatus('photo-error')
+      setErrorMsg('Network error. Please try again.')
+    }
+  }
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+    const dataUrl = await compressImage(file)
+    readBarcodeFromPhoto(dataUrl)
   }
 
   useEffect(() => {
@@ -149,7 +196,7 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
     return () => { active = false; cancelAnimationFrame(rafRef.current) }
   }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isManualMode = status === 'unsupported' || status === 'notfound'
+  const isPhotoMode = status === 'unsupported' || status === 'notfound' || status === 'photo-error'
 
   return (
     <div style={{
@@ -209,6 +256,16 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
         </div>
       )}
 
+      {/* Hidden photo input for AI barcode reading */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handlePhotoChange}
+        style={{ display: 'none' }}
+      />
+
       {/* Status / message area */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -226,13 +283,13 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
           </p>
         )}
 
-        {status === 'found' && (
+        {(status === 'found' || status === 'reading-photo') && (
           <p style={{ color: '#30D158', textAlign: 'center', fontSize: 14, margin: 0, fontWeight: 600 }}>
-            Barcode detected — looking up product...
+            {status === 'reading-photo' ? 'Reading barcode from photo...' : 'Barcode detected — looking up product...'}
           </p>
         )}
 
-        {(status === 'error' || status === 'notfound') && !isManualMode && (
+        {status === 'error' && (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#FF453A', fontSize: 13, marginBottom: 12 }}>{errorMsg}</p>
             <button onClick={() => setStatus('scanning')} style={{
@@ -242,34 +299,67 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
           </div>
         )}
 
-        {isManualMode && (
+        {isPhotoMode && (
           <div style={{ animation: 'fadeIn 0.25s ease' }}>
-            <p style={{ color: '#888', fontSize: 12, textAlign: 'center', marginBottom: 10 }}>
-              {status === 'unsupported'
-                ? 'Live scanning not supported on this browser.'
-                : errorMsg}
-              {' '}Enter the barcode number manually:
-            </p>
-            <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 8 }}>
-              <input
-                value={manualCode}
-                onChange={e => setManualCode(e.target.value)}
-                placeholder="e.g. 012345678905"
-                inputMode="numeric"
+            {/* Error/context message */}
+            {(status === 'photo-error' || status === 'notfound') && (
+              <p style={{ color: '#FF453A', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>{errorMsg}</p>
+            )}
+            {status === 'unsupported' && (
+              <p style={{ color: '#888', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>
+                Live scanning isn't supported on this browser — snap a photo instead.
+              </p>
+            )}
+
+            {/* Primary: take photo of barcode */}
+            <button
+              onClick={() => photoInputRef.current?.click()}
+              style={{
+                width: '100%', padding: '13px', marginBottom: 10,
+                backgroundColor: '#0A84FF', border: 'none',
+                borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              <CameraIcon size={18} color="#fff" strokeWidth={2} />
+              Take Photo of Barcode
+            </button>
+
+            {/* Secondary: manual entry toggle */}
+            {!showManualInput ? (
+              <button
+                onClick={() => setShowManualInput(true)}
                 style={{
-                  flex: 1, padding: '10px 12px', backgroundColor: '#1A1A1A',
-                  border: '1px solid #2C2C2C', borderRadius: 8, color: '#fff', fontSize: 15,
+                  width: '100%', padding: '9px', backgroundColor: 'transparent',
+                  border: '1px solid #333', borderRadius: 8,
+                  color: '#666', fontSize: 12, cursor: 'pointer',
                 }}
-              />
-              <button type="submit" disabled={submittingManual || !manualCode.trim()} style={{
-                padding: '10px 16px', backgroundColor: '#0A84FF', border: 'none',
-                borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600,
-                cursor: submittingManual ? 'not-allowed' : 'pointer',
-                opacity: submittingManual ? 0.6 : 1,
-              }}>
-                {submittingManual ? '...' : 'Look Up'}
+              >
+                Enter number manually
               </button>
-            </form>
+            ) : (
+              <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={manualCode}
+                  onChange={e => setManualCode(e.target.value)}
+                  placeholder="e.g. 012345678905"
+                  inputMode="numeric"
+                  autoFocus
+                  style={{
+                    flex: 1, padding: '10px 12px', backgroundColor: '#1A1A1A',
+                    border: '1px solid #2C2C2C', borderRadius: 8, color: '#fff', fontSize: 15,
+                  }}
+                />
+                <button type="submit" disabled={submittingManual || !manualCode.trim()} style={{
+                  padding: '10px 16px', backgroundColor: '#0A84FF', border: 'none',
+                  borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600,
+                  cursor: submittingManual ? 'not-allowed' : 'pointer',
+                  opacity: submittingManual ? 0.6 : 1,
+                }}>
+                  {submittingManual ? '...' : 'Look Up'}
+                </button>
+              </form>
+            )}
           </div>
         )}
       </div>
