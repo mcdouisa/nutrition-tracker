@@ -745,6 +745,45 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   padding: '10px 12px',
                   maxWidth: '85%'
                 }}>
+                  {/* Food quality score badge */}
+                  {msg.score && !msg.added && (() => {
+                    const g = msg.score.grade?.charAt(0)
+                    const c = g === 'A' ? '#30D158' : g === 'B' ? '#0A84FF' : g === 'C' ? '#FF9F0A' : '#FF453A'
+                    return (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        marginBottom: 10, padding: '8px 10px',
+                        backgroundColor: c + '18',
+                        border: `1px solid ${c}45`,
+                        borderRadius: 8,
+                      }}>
+                        <div style={{
+                          width: 42, height: 42, borderRadius: '50%',
+                          border: `2.5px solid ${c}`,
+                          backgroundColor: c + '18',
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: c, lineHeight: 1 }}>
+                            {msg.score.grade}
+                          </span>
+                          <span style={{ fontSize: 9, color: c, opacity: 0.75, lineHeight: 1, marginTop: 2 }}>
+                            {msg.score.score}
+                          </span>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: c }}>
+                            {msg.score.label}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                            {msg.score.reason}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   <div style={{
                     fontSize: '11px',
                     fontWeight: '600',

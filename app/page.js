@@ -1500,10 +1500,15 @@ When the user describes or shows a meal or food, provide:
 1. A brief response with your source or reasoning (e.g. "Based on Chick-fil-A's official data..." or "I can see this is a nutrition label showing...")
 2. Your accurate estimates for the EXACT amount described or shown
 
-Always end your response with nutrition data in this exact JSON format on its own line:
+Always end your response with these two lines:
 NUTRITION_DATA: ${JSON.stringify(metricsKeys)}
+FOOD_SCORE: {"score": 0, "grade": "?", "label": "?", "reason": "?"}
 
-Replace the 0s with accurate numerical values for the EXACT amount described.`
+For NUTRITION_DATA, replace 0s with accurate values for the EXACT amount described.
+For FOOD_SCORE: score 0-100 based on nutrient density, processing level, fiber, sugar, sodium, protein quality, and fat quality.
+Grades: A (85-100), B (70-84), C (55-69), D (40-54), F (0-39)
+Labels: "Excellent" (A), "Good" (B), "Fair" (C), "Poor" (D), "Avoid" (F)
+Reason: 5-7 words max — the single most important factor.`
 
       // Format current user message — use content array when image is present
       const currentUserContent = chatImage
@@ -1540,6 +1545,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
       // Check if the response contains nutrition data
       const nutritionMatch = assistantMessage.match(/NUTRITION_DATA:\s*(\{[^}]+\})/i)
       let estimates = null
+      let foodScore = null
       let displayMessage = assistantMessage
 
       if (nutritionMatch) {
@@ -1551,10 +1557,20 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
         }
       }
 
+      const scoreMatch = displayMessage.match(/FOOD_SCORE:\s*(\{[^}]+\})/i)
+      if (scoreMatch) {
+        try {
+          foodScore = JSON.parse(scoreMatch[1])
+          displayMessage = displayMessage.replace(/FOOD_SCORE:\s*\{[^}]+\}/i, '').trim()
+        } catch (e) {
+          console.error('Failed to parse food score:', e)
+        }
+      }
+
       setChatMessages([
         ...chatMessages,
         userMessage,
-        { role: 'assistant', content: displayMessage, estimates }
+        { role: 'assistant', content: displayMessage, estimates, score: foodScore }
       ])
     } catch (error) {
       console.error('Chat error:', error)
@@ -1586,7 +1602,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
 
   const addEstimatedNutrition = async (estimates, messageIndex) => {
     const timestamp = Date.now()
-    const newEntry = { estimates, timestamp }
+    const msgScore = messageIndex !== undefined ? chatMessages[messageIndex]?.score : null
+    const newEntry = { estimates, score: msgScore || undefined, timestamp }
 
     if (viewDate !== null && pastDayData) {
       // Viewing past day - update pastDayData and save to Firestore
@@ -2808,10 +2825,26 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                           fontWeight: '500',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
                         }}>
                           {entryType}
-                          <span style={{ color: T.muted, fontWeight: '400', marginLeft: '6px', fontSize: '11px' }}>{time}</span>
+                          <span style={{ color: T.muted, fontWeight: '400', fontSize: '11px' }}>{time}</span>
+                          {entry.score && (() => {
+                            const g = entry.score.grade?.charAt(0)
+                            const c = g === 'A' ? '#30D158' : g === 'B' ? '#0A84FF' : g === 'C' ? '#FF9F0A' : '#FF453A'
+                            return (
+                              <span style={{
+                                fontSize: '10px', fontWeight: '700', color: c,
+                                backgroundColor: c + '20', border: `1px solid ${c}50`,
+                                borderRadius: '4px', padding: '1px 5px', flexShrink: 0,
+                              }}>
+                                {entry.score.grade}
+                              </span>
+                            )
+                          })()}
                         </div>
                         <div style={{
                           fontSize: '12px',
