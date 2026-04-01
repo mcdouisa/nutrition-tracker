@@ -1,9 +1,15 @@
 'use client'
 
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, useRef, createContext, useContext } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
 import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr } from '../../lib/dataSync'
+import {
+  CalendarIcon, ClockIcon, TrendingUpIcon, PencilIcon, GridIcon,
+  TrophyIcon, FlameIcon, UtensilsIcon, BarChartIcon, DropletIcon,
+  LeafIcon, TargetIcon, ActivityIcon, CheckSquareIcon, CheckCircleIcon,
+  XCircleIcon, ChevronLeftIcon, ChevronRightIcon, SlidersIcon
+} from '../../lib/icons'
 
 const DARK = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#222222', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888', faint: '#3A3A3A' }
 const ThemeContext = createContext(DARK)
@@ -15,15 +21,15 @@ const T_PURPLE = '#BF5AF2'
 const FALLBACK_COLORS = ['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF453A']
 
 // ── SectionHeader ─────────────────────────────────────────────────────────────
-function SectionHeader({ icon, title }) {
+function SectionHeader({ icon, title, iconBg = 'rgba(10,132,255,0.12)', iconBorder = 'rgba(10,132,255,0.3)' }) {
   const T = useContext(ThemeContext)
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
       {icon && (
         <div style={{
           width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-          background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17
+          background: iconBg, border: `1px solid ${iconBorder}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           {icon}
         </div>
@@ -55,7 +61,8 @@ function Card({ children, style }) {
 // ── MacroRing ─────────────────────────────────────────────────────────────────
 function MacroRing({ metrics, values }) {
   const T = useContext(ThemeContext)
-  const size = 120
+  const [hoveredArc, setHoveredArc] = useState(null)
+  const size = 140
   const ringWidth = 14
   const r = (size / 2) - ringWidth / 2
   const circ = 2 * Math.PI * r
@@ -71,50 +78,67 @@ function MacroRing({ metrics, values }) {
     const val = values[m.key] || 0
     const pct = val / total
     const arcLen = pct * circ
-    const arc = { metric: m, val, pct, arcLen, offset, color: m.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length] }
+    const arc = { metric: m, val, pct, arcLen, offset, color: m.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length], idx: i }
     offset += arcLen
     return arc
   })
 
+  const hArc = hoveredArc !== null ? arcs[hoveredArc] : null
   const calMetric = metrics.find(m => m.key === 'calories')
-  const centerVal = calMetric && values['calories'] ? values['calories'].toLocaleString() : total.toLocaleString()
-  const centerLabel = calMetric && values['calories'] ? 'kcal' : 'total'
+  const centerVal = hArc ? hArc.val.toLocaleString() : (calMetric && values['calories'] ? values['calories'].toLocaleString() : total.toLocaleString())
+  const centerLabel = hArc ? (hArc.metric.unit || hArc.metric.name) : (calMetric && values['calories'] ? 'kcal' : 'total')
+  const centerColor = hArc ? hArc.color : T.text
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
       <div style={{ position: 'relative', width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)', cursor: 'pointer' }}>
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={T.faint} strokeWidth={ringWidth} />
-          {arcs.map((arc, i) => (
-            <circle
-              key={arc.metric.key}
-              cx={size / 2} cy={size / 2} r={r}
-              fill="none"
-              stroke={arc.color}
-              strokeWidth={ringWidth}
-              strokeDasharray={`${arc.arcLen} ${circ - arc.arcLen}`}
-              strokeDashoffset={-arc.offset}
-              strokeLinecap="round"
-            />
-          ))}
+          {arcs.map((arc, i) => {
+            const isHovered = hoveredArc === i
+            const sw = isHovered ? ringWidth + 5 : ringWidth
+            const rr = isHovered ? r : r
+            return (
+              <circle
+                key={arc.metric.key}
+                cx={size / 2} cy={size / 2} r={rr}
+                fill="none"
+                stroke={arc.color}
+                strokeWidth={sw}
+                strokeDasharray={`${arc.arcLen} ${circ - arc.arcLen}`}
+                strokeDashoffset={-arc.offset}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-width 0.15s', filter: isHovered ? `drop-shadow(0 0 5px ${arc.color})` : 'none', cursor: 'pointer' }}
+                onMouseEnter={() => setHoveredArc(i)}
+                onMouseLeave={() => setHoveredArc(null)}
+              />
+            )
+          })}
         </svg>
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center'
+          alignItems: 'center', justifyContent: 'center', pointerEvents: 'none'
         }}>
-          <span style={{ fontSize: 20, fontWeight: 900, color: T.text, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+          <span style={{ fontSize: 20, fontWeight: 900, color: centerColor, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1, transition: 'color 0.15s' }}>
             {centerVal}
           </span>
           <span style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px' }}>{centerLabel}</span>
+          {hArc && <span style={{ fontSize: 10, color: hArc.color, marginTop: 2 }}>{Math.round(hArc.pct * 100)}%</span>}
         </div>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-        {arcs.map(arc => (
-          <div key={arc.metric.key} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
-            backgroundColor: `${arc.color}18`, border: `1px solid ${arc.color}40`,
-            borderRadius: 20, fontSize: 11
-          }}>
+        {arcs.map((arc, i) => (
+          <div key={arc.metric.key}
+            onMouseEnter={() => setHoveredArc(i)}
+            onMouseLeave={() => setHoveredArc(null)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px',
+              backgroundColor: hoveredArc === i ? `${arc.color}28` : `${arc.color}12`,
+              border: `1px solid ${hoveredArc === i ? arc.color + '80' : arc.color + '35'}`,
+              borderRadius: 20, fontSize: 11, cursor: 'pointer',
+              transition: 'all 0.15s',
+              transform: hoveredArc === i ? 'scale(1.04)' : 'scale(1)'
+            }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: arc.color, flexShrink: 0 }} />
             <span style={{ color: T.muted, fontWeight: 500 }}>{arc.metric.name}</span>
             <span style={{ color: T.text, fontWeight: 700 }}>{arc.val}{arc.metric.unit || ''}</span>
@@ -129,6 +153,7 @@ function MacroRing({ metrics, values }) {
 // ── DayGoalGrid ───────────────────────────────────────────────────────────────
 function DayGoalGrid({ history, metrics, dateRange }) {
   const T = useContext(ThemeContext)
+  const [hoveredCol, setHoveredCol] = useState(null)
   const metricsWithGoal = metrics.filter(m => m.goal)
   if (metricsWithGoal.length === 0) return null
 
@@ -152,8 +177,10 @@ function DayGoalGrid({ history, metrics, dateRange }) {
       <div style={{ display: 'grid', gridTemplateColumns: '120px repeat(7, 1fr)', gap: 4, alignItems: 'center' }}>
         <div />
         {reorderedLetters.map((letter, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: T.muted,
-            fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px' }}>
+          <div key={i} style={{ textAlign: 'center', fontSize: 10, fontWeight: hoveredCol === i ? 700 : 600,
+            color: hoveredCol === i ? T.text : T.muted,
+            fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px',
+            transition: 'color 0.12s' }}>
             {letter}
           </div>
         ))}
@@ -164,9 +191,9 @@ function DayGoalGrid({ history, metrics, dateRange }) {
             <div style={{
               width: 28, height: 28, borderRadius: 8, flexShrink: 0,
               background: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              {metric.icon || '📊'}
+              <BarChartIcon size={13} color="#0A84FF" strokeWidth={2} />
             </div>
             <span style={{ fontSize: 11, color: T.muted, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {metric.name}
@@ -191,13 +218,20 @@ function DayGoalGrid({ history, metrics, dateRange }) {
             }
             let dotColor = T.faint
             if (hasData) dotColor = metGoal ? T_SUCCESS : T_DANGER
+            const isHovCol = hoveredCol === i
             return (
-              <div key={i} style={{ display: 'flex', justifyContent: 'center' }}>
-                <div style={{
-                  width: 24, height: 24, borderRadius: '50%',
+              <div key={i} style={{ display: 'flex', justifyContent: 'center' }}
+                onMouseEnter={() => setHoveredCol(i)}
+                onMouseLeave={() => setHoveredCol(null)}>
+                <div title={hasData ? `${val} ${metric.unit || ''}` : 'No data'} style={{
+                  width: isHovCol ? 28 : 24, height: isHovCol ? 28 : 24, borderRadius: '50%',
                   backgroundColor: dotColor,
-                  opacity: hasData ? 1 : 0.4,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  opacity: hasData ? 1 : 0.35,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.12s',
+                  border: isHovCol && hasData ? `2px solid rgba(255,255,255,0.5)` : '2px solid transparent',
+                  boxShadow: isHovCol && hasData ? `0 0 8px ${dotColor}` : 'none',
+                  cursor: 'default'
                 }} />
               </div>
             )
@@ -298,6 +332,109 @@ function BestWorstWeeks({ history, metrics, monthStart, monthEnd }) {
   )
 }
 
+// ── DayDetailPanel ────────────────────────────────────────────────────────────
+function DayDetailPanel({ dateKey, history, metrics, waterGoal, onClose }) {
+  const T = useContext(ThemeContext)
+  const normDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : toLocalDateStr(new Date(d || 0))
+  const dayData = history.find(h => normDate(h.date) === dateKey)
+  const date = new Date(dateKey + 'T12:00:00')
+  const dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+  const isToday = dateKey === toLocalDateStr(new Date())
+
+  return (
+    <div style={{
+      background: 'linear-gradient(145deg, #0a0d14, #111622, #0d0d0d)',
+      borderRadius: 16, border: '1px solid rgba(10,132,255,0.3)',
+      padding: '16px', marginBottom: 16, position: 'relative',
+      animation: 'fadeSlideIn 0.2s ease-out'
+    }}>
+      <style>{`@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 10, color: T_ACCENT, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 3 }}>
+            {isToday ? 'TODAY' : 'SELECTED DAY'}
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: T.text, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px' }}>
+            {dateLabel}
+          </div>
+        </div>
+        <button onClick={onClose} style={{
+          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8, padding: '6px 8px', color: T.muted, cursor: 'pointer', display: 'flex', alignItems: 'center'
+        }}>
+          <XCircleIcon size={16} color={T.muted} strokeWidth={2} />
+        </button>
+      </div>
+
+      {!dayData ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: T.muted, fontSize: 13 }}>No data recorded for this day.</div>
+      ) : (
+        <div>
+          {/* Metric grid */}
+          {metrics.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 12 }}>
+              {metrics.map((metric, i) => {
+                const entry = dayData.nutritionMetrics?.find(m => m.key === metric.key)
+                const val = entry?.value || 0
+                const goal = metric.goal || 0
+                const pct = goal > 0 ? Math.min(Math.round((val / goal) * 100), 100) : null
+                const color = metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]
+                const metGoal = goal > 0 && (metric.goalType === 'max' ? val <= goal : val >= goal)
+                return (
+                  <div key={metric.key} style={{
+                    padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${metGoal ? color + '50' : 'rgba(255,255,255,0.06)'}`
+                  }}>
+                    <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      {metric.name}
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: val > 0 ? color : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                      {val > 0 ? val.toLocaleString() : '—'}
+                      {val > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 3 }}>{metric.unit}</span>}
+                    </div>
+                    {pct !== null && val > 0 && (
+                      <div style={{ marginTop: 6, height: 3, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                        <div style={{ height: '100%', width: `${pct}%`, backgroundColor: metGoal ? T_SUCCESS : color, borderRadius: 2 }} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          {/* Water row */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1, padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(10,132,255,0.08)', border: '1px solid rgba(10,132,255,0.2)' }}>
+              <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}>
+                <DropletIcon size={10} color={T_ACCENT} strokeWidth={2} /> Water
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: T_ACCENT, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                {dayData.water || 0}<span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 3 }}>oz</span>
+                {waterGoal > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 4 }}>/ {waterGoal}</span>}
+              </div>
+            </div>
+            {dayData.checklistItems?.length > 0 && (() => {
+              const checked = dayData.checklistItems.filter(h => h.checked).length
+              const total = dayData.checklistItems.length
+              const pct = Math.round((checked / total) * 100)
+              return (
+                <div style={{ flex: 1, padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(48,209,88,0.08)', border: '1px solid rgba(48,209,88,0.2)' }}>
+                  <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <CheckSquareIcon size={10} color={T_SUCCESS} strokeWidth={2} /> Habits
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: pct >= 80 ? T_SUCCESS : pct >= 50 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                    {pct}%<span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 3 }}>{checked}/{total}</span>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── TimeOfDayChart ────────────────────────────────────────────────────────────
 function TimeOfDayChart({ filteredHistory, metrics }) {
   const T = useContext(ThemeContext)
@@ -348,7 +485,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
   if (!hasData) {
     return (
       <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: '28px', marginBottom: '8px', opacity: 0.3 }}>📈</div>
+        <div style={{ marginBottom: '8px', opacity: 0.3, display: 'flex', justifyContent: 'center' }}><TrendingUpIcon size={28} color="#888" strokeWidth={1.5} /></div>
         <div style={{ fontSize: '13px', color: T.muted }}>
           No meal timing data yet — log meals with the AI to see patterns
         </div>
@@ -437,7 +574,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
                 backgroundColor: metric.color || colors[mi % colors.length],
                 borderRadius: '2px', display: 'inline-block'
               }} />
-              {metric.icon} {metric.name}
+              {metric.name}
             </div>
           )
         })}
@@ -452,13 +589,14 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
 // ── BarChart ──────────────────────────────────────────────────────────────────
 function BarChart({ bars, goal, scrollable = false }) {
   const T = useContext(ThemeContext)
+  const [hoveredBar, setHoveredBar] = useState(null)
   if (!bars || bars.length === 0) return null
   const maxVal = Math.max(...bars.map(b => b.value), goal || 1, 1)
-  const barW = scrollable ? 18 : Math.max(12, Math.floor(260 / bars.length))
-  const gap = scrollable ? 5 : 3
-  const padL = 35, padB = 28, padT = 16, padR = 8
+  const barW = scrollable ? 20 : Math.max(14, Math.floor(260 / bars.length))
+  const gap = scrollable ? 6 : 4
+  const padL = 35, padB = 28, padT = 22, padR = 8
   const svgW = padL + bars.length * (barW + gap) + padR
-  const svgH = 160
+  const svgH = 170
   const chartH = svgH - padT - padB
   const goalY = goal ? padT + chartH - (goal / maxVal) * chartH : null
 
@@ -466,7 +604,7 @@ function BarChart({ bars, goal, scrollable = false }) {
     <div style={{ overflowX: scrollable ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
       <svg
         viewBox={`0 0 ${svgW} ${svgH}`}
-        style={{ width: scrollable ? `${Math.max(svgW, 320)}px` : '100%', height: 'auto', display: 'block' }}
+        style={{ width: scrollable ? `${Math.max(svgW, 320)}px` : '100%', height: 'auto', display: 'block', overflow: 'visible' }}
       >
         {[0, 0.5, 1].map((frac, i) => {
           const y = padT + chartH - frac * chartH
@@ -487,14 +625,35 @@ function BarChart({ bars, goal, scrollable = false }) {
         )}
         {bars.map((bar, i) => {
           const x = padL + i * (barW + gap)
-          const barH = bar.value > 0 ? Math.max((bar.value / maxVal) * chartH, 2) : 0
+          const barH = bar.value > 0 ? Math.max((bar.value / maxVal) * chartH, 3) : 0
           const y = padT + chartH - barH
           const metGoal = goal && bar.value > 0 ? bar.value >= goal : false
           const barColor = bar.value === 0 ? '#3A3A3A' : metGoal ? T_SUCCESS : T_ACCENT
+          const isHovered = hoveredBar === i
+          const displayH = isHovered && bar.value > 0 ? barH + 2 : barH
+          const displayY = isHovered && bar.value > 0 ? y - 2 : y
           return (
-            <g key={i}>
-              <rect x={x} y={bar.value === 0 ? padT + chartH - 2 : y} width={barW} height={bar.value === 0 ? 2 : barH} fill={barColor} rx="2" />
-              <text x={x + barW / 2} y={svgH - 6} textAnchor="middle" fontSize="7" fill="#888888">{bar.label}</text>
+            <g key={i} style={{ cursor: 'pointer' }}
+              onMouseEnter={() => setHoveredBar(i)}
+              onMouseLeave={() => setHoveredBar(null)}>
+              {/* Invisible wider hit area */}
+              <rect x={x - 3} y={padT} width={barW + 6} height={chartH + padB} fill="transparent" />
+              <rect
+                x={x} y={bar.value === 0 ? padT + chartH - 2 : displayY}
+                width={barW} height={bar.value === 0 ? 2 : displayH}
+                fill={barColor} rx="3"
+                style={{ transition: 'all 0.1s', opacity: isHovered ? 1 : 0.82 }}
+              />
+              {/* Hover value label */}
+              {isHovered && bar.value > 0 && (
+                <>
+                  <rect x={x - 8} y={displayY - 20} width={barW + 16} height={16} rx="4" fill="rgba(0,0,0,0.75)" />
+                  <text x={x + barW / 2} y={displayY - 9} textAnchor="middle" fontSize="8" fill="#fff" fontWeight="700">
+                    {bar.value > 999 ? `${(bar.value / 1000).toFixed(1)}k` : bar.value}
+                  </text>
+                </>
+              )}
+              <text x={x + barW / 2} y={svgH - 6} textAnchor="middle" fontSize="7" fill={isHovered ? '#fff' : '#888888'}>{bar.label}</text>
             </g>
           )
         })}
@@ -600,7 +759,9 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
                 <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px', fontFamily: "'Barlow Condensed', sans-serif" }}>Daily Habits</div>
                 {todayEntry.checklistItems.map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: `1px solid ${T.faint}` }}>
-                    <span style={{ fontSize: '16px', color: item.checked ? T_SUCCESS : T_DANGER }}>{item.checked ? '✓' : '✗'}</span>
+                    <span style={{ display: 'flex', color: item.checked ? T_SUCCESS : T_DANGER }}>
+                      {item.checked ? <CheckCircleIcon size={16} color={T_SUCCESS} strokeWidth={2} /> : <XCircleIcon size={16} color={T_DANGER} strokeWidth={2} />}
+                    </span>
                     <span style={{ fontSize: '14px', color: item.checked ? T.text : T.muted, fontWeight: '500', textDecoration: item.checked ? 'none' : 'line-through' }}>
                       {item.label || item.name || `Habit ${i + 1}`}
                     </span>
@@ -619,7 +780,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
 }
 
 // ── WeeklyStrip ───────────────────────────────────────────────────────────────
-function WeeklyStrip({ history, metrics }) {
+function WeeklyStrip({ history, metrics, selectedDay, onSelectDay }) {
   const T = useContext(ThemeContext)
   const calMetric = metrics.find(m => m.key === 'calories') || metrics[0]
   if (!calMetric || !calMetric.goal) return null
@@ -642,29 +803,36 @@ function WeeklyStrip({ history, metrics }) {
     const hasData = value > 0
     let dotColor = T.faint
     if (hasData) dotColor = pct >= 0.8 ? T_SUCCESS : pct >= 0.5 ? T_WARNING : T_DANGER
-    days.push({ d, value, goal, dotColor, hasData, isToday: i === 0 })
+    const isSelected = dateStr === selectedDay
+    days.push({ d, value, goal, dotColor, hasData, isToday: i === 0, dateStr, isSelected })
   }
 
   return (
     <Card>
-      <SectionHeader icon="📅" title={`This Week — ${calMetric.name}`} />
+      <SectionHeader icon={<CalendarIcon size={17} color="#0A84FF" strokeWidth={2} />} title={`This Week — ${calMetric.name}`} />
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
-        {days.map(({ d, value, goal, dotColor, hasData, isToday }) => (
-          <div key={d.toISOString()} style={{ textAlign: 'center', flex: 1 }}>
+        {days.map(({ d, value, goal, dotColor, hasData, isToday, dateStr, isSelected }) => (
+          <div key={d.toISOString()}
+            onClick={() => onSelectDay && onSelectDay(isSelected ? null : dateStr)}
+            style={{ textAlign: 'center', flex: 1, cursor: 'pointer' }}>
             <div style={{
-              fontSize: '10px', color: isToday ? T_ACCENT : T.muted,
-              fontWeight: isToday ? '700' : '500', marginBottom: '8px',
+              fontSize: '10px', color: isSelected ? '#fff' : isToday ? T_ACCENT : T.muted,
+              fontWeight: isToday || isSelected ? '700' : '500', marginBottom: '8px',
               fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px'
             }}>
               {d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}
             </div>
             <div style={{
-              width: '36px', height: '36px', borderRadius: '50%', backgroundColor: dotColor,
+              width: '36px', height: '36px', borderRadius: '50%',
+              backgroundColor: isSelected ? dotColor : dotColor,
               margin: '0 auto 8px',
-              border: isToday ? `2px solid ${T_ACCENT}` : '2px solid transparent',
-              boxSizing: 'border-box', boxShadow: isToday ? `0 0 8px rgba(10,132,255,0.4)` : 'none'
+              border: isSelected ? `2.5px solid #fff` : isToday ? `2px solid ${T_ACCENT}` : '2px solid transparent',
+              boxSizing: 'border-box',
+              boxShadow: isSelected ? `0 0 0 3px ${dotColor}60, 0 0 14px ${dotColor}50` : isToday ? `0 0 8px rgba(10,132,255,0.4)` : 'none',
+              transition: 'all 0.15s',
+              transform: isSelected ? 'scale(1.12)' : 'scale(1)'
             }} />
-            <div style={{ fontSize: '10px', color: hasData ? T.text : T.muted, fontWeight: '600', lineHeight: '1.3' }}>
+            <div style={{ fontSize: '10px', color: hasData ? T.text : T.muted, fontWeight: isSelected ? '700' : '600', lineHeight: '1.3' }}>
               {hasData ? value.toLocaleString() : '—'}
             </div>
             {hasData && goal > 0 && <div style={{ fontSize: '9px', color: T.muted }}>/{goal.toLocaleString()}</div>}
@@ -675,6 +843,7 @@ function WeeklyStrip({ history, metrics }) {
         <span><span style={{ color: T_SUCCESS }}>●</span> On track</span>
         <span><span style={{ color: T_WARNING }}>●</span> Partial</span>
         <span><span style={{ color: T_DANGER }}>●</span> Low</span>
+        {selectedDay && <span style={{ color: T.text, fontWeight: 600 }}>· tap dot again to deselect</span>}
       </div>
     </Card>
   )
@@ -727,6 +896,7 @@ export default function ReportsPage() {
   const [editValues, setEditValues] = useState({})
   const [waterGoal, setWaterGoal] = useState(0)
   const [showExport, setShowExport] = useState(false)
+  const [selectedDayKey, setSelectedDayKey] = useState(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -1070,7 +1240,7 @@ export default function ReportsPage() {
               {metrics.map(metric => (
                 <div key={metric.key} style={{ marginBottom: '16px' }}>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: T.muted, marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
-                    {metric.icon} {metric.name} ({metric.unit})
+                    {metric.name} ({metric.unit})
                   </label>
                   <input type="number" value={editValues[metric.key] || ''} onChange={e => setEditValues({ ...editValues, [metric.key]: e.target.value })}
                     style={{ width: '100%', padding: '12px 14px', backgroundColor: T.bg, border: `1px solid ${T.border}`, borderRadius: '10px', fontSize: '16px', color: T.text, boxSizing: 'border-box', outline: 'none' }} />
@@ -1205,14 +1375,14 @@ export default function ReportsPage() {
                   {/* Secondary stats row */}
                   <div style={{ display: 'flex', gap: 12, position: 'relative' }}>
                     <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 4 }}>💧 Water</div>
+                      <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><DropletIcon size={10} color={T.muted} strokeWidth={2} /> Water</div>
                       <div style={{ fontSize: 18, fontWeight: 800, color: T_ACCENT, fontFamily: "'Barlow Condensed', sans-serif" }}>
                         {todayWater} <span style={{ fontSize: 11, fontWeight: 500, color: T.muted }}>oz{waterGoal > 0 ? ` / ${waterGoal}` : ''}</span>
                       </div>
                     </div>
                     {habitPct !== null && (
                       <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 4 }}>✅ Habits</div>
+                        <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><CheckSquareIcon size={10} color={T.muted} strokeWidth={2} /> Habits</div>
                         <div style={{ fontSize: 18, fontWeight: 800, color: habitPct >= 80 ? T_SUCCESS : habitPct >= 50 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif" }}>
                           {habitPct}% <span style={{ fontSize: 11, fontWeight: 500, color: T.muted }}>{checkedHabits}/{totalHabits}</span>
                         </div>
@@ -1225,7 +1395,7 @@ export default function ReportsPage() {
               {/* Macro Breakdown */}
               {todayEntry && metrics.length >= 2 && Object.values(todayMacroValues).some(v => v > 0) && (
                 <Card>
-                  <SectionHeader icon="🥗" title="Macro Breakdown" />
+                  <SectionHeader icon={<LeafIcon size={17} color="#30D158" strokeWidth={2} />} title="Macro Breakdown" iconBg="rgba(48,209,88,0.12)" iconBorder="rgba(48,209,88,0.3)" />
                   <MacroRing metrics={metrics} values={todayMacroValues} />
                 </Card>
               )}
@@ -1233,7 +1403,7 @@ export default function ReportsPage() {
               {/* Meal Timing Today */}
               {todayEntry && (
                 <Card>
-                  <SectionHeader icon="🕐" title="Meal Windows Today" />
+                  <SectionHeader icon={<ClockIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Meal Windows Today" />
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
                     {mealWindows.map((w, i) => (
                       <div key={w.label} style={{ flex: 1, textAlign: 'center' }}>
@@ -1242,9 +1412,8 @@ export default function ReportsPage() {
                           backgroundColor: todayWindowsLogged[i] ? 'rgba(48,209,88,0.2)' : 'rgba(255,255,255,0.04)',
                           border: `1px solid ${todayWindowsLogged[i] ? 'rgba(48,209,88,0.4)' : T.border}`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: todayWindowsLogged[i] ? 18 : 14
                         }}>
-                          {todayWindowsLogged[i] ? '🍽️' : '·'}
+                          {todayWindowsLogged[i] ? <UtensilsIcon size={16} color="#30D158" strokeWidth={2} /> : <span style={{ color: T.faint, fontSize: 20, lineHeight: 1 }}>·</span>}
                         </div>
                         <div style={{ fontSize: 10, color: todayWindowsLogged[i] ? T_SUCCESS : T.muted, fontWeight: 600, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px' }}>
                           {w.label}
@@ -1256,12 +1425,17 @@ export default function ReportsPage() {
               )}
 
               {/* 7-day goal strip */}
-              <WeeklyStrip history={history} metrics={metrics} />
+              <WeeklyStrip history={history} metrics={metrics} selectedDay={selectedDayKey} onSelectDay={setSelectedDayKey} />
+
+              {/* Day drill-down panel */}
+              {selectedDayKey && (
+                <DayDetailPanel dateKey={selectedDayKey} history={history} metrics={metrics} waterGoal={waterGoal} onClose={() => setSelectedDayKey(null)} />
+              )}
 
               {/* Goal Achievement */}
               {metrics.some(m => m.goal) && stats.days > 0 && (
                 <Card>
-                  <SectionHeader icon="🎯" title="Goal Achievement — Last 7 Days" />
+                  <SectionHeader icon={<TargetIcon size={17} color="#BF5AF2" strokeWidth={2} />} title="Goal Achievement — Last 7 Days" iconBg="rgba(191,90,242,0.12)" iconBorder="rgba(191,90,242,0.3)" />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {metrics.filter(m => m.goal).map(m => {
                       const hits = stats.goalAchievement[m.key] || 0
@@ -1287,7 +1461,7 @@ export default function ReportsPage() {
               {/* Avg stats */}
               {metrics.length > 0 && stats.days > 0 && (
                 <Card>
-                  <SectionHeader icon="📊" title="Daily Averages" />
+                  <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Daily Averages" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {metrics.map((metric, i) => (
                       <div key={metric.key} style={{
@@ -1301,7 +1475,7 @@ export default function ReportsPage() {
                             border: `1px solid ${metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]}40`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
                           }}>
-                            {metric.icon || '📊'}
+                            <BarChartIcon size={14} color={metric.color || '#0A84FF'} strokeWidth={2} />
                           </div>
                           <span style={{ fontSize: '12px', color: T.muted, fontWeight: '600', letterSpacing: '0.5px' }}>{metric.name}</span>
                         </div>
@@ -1332,29 +1506,32 @@ export default function ReportsPage() {
                       Tracking Streak
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                      <span style={{ fontSize: 48, fontWeight: 900, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
-                        {streaks.trackingStreak > 0 ? '🔥' : ''} {streaks.trackingStreak}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {streaks.trackingStreak > 0 && <FlameIcon size={36} color={T_WARNING} strokeWidth={1.5} />}
+                        <span style={{ fontSize: 48, fontWeight: 900, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                          {streaks.trackingStreak}
+                        </span>
+                      </div>
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,159,10,0.6)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginTop: 4 }}>
                       DAY STREAK
                     </div>
                   </div>
-                  <div style={{ fontSize: 56, opacity: 0.12 }}>🔥</div>
+                  <div style={{ opacity: 0.08, display: 'flex' }}><FlameIcon size={80} color={T_WARNING} strokeWidth={1} /></div>
                 </div>
               </div>
 
               {/* Eating Patterns */}
               {metrics.length > 0 && (
                 <Card>
-                  <SectionHeader icon="📈" title="Eating Patterns — Last 7 Days" />
+                  <SectionHeader icon={<TrendingUpIcon size={17} color="#30D158" strokeWidth={2} />} title="Eating Patterns — Last 7 Days" iconBg="rgba(48,209,88,0.12)" iconBorder="rgba(48,209,88,0.3)" />
                   <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
                 </Card>
               )}
 
               {/* Add to Previous Day */}
               <Card>
-                <SectionHeader icon="✏️" title="Add to Previous Day" />
+                <SectionHeader icon={<PencilIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Add to Previous Day" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {['Yesterday', '2 days ago', '3 days ago'].map((label, i) => (
                     <button key={i} onClick={() => addToPreviousDay(i + 1)}
@@ -1376,6 +1553,31 @@ export default function ReportsPage() {
           {viewMode === 'weekly' && (
             <>
               <DateNavCard label={formatDateRange()} onPrev={() => navigate(-1)} onNext={() => navigate(1)} />
+
+              {/* Metric filter pills */}
+              {metrics.length > 1 && (
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 16, WebkitOverflowScrolling: 'touch' }}>
+                  {metrics.map(m => {
+                    const isActive = chartMetricKey === m.key
+                    const color = m.color || '#0A84FF'
+                    return (
+                      <button key={m.key} onClick={() => setChartMetricKey(m.key)}
+                        style={{
+                          padding: '7px 14px', borderRadius: 20, flexShrink: 0,
+                          backgroundColor: isActive ? color : 'transparent',
+                          border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.12)'}`,
+                          color: isActive ? '#fff' : T.muted,
+                          fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer',
+                          fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px',
+                          transition: 'all 0.15s',
+                          boxShadow: isActive ? `0 2px 8px ${color}40` : 'none'
+                        }}>
+                        {m.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
               {/* Summary Hero */}
               {stats.days > 0 && (
@@ -1424,7 +1626,7 @@ export default function ReportsPage() {
               {/* Day Goal Grid */}
               {metrics.some(m => m.goal) && (
                 <Card>
-                  <SectionHeader icon="🗓️" title="Day-by-Day Goal Tracker" />
+                  <SectionHeader icon={<GridIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Day-by-Day Goal Tracker" />
                   <DayGoalGrid history={history} metrics={metrics} dateRange={weekStart} />
                 </Card>
               )}
@@ -1432,7 +1634,7 @@ export default function ReportsPage() {
               {/* Water week bars */}
               {filteredHistory.length > 0 && (
                 <Card>
-                  <SectionHeader icon="💧" title="Hydration This Week" />
+                  <SectionHeader icon={<DropletIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Hydration This Week" />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {Array.from({ length: 7 }, (_, i) => {
                       const d = new Date(weekStart); d.setDate(d.getDate() + i)
@@ -1477,11 +1679,11 @@ export default function ReportsPage() {
               {metrics.length > 0 && (
                 <Card>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <SectionHeader icon="📊" title="Day by Day" />
+                    <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Day by Day" />
                     {metrics.length > 1 && (
                       <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
                         style={{ fontSize: '12px', padding: '6px 10px', border: `1px solid ${T.border}`, borderRadius: '8px', color: T.muted, backgroundColor: T.card2, outline: 'none' }}>
-                        {metrics.map(m => <option key={m.key} value={m.key}>{m.icon} {m.name}</option>)}
+                        {metrics.map(m => <option key={m.key} value={m.key}>{m.name}</option>)}
                       </select>
                     )}
                   </div>
@@ -1490,7 +1692,7 @@ export default function ReportsPage() {
                     const insight = getWeeklyInsight()
                     return insight ? (
                       <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.25)', borderRadius: '10px', fontSize: '12px', color: T_ACCENT, fontWeight: '500' }}>
-                        💡 {insight}
+                        {insight}
                       </div>
                     ) : null
                   })()}
@@ -1500,7 +1702,7 @@ export default function ReportsPage() {
               {/* Meal Timing */}
               {metrics.length > 0 && (
                 <Card>
-                  <SectionHeader icon="🍽️" title="Meal Timing Patterns" />
+                  <SectionHeader icon={<UtensilsIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Meal Timing Patterns" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
                   <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
                 </Card>
               )}
@@ -1511,6 +1713,31 @@ export default function ReportsPage() {
           {viewMode === 'monthly' && (
             <>
               <DateNavCard label={formatDateRange()} onPrev={() => navigate(-1)} onNext={() => navigate(1)} />
+
+              {/* Metric filter pills */}
+              {metrics.length > 1 && (
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 16, WebkitOverflowScrolling: 'touch' }}>
+                  {metrics.map(m => {
+                    const isActive = chartMetricKey === m.key
+                    const color = m.color || '#0A84FF'
+                    return (
+                      <button key={m.key} onClick={() => setChartMetricKey(m.key)}
+                        style={{
+                          padding: '7px 14px', borderRadius: 20, flexShrink: 0,
+                          backgroundColor: isActive ? color : 'transparent',
+                          border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.12)'}`,
+                          color: isActive ? '#fff' : T.muted,
+                          fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer',
+                          fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px',
+                          transition: 'all 0.15s',
+                          boxShadow: isActive ? `0 2px 8px ${color}40` : 'none'
+                        }}>
+                        {m.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
               {/* Consistency Hero */}
               {(() => {
@@ -1540,7 +1767,7 @@ export default function ReportsPage() {
                       const insight = getMonthlyInsight()
                       return insight ? (
                         <div style={{ marginTop: 14, padding: '10px 14px', backgroundColor: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.25)', borderRadius: '10px', fontSize: '12px', color: T_ACCENT, fontWeight: '500' }}>
-                          💡 {insight}
+                          {insight}
                         </div>
                       ) : null
                     })()}
@@ -1551,7 +1778,7 @@ export default function ReportsPage() {
               {/* Best vs Worst Weeks */}
               {filteredHistory.length > 0 && metrics.length > 0 && (
                 <Card>
-                  <SectionHeader icon="🏆" title="Best vs Worst Weeks" />
+                  <SectionHeader icon={<TrophyIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Best vs Worst Weeks" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
                   <BestWorstWeeks history={history} metrics={metrics} monthStart={monthStart} monthEnd={monthEnd} />
                 </Card>
               )}
@@ -1559,7 +1786,7 @@ export default function ReportsPage() {
               {/* Monthly averages grid */}
               {metrics.length > 0 && stats.days > 0 && (
                 <Card>
-                  <SectionHeader icon="📊" title="Monthly Averages" />
+                  <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Monthly Averages" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {metrics.map((metric, i) => (
                       <div key={metric.key} style={{
@@ -1573,7 +1800,7 @@ export default function ReportsPage() {
                             border: `1px solid ${metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]}40`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
                           }}>
-                            {metric.icon || '📊'}
+                            <BarChartIcon size={14} color={metric.color || '#0A84FF'} strokeWidth={2} />
                           </div>
                           <span style={{ fontSize: '12px', color: T.muted, fontWeight: '600', letterSpacing: '0.5px' }}>{metric.name}</span>
                         </div>
@@ -1596,12 +1823,12 @@ export default function ReportsPage() {
               {metrics.length > 0 && (
                 <Card>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                    <SectionHeader icon={activeMetric?.icon || '📊'} title={activeMetric?.name || 'Metric'} />
+                    <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title={activeMetric?.name || 'Metric'} />
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       {metrics.length > 1 && (
                         <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
                           style={{ fontSize: '12px', padding: '6px 10px', border: `1px solid ${T.border}`, borderRadius: '8px', color: T.muted, backgroundColor: T.card2, outline: 'none' }}>
-                          {metrics.map(m => <option key={m.key} value={m.key}>{m.icon} {m.name}</option>)}
+                          {metrics.map(m => <option key={m.key} value={m.key}>{m.name}</option>)}
                         </select>
                       )}
                       <div style={{ display: 'flex', backgroundColor: T.card2, borderRadius: '8px', padding: '2px', border: `1px solid ${T.border}` }}>
@@ -1636,7 +1863,7 @@ export default function ReportsPage() {
               {/* Meal Timing for the month */}
               {metrics.length > 0 && filteredHistory.length > 0 && (
                 <Card>
-                  <SectionHeader icon="🍽️" title="Meal Timing Patterns" />
+                  <SectionHeader icon={<UtensilsIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Meal Timing Patterns" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
                   <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
                 </Card>
               )}
@@ -1652,14 +1879,17 @@ export default function ReportsPage() {
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,159,10,0.7)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 6 }}>
                       Current Tracking Streak
                     </div>
-                    <div style={{ fontSize: 48, fontWeight: 900, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
-                      {streaks.trackingStreak > 0 ? '🔥' : ''} {streaks.trackingStreak}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {streaks.trackingStreak > 0 && <FlameIcon size={36} color={T_WARNING} strokeWidth={1.5} />}
+                      <span style={{ fontSize: 48, fontWeight: 900, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                        {streaks.trackingStreak}
+                      </span>
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,159,10,0.6)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginTop: 4 }}>
                       DAY STREAK
                     </div>
                   </div>
-                  <div style={{ fontSize: 56, opacity: 0.12 }}>🔥</div>
+                  <div style={{ opacity: 0.08, display: 'flex' }}><FlameIcon size={80} color={T_WARNING} strokeWidth={1} /></div>
                 </div>
               </div>
             </>

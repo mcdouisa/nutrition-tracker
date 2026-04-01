@@ -26,6 +26,12 @@ import {
   completeOnboarding,
   loadUserProfile
 } from '../lib/dataSync'
+import {
+  BarChartIcon, DumbbellIcon, TargetIcon, InboxIcon,
+  CheckSquareIcon, DropletIcon, LeafIcon, ZapIcon,
+  SparklesIcon, InfoIcon, CheckCircleIcon, CloseIcon,
+  FlameIcon, UtensilsIcon, ChevronDownIcon, ChevronRightIcon
+} from '../lib/icons'
 
 // ─── THEME TOKENS ─────────────────────────────────────────────────────────────
 const DARK = {
@@ -653,9 +659,14 @@ export default function NutritionTracker() {
       localStorage.setItem('nutrition-data', JSON.stringify(yesterdayData))
       saveToHistory(yesterdayData)
 
-      // Sync to cloud if user is logged in and cloud load succeeded
+      // Sync yesterday's data to the correct dated document (NOT today's doc)
+      // We bypass syncToCloud here because syncToCloud calls saveTodayData which
+      // always writes to today's date, which would corrupt today with yesterday's data
       if (user && cloudLoadSucceeded.current) {
-        syncToCloud(yesterdayData)
+        setSyncStatus('syncing')
+        saveHistoryEntry(user.uid, currentDate, yesterdayData)
+          .then(() => { setSyncStatus('synced'); setTimeout(() => setSyncStatus(''), 2000) })
+          .catch(() => { setSyncStatus('error'); setTimeout(() => setSyncStatus(''), 3000) })
       }
 
       // Now trigger reload for today
@@ -1559,6 +1570,20 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
     }
   }
 
+  const handleBarcodeResult = ({ name, brand, servingSize, estimates }) => {
+    const displayName = brand ? `${brand} ${name}` : name
+    const servingNote = servingSize ? ` · ${servingSize}` : ''
+    setChatMessages(prev => [
+      ...prev,
+      { role: 'user', content: `Scanned: ${displayName}` },
+      {
+        role: 'assistant',
+        content: `Found ${displayName}${servingNote}.`,
+        estimates,
+      },
+    ])
+  }
+
   const addEstimatedNutrition = async (estimates, messageIndex) => {
     const timestamp = Date.now()
     const newEntry = { estimates, timestamp }
@@ -2117,7 +2142,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 letterSpacing: '0.5px'
               }}
             >
-              📊 Reports
+              <BarChartIcon size={14} color="currentColor" strokeWidth={2} /> Reports
             </Link>
             <button
               onClick={() => setShowSettings(true)}
@@ -2134,7 +2159,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 letterSpacing: '0.5px'
               }}
             >
-              🎯 Goals
+              <TargetIcon size={14} color="currentColor" strokeWidth={2} /> Goals
             </button>
             <Link
               href="/workout"
@@ -2156,7 +2181,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 letterSpacing: '0.5px'
               }}
             >
-              💪 Workout
+              <DumbbellIcon size={14} color="currentColor" strokeWidth={2} /> Workout
             </Link>
           </div>
         </div>
@@ -2199,7 +2224,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>📬</span>
+                <InboxIcon size={14} color="currentColor" strokeWidth={2} />
                 <span>{archivedAnnouncements.length} older update{archivedAnnouncements.length !== 1 ? 's' : ''} — Catch up</span>
               </span>
               <span style={{ fontSize: '14px' }}>{showCatchUp ? '▲' : '▼'}</span>
@@ -2223,7 +2248,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '14px' }}>🎉</span>
+                          <SparklesIcon size={14} color="#0A84FF" strokeWidth={2} />
                           <span style={{
                             fontSize: '12px', fontWeight: '700', color: '#0A84FF',
                             textTransform: 'uppercase', letterSpacing: '0.5px',
@@ -2351,8 +2376,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                     <div style={{
                       width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
                       background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
-                    }}>✅</div>
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}><CheckSquareIcon size={17} color="#0A84FF" strokeWidth={2} /></div>
                     <h2 style={{
                       margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
                       textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
@@ -2458,8 +2483,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
               <div style={{
                 width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
                 background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
-              }}>💧</div>
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}><DropletIcon size={17} color="#0A84FF" strokeWidth={2} /></div>
               <h2 style={{
                 margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
                 textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
@@ -2618,8 +2643,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
                 <div style={{
                   width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
                   background: 'rgba(48,209,88,0.12)', border: '1px solid rgba(48,209,88,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
-                }}>🥗</div>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}><LeafIcon size={17} color="#30D158" strokeWidth={2} /></div>
                 <h2 style={{
                   margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
                   textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
@@ -3016,8 +3041,8 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
             <div style={{
               width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
               background: 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px'
-            }}>⚡</div>
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}><ZapIcon size={17} color="#FF9F0A" strokeWidth={2} /></div>
             <h2 style={{
               margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
               textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
@@ -3183,10 +3208,10 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           }}>
             <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle,rgba(10,132,255,0.09) 0%,transparent 70%)', pointerEvents: 'none' }}/>
             <div style={{
-              fontSize: '48px',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              display: 'flex', justifyContent: 'center'
             }}>
-              📊
+              <BarChartIcon size={52} color="rgba(10,132,255,0.4)" strokeWidth={1.25} />
             </div>
             <div style={{
               fontFamily: "'Barlow Condensed', sans-serif",
@@ -3279,6 +3304,7 @@ Replace the 0s with accurate numerical values for the EXACT amount described.`
           onImageClear={() => setChatImage(null)}
           onSend={sendChatMessage}
           onAddEstimates={addEstimatedNutrition}
+          onBarcodeResult={handleBarcodeResult}
           onClose={() => setShowChat(false)}
         />
       )}
@@ -4095,7 +4121,7 @@ function NotificationBanner({ notification, onDismiss }) {
         ? notif.feedbackMessage.substring(0, 60) + '...'
         : notif.feedbackMessage
       return {
-        icon: '✓',
+        icon: 'check',
         label: 'Resolved',
         message: `Thank you for reporting the ${typeLabel} "${truncatedMessage}". The problem has been addressed.`,
         colors: {
@@ -4110,7 +4136,7 @@ function NotificationBanner({ notification, onDismiss }) {
 
     if (notif.type === 'announcement') {
       return {
-        icon: '🎉',
+        icon: 'sparkle',
         label: notif.title || 'NEW FEATURE',
         message: notif.message,
         colors: {
@@ -4124,7 +4150,7 @@ function NotificationBanner({ notification, onDismiss }) {
     }
 
     return {
-      icon: 'ℹ',
+      icon: 'info',
       label: 'Notification',
       message: 'You have a new notification.',
       colors: {
@@ -4158,10 +4184,11 @@ function NotificationBanner({ notification, onDismiss }) {
           gap: '8px',
           marginBottom: '4px'
         }}>
-          <span style={{
-            fontSize: '16px',
-            color: content.colors.icon
-          }}>{content.icon}</span>
+          <span style={{ display: 'flex', color: content.colors.icon }}>
+            {content.icon === 'check' && <CheckCircleIcon size={16} color={content.colors.icon} strokeWidth={2} />}
+            {content.icon === 'sparkle' && <SparklesIcon size={16} color={content.colors.icon} strokeWidth={2} />}
+            {content.icon === 'info' && <InfoIcon size={16} color={content.colors.icon} strokeWidth={2} />}
+          </span>
           <span style={{
             fontSize: '12px',
             fontWeight: '600',
@@ -4191,15 +4218,15 @@ function NotificationBanner({ notification, onDismiss }) {
           background: 'transparent',
           border: 'none',
           color: content.colors.label,
-          fontSize: '18px',
           cursor: 'pointer',
-          padding: '0 4px',
+          padding: '0 2px',
           lineHeight: '1',
-          flexShrink: 0
+          flexShrink: 0,
+          display: 'flex', alignItems: 'center'
         }}
         aria-label="Dismiss notification"
       >
-        ×
+        <CloseIcon size={16} color={content.colors.label} strokeWidth={2} />
       </button>
     </div>
   )

@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPrograms, getCurrentWorkout, saveSession, syncSessionToFirestore } from '../../../lib/workoutSync';
+import { getPrograms, getCurrentWorkout, saveSession, syncSessionToFirestore, checkProgressiveOverload, applyProgressiveOverload, syncProgramsToFirestore } from '../../../lib/workoutSync';
+// Note: getPrograms is used post-applyProgressiveOverload to re-read updated weights for Firestore sync
 import { useAuth } from '../../../lib/AuthContext';
 
 const C = {
@@ -79,6 +80,7 @@ export default function WorkoutLog() {
   const [restTimer, setRestTimer] = useState(null);
   const [activeEx,  setActiveEx]  = useState(0);
   const [showDone,  setShowDone]  = useState(false);
+  const [weightBumps, setWeightBumps] = useState([]);
 
   useEffect(() => {
     const ctx = getCurrentWorkout();
@@ -166,6 +168,7 @@ export default function WorkoutLog() {
         sets: ex.sets.map(s => ({
           type: s.type, logged: s.logged,
           reps: s.actualReps, weight: s.actualWeight,
+          targetReps: s.targetReps, // saved so overload checker can compare
           distance: s.actualDistance, time: s.actualTime,
           duration: s.actualDuration, sides: s.sides,
         })),
@@ -173,6 +176,18 @@ export default function WorkoutLog() {
     };
     saveSession(session);
     if (user) syncSessionToFirestore(user.uid, session);
+
+    // Check for progressive overload (needs the session we just saved to be in getSessions())
+    const bumps = checkProgressiveOverload(program.id, day.id);
+    if (bumps.length > 0) {
+      applyProgressiveOverload(program.id, day.id, bumps);
+      if (user) {
+        // Sync updated program weights to Firestore
+        syncProgramsToFirestore(user.uid, getPrograms());
+      }
+      setWeightBumps(bumps);
+    }
+
     setShowDone(true);
   }
 
@@ -202,14 +217,53 @@ export default function WorkoutLog() {
 
       {/* DONE OVERLAY */}
       {showDone && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(10px)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:24, padding:'36px 28px', textAlign:'center', maxWidth:340, width:'100%' }}>
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(10px)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:20, overflowY:'auto' }}>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:24, padding:'36px 28px', textAlign:'center', maxWidth:360, width:'100%' }}>
             <div style={{ width:72, height:72, borderRadius:'50%', background:C.successBg, border:`2px solid ${C.success}`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h2 style={{ fontFamily:font.heading, fontWeight:900, fontSize:32, letterSpacing:1, marginBottom:8, color:C.white }}>WORKOUT DONE!</h2>
             <p style={{ color:C.muted, fontSize:14, marginBottom:6 }}>{day.name}</p>
-            <p style={{ color:C.success, fontSize:16, fontWeight:700, marginBottom:28 }}>{fmtTime(elapsed)} · {loggedSets} sets completed</p>
+            <p style={{ color:C.success, fontSize:16, fontWeight:700, marginBottom: weightBumps.length > 0 ? 20 : 28 }}>{fmtTime(elapsed)} · {loggedSets} sets completed</p>
+
+            {/* Progressive overload notification */}
+            {weightBumps.length > 0 && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(255,159,10,0.12), rgba(255,159,10,0.06))',
+                border: '1px solid rgba(255,159,10,0.35)',
+                borderRadius: 16, padding: '16px', marginBottom: 24, textAlign: 'left'
+              }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+                  <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,159,10,0.15)', border:'1px solid rgba(255,159,10,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:font.heading, fontSize:13, fontWeight:700, color:'#FF9F0A', letterSpacing:'1.5px', textTransform:'uppercase' }}>PROGRESSIVE OVERLOAD</div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>Hit max reps 2 sessions in a row</div>
+                  </div>
+                </div>
+                {weightBumps.map((bump, i) => (
+                  <div key={i} style={{
+                    display:'flex', alignItems:'center', justifyContent:'space-between',
+                    padding:'8px 10px', borderRadius:10, backgroundColor:'rgba(255,255,255,0.04)',
+                    border:`1px solid rgba(255,255,255,0.06)`,
+                    marginBottom: i < weightBumps.length - 1 ? 6 : 0
+                  }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:C.white }}>{bump.name}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ fontSize:13, color:C.muted, fontFamily:font.heading }}>{bump.oldWeight} lbs</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      <span style={{ fontSize:14, fontWeight:900, color:'#FF9F0A', fontFamily:font.heading }}>{bump.newWeight} lbs</span>
+                      <span style={{ fontSize:10, color:C.muted }}>+{bump.increment}</span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ fontSize:11, color:C.muted, marginTop:10, textAlign:'center' }}>
+                  Weights updated in your program for next session
+                </div>
+              </div>
+            )}
+
             <button onClick={() => router.push('/workout')} style={{
               width:'100%', background:`linear-gradient(90deg, ${C.success}, #20b857)`,
               border:'none', borderRadius:14, padding:'16px',

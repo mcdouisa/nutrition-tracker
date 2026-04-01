@@ -1,5 +1,294 @@
 // AI Chat Modal Component (mobile optimized)
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { CameraIcon, BarcodeIcon } from '../lib/icons'
+
+// ── Barcode lookup via Open Food Facts (free, no API key) ────────────────────
+async function lookupBarcode(barcode, metrics) {
+  const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+  const data = await res.json()
+  if (data.status === 0 || !data.product) return null
+
+  const p = data.product
+  const n = p.nutriments || {}
+
+  // Prefer per-serving values, fall back to per-100g
+  const get = (key) => {
+    const s = n[`${key}_serving`]
+    if (s != null && !isNaN(s)) return s
+    const h = n[`${key}_100g`]
+    if (h != null && !isNaN(h)) return h
+    return n[key] ?? null
+  }
+
+  // Map common metric keys to Open Food Facts nutriment keys
+  const keyMap = {
+    calories:  () => n['energy-kcal_serving'] ?? n['energy-kcal_100g'] ?? n['energy-kcal'],
+    protein:   () => get('proteins'),
+    carbs:     () => get('carbohydrates'),
+    fat:       () => get('fat'),
+    fiber:     () => get('fiber'),
+    sugar:     () => get('sugars'),
+    sugars:    () => get('sugars'),
+    sodium:    () => { const v = get('sodium'); return v != null ? Math.round(v * 1000) : null }, // g → mg
+    saturatedfat: () => get('saturated-fat'),
+    cholesterol:  () => get('cholesterol'),
+  }
+
+  const estimates = {}
+  ;(metrics || []).forEach(m => {
+    const getter = keyMap[m.key.toLowerCase().replace(/[_-]/g, '')]
+               || keyMap[m.key.toLowerCase()]
+    if (getter) {
+      const val = getter()
+      if (val != null && !isNaN(val)) estimates[m.key] = Math.round(val)
+    }
+  })
+
+  return {
+    name: p.product_name || p.abbreviated_product_name || 'Unknown Product',
+    brand: p.brands ? p.brands.split(',')[0].trim() : null,
+    servingSize: p.serving_size || null,
+    estimates,
+  }
+}
+
+// ── Live barcode scanner overlay ─────────────────────────────────────────────
+function BarcodeScanner({ metrics, onResult, onClose }) {
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const rafRef = useRef(null)
+  const detectorRef = useRef(null)
+  const [status, setStatus] = useState('starting') // starting | scanning | found | error | unsupported | notfound
+  const [errorMsg, setErrorMsg] = useState('')
+  const [manualCode, setManualCode] = useState('')
+  const [submittingManual, setSubmittingManual] = useState(false)
+
+  const stopCamera = () => {
+    cancelAnimationFrame(rafRef.current)
+    streamRef.current?.getTracks().forEach(t => t.stop())
+  }
+
+  const handleBarcode = async (code) => {
+    setStatus('found')
+    stopCamera()
+    try {
+      const result = await lookupBarcode(code, metrics)
+      if (!result || Object.keys(result.estimates).length === 0) {
+        setStatus('notfound')
+        setErrorMsg(`Barcode ${code} not found in our database.`)
+      } else {
+        onResult(result)
+      }
+    } catch {
+      setStatus('error')
+      setErrorMsg('Network error looking up product. Please try again.')
+    }
+  }
+
+  const handleManualSubmit = async (e) => {
+    e.preventDefault()
+    if (!manualCode.trim()) return
+    setSubmittingManual(true)
+    await handleBarcode(manualCode.trim())
+    setSubmittingManual(false)
+  }
+
+  useEffect(() => {
+    if (!('BarcodeDetector' in window)) {
+      setStatus('unsupported')
+      return
+    }
+
+    detectorRef.current = new window.BarcodeDetector({
+      formats: ['upc_a', 'upc_e', 'ean_8', 'ean_13', 'code_128', 'code_39'],
+    })
+
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+    })
+    .then(stream => {
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play()
+        setStatus('scanning')
+      }
+    })
+    .catch(() => {
+      setStatus('error')
+      setErrorMsg('Camera access denied. Please allow camera access and try again.')
+    })
+
+    return stopCamera
+  }, [])
+
+  useEffect(() => {
+    if (status !== 'scanning') return
+    let active = true
+
+    const scan = async () => {
+      if (!active) return
+      const vid = videoRef.current
+      if (!vid || vid.readyState < 2) {
+        rafRef.current = requestAnimationFrame(scan)
+        return
+      }
+      try {
+        const codes = await detectorRef.current.detect(vid)
+        if (codes.length > 0) {
+          handleBarcode(codes[0].rawValue)
+        } else if (active) {
+          rafRef.current = requestAnimationFrame(scan)
+        }
+      } catch {
+        if (active) rafRef.current = requestAnimationFrame(scan)
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(scan)
+    return () => { active = false; cancelAnimationFrame(rafRef.current) }
+  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isManualMode = status === 'unsupported' || status === 'notfound'
+
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: '#000', zIndex: 10, display: 'flex',
+      flexDirection: 'column', borderRadius: '16px 16px 0 0', overflow: 'hidden',
+    }}>
+      <style>{`
+        @keyframes scanPulse {
+          0%, 100% { opacity: 0.9; top: 22%; }
+          50% { opacity: 0.6; top: 72%; }
+        }
+        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+      `}</style>
+
+      {/* Camera feed */}
+      {(status === 'scanning' || status === 'starting') && (
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+
+      {/* Dark vignette overlay */}
+      {status === 'scanning' && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse 60% 45% at 50% 45%, transparent 0%, rgba(0,0,0,0.65) 100%)',
+        }} />
+      )}
+
+      {/* Scan frame */}
+      {status === 'scanning' && (
+        <div style={{
+          position: 'absolute', top: '20%', left: '10%', right: '10%', height: '55%',
+          border: '2px solid rgba(10,132,255,0.85)', borderRadius: 12,
+          boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
+        }}>
+          {/* Corner accents */}
+          {[
+            { top: -2, left: -2, borderTop: '3px solid #0A84FF', borderLeft: '3px solid #0A84FF' },
+            { top: -2, right: -2, borderTop: '3px solid #0A84FF', borderRight: '3px solid #0A84FF' },
+            { bottom: -2, left: -2, borderBottom: '3px solid #0A84FF', borderLeft: '3px solid #0A84FF' },
+            { bottom: -2, right: -2, borderBottom: '3px solid #0A84FF', borderRight: '3px solid #0A84FF' },
+          ].map((s, i) => (
+            <div key={i} style={{ position: 'absolute', width: 20, height: 20, borderRadius: 3, ...s }} />
+          ))}
+          {/* Scan line */}
+          <div style={{
+            position: 'absolute', left: 4, right: 4, height: 2,
+            background: 'linear-gradient(90deg, transparent, #0A84FF, transparent)',
+            boxShadow: '0 0 8px #0A84FF',
+            animation: 'scanPulse 2s ease-in-out infinite',
+          }} />
+        </div>
+      )}
+
+      {/* Status / message area */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: '20px 24px 32px',
+        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)',
+        animation: 'fadeIn 0.3s ease',
+      }}>
+        {status === 'starting' && (
+          <p style={{ color: '#888', textAlign: 'center', fontSize: 14, margin: 0 }}>Starting camera...</p>
+        )}
+
+        {status === 'scanning' && (
+          <p style={{ color: '#fff', textAlign: 'center', fontSize: 14, margin: 0, fontWeight: 500 }}>
+            Point at a product barcode
+          </p>
+        )}
+
+        {status === 'found' && (
+          <p style={{ color: '#30D158', textAlign: 'center', fontSize: 14, margin: 0, fontWeight: 600 }}>
+            Barcode detected — looking up product...
+          </p>
+        )}
+
+        {(status === 'error' || status === 'notfound') && !isManualMode && (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#FF453A', fontSize: 13, marginBottom: 12 }}>{errorMsg}</p>
+            <button onClick={() => setStatus('scanning')} style={{
+              padding: '9px 20px', backgroundColor: '#0A84FF', border: 'none',
+              borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}>Try Again</button>
+          </div>
+        )}
+
+        {isManualMode && (
+          <div style={{ animation: 'fadeIn 0.25s ease' }}>
+            <p style={{ color: '#888', fontSize: 12, textAlign: 'center', marginBottom: 10 }}>
+              {status === 'unsupported'
+                ? 'Live scanning not supported on this browser.'
+                : errorMsg}
+              {' '}Enter the barcode number manually:
+            </p>
+            <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={manualCode}
+                onChange={e => setManualCode(e.target.value)}
+                placeholder="e.g. 012345678905"
+                inputMode="numeric"
+                style={{
+                  flex: 1, padding: '10px 12px', backgroundColor: '#1A1A1A',
+                  border: '1px solid #2C2C2C', borderRadius: 8, color: '#fff', fontSize: 15,
+                }}
+              />
+              <button type="submit" disabled={submittingManual || !manualCode.trim()} style={{
+                padding: '10px 16px', backgroundColor: '#0A84FF', border: 'none',
+                borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600,
+                cursor: submittingManual ? 'not-allowed' : 'pointer',
+                opacity: submittingManual ? 0.6 : 1,
+              }}>
+                {submittingManual ? '...' : 'Look Up'}
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+
+      {/* Close button */}
+      <button
+        onClick={() => { stopCamera(); onClose() }}
+        style={{
+          position: 'absolute', top: 14, right: 16,
+          padding: '6px 14px', backgroundColor: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8,
+          color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  )
+}
 
 // Compress image before sending to API
 // Higher resolution + quality needed for nutrition label text to remain legible
@@ -27,8 +316,9 @@ function compressImage(file) {
   })
 }
 
-export function AIChatModal({ messages, input, pendingImage, isThinking, metrics, viewDate, onInputChange, onImageSelect, onImageClear, onSend, onAddEstimates, onClose }) {
+export function AIChatModal({ messages, input, pendingImage, isThinking, metrics, viewDate, onInputChange, onImageSelect, onImageClear, onSend, onAddEstimates, onBarcodeResult, onClose }) {
   const fileInputRef = useRef(null)
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -91,8 +381,21 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 -4px 30px rgba(0,0,0,0.2)'
+        boxShadow: '0 -4px 30px rgba(0,0,0,0.2)',
+        position: 'relative',
       }}>
+        {/* Barcode scanner overlay */}
+        {showBarcodeScanner && (
+          <BarcodeScanner
+            metrics={metrics}
+            onResult={(result) => {
+              setShowBarcodeScanner(false)
+              onBarcodeResult && onBarcodeResult(result)
+            }}
+            onClose={() => setShowBarcodeScanner(false)}
+          />
+        )}
+
         {/* Header */}
         <div style={{
           padding: '16px 20px',
@@ -110,7 +413,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               color: '#FFFFFF',
               letterSpacing: '-0.3px'
             }}>
-              🤖 AI Assistant
+              AI Assistant
             </h2>
             <div style={{
               fontSize: '12px',
@@ -162,7 +465,9 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               padding: '32px 16px',
               color: '#666666'
             }}>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>💬</div>
+              <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+                <CameraIcon size={40} color="rgba(10,132,255,0.5)" strokeWidth={1.25} />
+              </div>
               <div style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '500', color: '#888888' }}>
                 Ask me about your meals!
               </div>
@@ -170,7 +475,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                 Type a description:<br />
                 "Chicken breast with rice"<br />
                 <br />
-                Or tap 📷 to:<br />
+                Or tap the camera to:<br />
                 • Take a photo of your food<br />
                 • Snap a nutrition label
               </div>
@@ -367,17 +672,41 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               title="Take a photo or choose from library"
               style={{
                 padding: '10px 12px',
-                backgroundColor: pendingImage ? '#0A84FF' : '#f3f4f6',
+                backgroundColor: pendingImage ? '#0A84FF' : 'transparent',
                 border: `1px solid ${pendingImage ? '#0A84FF' : '#2C2C2C'}`,
                 borderRadius: '8px',
-                fontSize: '18px',
                 cursor: isThinking ? 'not-allowed' : 'pointer',
                 lineHeight: 1,
                 flexShrink: 0,
-                opacity: isThinking ? 0.5 : 1
+                opacity: isThinking ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
-              📷
+              <CameraIcon size={20} color={pendingImage ? '#fff' : '#888888'} strokeWidth={1.75} />
+            </button>
+
+            {/* Barcode scan button */}
+            <button
+              onClick={() => setShowBarcodeScanner(true)}
+              disabled={isThinking}
+              title="Scan a product barcode"
+              style={{
+                padding: '10px 12px',
+                backgroundColor: 'transparent',
+                border: '1px solid #2C2C2C',
+                borderRadius: '8px',
+                cursor: isThinking ? 'not-allowed' : 'pointer',
+                lineHeight: 1,
+                flexShrink: 0,
+                opacity: isThinking ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <BarcodeIcon size={20} color="#888888" strokeWidth={1.75} />
             </button>
 
             <textarea

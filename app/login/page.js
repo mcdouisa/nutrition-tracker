@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/AuthContext'
+import { LockIcon } from '../../lib/icons'
 
 const DARK  = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#242424', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888' }
 const LIGHT = { bg: '#F5F5F5', card: '#FFFFFF',  card2: '#EBEBEB', border: '#E0E0E0', text: '#1A1A1A', muted: '#666666' }
@@ -226,7 +227,7 @@ export default function LoginPage() {
         }}>
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔑</div>
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><LockIcon size={48} color="#0A84FF" strokeWidth={1.25} /></div>
             <h1 style={{
               margin: '0 0 4px 0',
               fontSize: '24px',

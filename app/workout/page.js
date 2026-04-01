@@ -8,6 +8,15 @@ import {
   PROGRAM_TYPES, publishProgram, unpublishProgram,
 } from '../../lib/workoutSync';
 import { useAuth } from '../../lib/AuthContext';
+import { DumbbellIcon, RunIcon, YogaIcon, PersonIcon } from '../../lib/icons';
+
+// Maps workout type keys → SVG icon component
+function ProgramTypeIcon({ type, size = 22, color = 'currentColor' }) {
+  if (type === 'strength') return <DumbbellIcon size={size} color={color} strokeWidth={1.75} />
+  if (type === 'running')  return <RunIcon size={size} color={color} strokeWidth={1.75} />
+  if (type === 'stretching') return <YogaIcon size={size} color={color} strokeWidth={1.75} />
+  return <PersonIcon size={size} color={color} strokeWidth={1.75} /> // bodyweight default
+}
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const C = {
@@ -308,7 +317,7 @@ export default function WorkoutHome() {
                       <p style={{ fontSize:12, color:C.muted, fontWeight:500 }}>{activeProgram.description}</p>
                     )}
                     {(() => { const pt = PROGRAM_TYPES[activeProgram.type || 'strength']; return (
-                      <span style={{ fontSize:11, color:C.muted, fontWeight:600 }}>{pt?.emoji} {pt?.label}</span>
+                      <span style={{ fontSize:11, color:C.muted, fontWeight:600, display:'flex', alignItems:'center', gap:4 }}><ProgramTypeIcon type={activeProgram.type || 'strength'} size={11} color={C.muted} /> {pt?.label}</span>
                     ); })()}
                     {activeProgram.isPublic && <span style={{ fontSize:11, color:C.success, fontWeight:700 }}>🌐 Public</span>}
                   </div>
@@ -421,7 +430,7 @@ export default function WorkoutHome() {
           </>
         ) : (
           <div style={{ textAlign:'center', padding:'60px 20px' }}>
-            <div style={{ fontSize:48, marginBottom:16 }}>🏋️</div>
+            <div style={{ marginBottom:16, display:'flex', justifyContent:'center' }}><DumbbellIcon size={52} color="rgba(255,159,10,0.4)" strokeWidth={1.25} /></div>
             <h3 style={{ fontFamily:font.heading, fontSize:24, fontWeight:700, marginBottom:8 }}>No Programs Yet</h3>
             <p style={{ color:C.muted, fontSize:14, marginBottom:24 }}>Create your first workout program to get started.</p>
             <button onClick={() => setShowCreateModal(true)} style={{
@@ -477,7 +486,7 @@ export default function WorkoutHome() {
                       color: p.id === activeProgramId ? C.accent : C.white,
                       fontSize:14, fontWeight:600, textAlign:'left', cursor:'pointer',
                     }}>
-                      <span>{pt?.emoji} {p.name}</span>
+                      <span style={{ display:'flex', alignItems:'center', gap:5 }}><ProgramTypeIcon type={p.type || 'strength'} size={13} color="currentColor" /> {p.name}</span>
                       <span style={{ fontSize:11, color:C.muted }}>{p.days.length}d</span>
                     </button>
                     <button onClick={() => togglePublic(p.id)} title={p.isPublic ? 'Make private' : 'Make public'} style={{
@@ -534,7 +543,7 @@ export default function WorkoutHome() {
                     border:`1.5px solid ${newType === id ? C.accent : C.border}`,
                     borderRadius:12, padding:'12px 10px', textAlign:'left', cursor:'pointer',
                   }}>
-                    <div style={{ fontSize:22, marginBottom:4 }}>{t.emoji}</div>
+                    <div style={{ marginBottom:6, display:'flex' }}><ProgramTypeIcon type={id} size={22} color={newType === id ? '#0A84FF' : C.muted} /></div>
                     <div style={{ fontSize:13, fontWeight:700, color: newType === id ? C.accent : C.white, marginBottom:2 }}>{t.label}</div>
                     <div style={{ fontSize:10, color:C.muted, lineHeight:1.3 }}>{t.desc}</div>
                   </button>
