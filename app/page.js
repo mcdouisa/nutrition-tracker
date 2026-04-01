@@ -3586,8 +3586,11 @@ function SettingsModal({
     setTempChecklist(updated)
   }
 
-  const addNutritionMetric = () => {
-    setTempMetrics([...tempMetrics, { name: '', key: '', unit: '', value: 0, goal: 0, goalType: 'min', goalMax: 0, icon: '📊' }])
+  const addNutritionMetric = (preset = null) => {
+    const newMetric = preset
+      ? { ...preset, value: 0 }
+      : { name: '', key: '', unit: '', value: 0, goal: 0, goalType: 'min', goalMax: 0, icon: '📊' }
+    setTempMetrics([...tempMetrics, newMetric])
   }
 
   const updateNutritionMetric = (index, field, value) => {
@@ -4380,11 +4383,63 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
   )
 }
 
+// ── Micronutrient preset definitions ──────────────────────────────────────────
+const MICRONUTRIENT_PRESETS = {
+  vitamins: [
+    { key: 'vitaminA',   name: 'Vitamin A',   unit: 'mcg', goal: 700,  goalType: 'min', goalMax: 0, color: '#BF5AF2', icon: '💊' },
+    { key: 'vitaminC',   name: 'Vitamin C',   unit: 'mg',  goal: 90,   goalType: 'min', goalMax: 0, color: '#FF9F0A', icon: '💊' },
+    { key: 'vitaminD',   name: 'Vitamin D',   unit: 'mcg', goal: 20,   goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '💊' },
+    { key: 'vitaminE',   name: 'Vitamin E',   unit: 'mg',  goal: 15,   goalType: 'min', goalMax: 0, color: '#30D158', icon: '💊' },
+    { key: 'vitaminK',   name: 'Vitamin K',   unit: 'mcg', goal: 120,  goalType: 'min', goalMax: 0, color: '#32D74B', icon: '💊' },
+    { key: 'vitaminB1',  name: 'Thiamine (B1)',  unit: 'mg',  goal: 1.2,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '💊' },
+    { key: 'vitaminB2',  name: 'Riboflavin (B2)', unit: 'mg', goal: 1.3, goalType: 'min', goalMax: 0, color: '#5E5CE6', icon: '💊' },
+    { key: 'vitaminB3',  name: 'Niacin (B3)', unit: 'mg',  goal: 16,   goalType: 'min', goalMax: 0, color: '#FF6B6B', icon: '💊' },
+    { key: 'vitaminB5',  name: 'Pantothenic Acid (B5)', unit: 'mg', goal: 5, goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '💊' },
+    { key: 'vitaminB6',  name: 'Vitamin B6',  unit: 'mg',  goal: 1.7,  goalType: 'min', goalMax: 0, color: '#30B0C7', icon: '💊' },
+    { key: 'biotin',     name: 'Biotin (B7)', unit: 'mcg', goal: 30,   goalType: 'min', goalMax: 0, color: '#BF5AF2', icon: '💊' },
+    { key: 'folate',     name: 'Folate (B9)', unit: 'mcg', goal: 400,  goalType: 'min', goalMax: 0, color: '#30D158', icon: '💊' },
+    { key: 'vitaminB12', name: 'Vitamin B12', unit: 'mcg', goal: 2.4,  goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '💊' },
+  ],
+  minerals: [
+    { key: 'calcium',    name: 'Calcium',    unit: 'mg',  goal: 1000, goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '⚗️' },
+    { key: 'iron',       name: 'Iron',       unit: 'mg',  goal: 18,   goalType: 'min', goalMax: 0, color: '#FF453A', icon: '⚗️' },
+    { key: 'magnesium',  name: 'Magnesium',  unit: 'mg',  goal: 420,  goalType: 'min', goalMax: 0, color: '#30D158', icon: '⚗️' },
+    { key: 'phosphorus', name: 'Phosphorus', unit: 'mg',  goal: 700,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '⚗️' },
+    { key: 'potassium',  name: 'Potassium',  unit: 'mg',  goal: 3500, goalType: 'min', goalMax: 0, color: '#FF9F0A', icon: '⚗️' },
+    { key: 'sodium',     name: 'Sodium',     unit: 'mg',  goal: 2300, goalType: 'max', goalMax: 0, color: '#FF453A', icon: '⚗️' },
+    { key: 'zinc',       name: 'Zinc',       unit: 'mg',  goal: 11,   goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '⚗️' },
+    { key: 'copper',     name: 'Copper',     unit: 'mg',  goal: 0.9,  goalType: 'min', goalMax: 0, color: '#FF9F0A', icon: '⚗️' },
+    { key: 'manganese',  name: 'Manganese',  unit: 'mg',  goal: 2.3,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '⚗️' },
+    { key: 'selenium',   name: 'Selenium',   unit: 'mcg', goal: 55,   goalType: 'min', goalMax: 0, color: '#BF5AF2', icon: '⚗️' },
+    { key: 'iodine',     name: 'Iodine',     unit: 'mcg', goal: 150,  goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '⚗️' },
+    { key: 'chromium',   name: 'Chromium',   unit: 'mcg', goal: 35,   goalType: 'min', goalMax: 0, color: '#30D158', icon: '⚗️' },
+  ],
+  other: [
+    { key: 'saturatedFat',  name: 'Saturated Fat', unit: 'g',  goal: 20,  goalType: 'max', goalMax: 0, color: '#FF453A', icon: '📊' },
+    { key: 'transFat',      name: 'Trans Fat',     unit: 'g',  goal: 2,   goalType: 'max', goalMax: 0, color: '#FF453A', icon: '📊' },
+    { key: 'cholesterol',   name: 'Cholesterol',   unit: 'mg', goal: 300, goalType: 'max', goalMax: 0, color: '#FF9F0A', icon: '📊' },
+    { key: 'sugar',         name: 'Sugar',         unit: 'g',  goal: 50,  goalType: 'max', goalMax: 0, color: '#FFD60A', icon: '📊' },
+    { key: 'omega3',        name: 'Omega-3',        unit: 'g',  goal: 1.6, goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '📊' },
+  ],
+}
+
 // Nutrition Settings Component
 function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
   const T = useContext(ThemeContext)
+  const [showMicroPicker, setShowMicroPicker] = useState(false)
+  const [microTab, setMicroTab] = useState('vitamins')
   // Common food/nutrition emojis to choose from
   const iconOptions = ['📊', '🔥', '💪', '🥩', '🥚', '🥛', '🍗', '🥤', '🧈', '🥜', '🌾']
+
+  const isAdded = (key) => metrics.some(m => m.key === key)
+  const togglePreset = (preset) => {
+    if (isAdded(preset.key)) {
+      const idx = metrics.findIndex(m => m.key === preset.key)
+      onRemove(idx)
+    } else {
+      onAdd(preset)
+    }
+  }
 
   return (
     <div>
@@ -4558,8 +4613,92 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
         </div>
       ))}
 
+      {/* ── Micronutrient quick-add picker ── */}
+      <div style={{
+        marginTop: metrics.length > 0 ? '16px' : '0',
+        border: `1px solid ${T.border}`,
+        borderRadius: '12px',
+        overflow: 'hidden',
+      }}>
+        <button
+          onClick={() => setShowMicroPicker(v => !v)}
+          style={{
+            width: '100%', padding: '12px 14px',
+            backgroundColor: T.card2,
+            border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: T.text }}>
+              Quick Add Micronutrients
+            </div>
+            <div style={{ fontSize: '11px', color: T.muted, marginTop: '2px' }}>
+              Vitamins, minerals & more — tap to toggle
+            </div>
+          </div>
+          <span style={{ color: T.muted, fontSize: '18px', lineHeight: 1, transform: showMicroPicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+            ›
+          </span>
+        </button>
+
+        {showMicroPicker && (
+          <div style={{ padding: '12px 14px', backgroundColor: T.card }}>
+            {/* Category tabs */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+              {[
+                { id: 'vitamins', label: 'Vitamins' },
+                { id: 'minerals', label: 'Minerals' },
+                { id: 'other',    label: 'Other' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setMicroTab(tab.id)}
+                  style={{
+                    padding: '5px 12px', borderRadius: '20px', border: 'none',
+                    fontSize: '12px', fontWeight: '500', cursor: 'pointer',
+                    backgroundColor: microTab === tab.id ? '#0A84FF' : T.card2,
+                    color: microTab === tab.id ? '#fff' : T.muted,
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Nutrient pill grid */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {MICRONUTRIENT_PRESETS[microTab].map(preset => {
+                const active = isAdded(preset.key)
+                return (
+                  <button
+                    key={preset.key}
+                    onClick={() => togglePreset(preset)}
+                    style={{
+                      padding: '6px 10px', borderRadius: '20px', cursor: 'pointer',
+                      fontSize: '12px', fontWeight: '500',
+                      backgroundColor: active ? preset.color + '22' : T.card2,
+                      border: `1px solid ${active ? preset.color : T.border}`,
+                      color: active ? preset.color : T.muted,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {active ? '✓ ' : ''}{preset.name}
+                    <span style={{ opacity: 0.6, marginLeft: 3 }}>·{preset.unit}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div style={{ marginTop: '10px', fontSize: '11px', color: T.muted }}>
+              Daily goals are pre-filled with standard RDA values — you can edit them above.
+            </div>
+          </div>
+        )}
+      </div>
+
       <button
-        onClick={onAdd}
+        onClick={() => onAdd()}
         style={{
           width: '100%',
           padding: '10px',
@@ -4573,7 +4712,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
           cursor: 'pointer'
         }}
       >
-        + Add Metric
+        + Add Custom Metric
       </button>
     </div>
   )

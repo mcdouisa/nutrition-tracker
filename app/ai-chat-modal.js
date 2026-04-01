@@ -22,16 +22,51 @@ async function lookupBarcode(barcode, metrics) {
 
   // Map common metric keys to Open Food Facts nutriment keys
   const keyMap = {
-    calories:  () => n['energy-kcal_serving'] ?? n['energy-kcal_100g'] ?? n['energy-kcal'],
-    protein:   () => get('proteins'),
-    carbs:     () => get('carbohydrates'),
-    fat:       () => get('fat'),
-    fiber:     () => get('fiber'),
-    sugar:     () => get('sugars'),
-    sugars:    () => get('sugars'),
-    sodium:    () => { const v = get('sodium'); return v != null ? Math.round(v * 1000) : null }, // g → mg
-    saturatedfat: () => get('saturated-fat'),
-    cholesterol:  () => get('cholesterol'),
+    // Macros
+    calories:       () => n['energy-kcal_serving'] ?? n['energy-kcal_100g'] ?? n['energy-kcal'],
+    protein:        () => get('proteins'),
+    carbs:          () => get('carbohydrates'),
+    fat:            () => get('fat'),
+    fiber:          () => get('fiber'),
+    sugar:          () => get('sugars'),
+    sugars:         () => get('sugars'),
+    // Other fats
+    saturatedfat:   () => get('saturated-fat'),
+    saturated_fat:  () => get('saturated-fat'),
+    saturatedFat:   () => get('saturated-fat'),
+    transfat:       () => get('trans-fat'),
+    trans_fat:      () => get('trans-fat'),
+    transFat:       () => get('trans-fat'),
+    cholesterol:    () => get('cholesterol'),
+    omega3:         () => get('omega-3-fat'),
+    'omega-3':      () => get('omega-3-fat'),
+    // Minerals (OFF stores in g, convert to mg where needed)
+    sodium:         () => { const v = get('sodium');     return v != null ? Math.round(v * 1000) : null },
+    calcium:        () => { const v = get('calcium');    return v != null ? Math.round(v * 1000) : null },
+    iron:           () => { const v = get('iron');       return v != null ? Math.round(v * 1000) : null },
+    magnesium:      () => { const v = get('magnesium');  return v != null ? Math.round(v * 1000) : null },
+    phosphorus:     () => { const v = get('phosphorus'); return v != null ? Math.round(v * 1000) : null },
+    potassium:      () => { const v = get('potassium');  return v != null ? Math.round(v * 1000) : null },
+    zinc:           () => { const v = get('zinc');       return v != null ? Math.round(v * 1000) : null },
+    copper:         () => get('copper'),
+    manganese:      () => get('manganese'),
+    selenium:       () => { const v = get('selenium');   return v != null ? Math.round(v * 1000000) : null }, // g → mcg
+    iodine:         () => { const v = get('iodine');     return v != null ? Math.round(v * 1000000) : null },
+    chromium:       () => { const v = get('chromium');   return v != null ? Math.round(v * 1000000) : null },
+    // Vitamins (OFF stores in g, convert to mcg/mg as appropriate)
+    vitaminA:       () => { const v = get('vitamin-a');  return v != null ? Math.round(v * 1000000) : null }, // g → mcg
+    vitaminC:       () => { const v = get('vitamin-c');  return v != null ? Math.round(v * 1000) : null },    // g → mg
+    vitaminD:       () => { const v = get('vitamin-d');  return v != null ? Math.round(v * 1000000) : null },
+    vitaminE:       () => { const v = get('vitamin-e');  return v != null ? Math.round(v * 1000) : null },
+    vitaminK:       () => { const v = get('vitamin-k');  return v != null ? Math.round(v * 1000000) : null },
+    vitaminB1:      () => { const v = get('vitamin-b1') ?? get('thiamine'); return v != null ? Math.round(v * 1000) : null },
+    vitaminB2:      () => { const v = get('vitamin-b2') ?? get('riboflavin'); return v != null ? Math.round(v * 1000) : null },
+    vitaminB3:      () => { const v = get('vitamin-b3') ?? get('niacin'); return v != null ? Math.round(v * 1000) : null },
+    vitaminB5:      () => { const v = get('vitamin-b5') ?? get('pantothenic-acid'); return v != null ? Math.round(v * 1000) : null },
+    vitaminB6:      () => { const v = get('vitamin-b6'); return v != null ? Math.round(v * 1000) : null },
+    biotin:         () => { const v = get('biotin') ?? get('vitamin-b7'); return v != null ? Math.round(v * 1000000) : null },
+    folate:         () => { const v = get('folates') ?? get('folic-acid') ?? get('vitamin-b9'); return v != null ? Math.round(v * 1000000) : null },
+    vitaminB12:     () => { const v = get('vitamin-b12'); return v != null ? Math.round(v * 1000000) : null },
   }
 
   const estimates = {}
