@@ -514,11 +514,14 @@ export default function DiscoverPage() {
     // Always show demo programs; merge in Firestore public programs on top
     getPublicPrograms().then(remote => {
       setFirestoreStatus(remote.length >= 0 ? 'ok' : 'unavailable');
-      // Merge: real published programs first, then demo fill-ins (deduplicated)
+      // Merge: real published programs first, then demo fill-ins (deduplicated).
+      // For demo programs that exist in Firestore (copies-only doc), merge the
+      // copies count back onto the full demo template so the count is preserved.
+      const remoteById = Object.fromEntries(remote.map(r => [r.id, r]));
       const remoteIds = new Set(remote.map(r => r.id));
       const merged = [
-        ...remote,
-        ...DEMO_PROGRAMS.filter(d => !remoteIds.has(d.id)),
+        ...remote.filter(r => !DEMO_PROGRAMS.some(d => d.id === r.id)),
+        ...DEMO_PROGRAMS.map(d => remoteById[d.id] ? { ...d, copies: remoteById[d.id].copies || 0 } : d),
       ];
       setPublicPrograms(merged);
       setLoading(false);
