@@ -35,6 +35,7 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
       : [defaultSet()]
   );
   const [overloadSessions, setOverloadSessions] = useState(String(initial?.overloadSessions || 2));
+  const [overloadIncrement, setOverloadIncrement] = useState(String(initial?.overloadIncrement || 5));
 
   function updateSet(i, field, val) {
     setSets(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s));
@@ -162,13 +163,24 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
             placeholder="90"
             style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
         </div>
-        <div style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>INCREASE WEIGHT AFTER X SESSIONS AT MAX REPS</label>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <input value={overloadSessions} onChange={e => setOverloadSessions(e.target.value)}
-              inputMode="numeric" placeholder="2"
-              style={{ width:'70px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
-            <span style={{ fontSize:13, color:C.muted }}>sessions in a row</span>
+        <div style={{ display:'flex', gap:16, marginBottom:12 }}>
+          <div style={{ flex:1 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>SESSIONS AT MAX REPS TO PROGRESS</label>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <input value={overloadSessions} onChange={e => setOverloadSessions(e.target.value)}
+                inputMode="numeric" placeholder="2"
+                style={{ width:'70px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
+              <span style={{ fontSize:12, color:C.muted }}>sessions</span>
+            </div>
+          </div>
+          <div style={{ flex:1 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>WEIGHT INCREMENT</label>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <input value={overloadIncrement} onChange={e => setOverloadIncrement(e.target.value)}
+                inputMode="decimal" placeholder="5"
+                style={{ width:'70px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
+              <span style={{ fontSize:12, color:C.muted }}>lbs</span>
+            </div>
           </div>
         </div>
       </>
@@ -181,7 +193,7 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
     const normalised = sets.map(s =>
       type === 'bodyweight' ? { ...s, weight: 'BW' } : s
     );
-    onSave(name.trim(), normalised, parseInt(overloadSessions) || 2);
+    onSave(name.trim(), normalised, parseInt(overloadSessions) || 2, parseFloat(overloadIncrement) || 5);
   }
 
   const placeholder = {
@@ -284,12 +296,12 @@ export default function WorkoutDetail() {
   }
 
   // ── Exercise actions ──────────────────────────────────────────────────────
-  function saveExercise(name, sets, editIdx, overloadSessions) {
+  function saveExercise(name, sets, editIdx, overloadSessions, overloadIncrement) {
     const exercises = [...(day.exercises || [])];
     if (editIdx != null) {
-      exercises[editIdx] = { ...exercises[editIdx], name, sets, overloadSessions };
+      exercises[editIdx] = { ...exercises[editIdx], name, sets, overloadSessions, overloadIncrement };
     } else {
-      exercises.push({ id:`ex-${Date.now()}`, name, sets, overloadSessions });
+      exercises.push({ id:`ex-${Date.now()}`, name, sets, overloadSessions, overloadIncrement });
     }
     persist({ ...day, exercises });
     setShowAddEx(false);
@@ -589,7 +601,7 @@ export default function WorkoutDetail() {
         <ExerciseModal
           initial={editingEx != null ? day.exercises[editingEx] : null}
           programType={program?.type || 'strength'}
-          onSave={(name, sets, overloadSessions) => saveExercise(name, sets, editingEx, overloadSessions)}
+          onSave={(name, sets, overloadSessions, overloadIncrement) => saveExercise(name, sets, editingEx, overloadSessions, overloadIncrement)}
           onClose={() => { setShowAddEx(false); setEditingEx(null); }}
         />
       )}
