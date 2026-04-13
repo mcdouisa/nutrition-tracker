@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPrograms, getCurrentWorkout, saveSession, syncSessionToFirestore, checkProgressiveOverload, applyProgressiveOverload, syncProgramsToFirestore } from '../../../lib/workoutSync';
+import { getPrograms, savePrograms, getCurrentWorkout, saveSession, syncSessionToFirestore, checkProgressiveOverload, applyProgressiveOverload, syncProgramsToFirestore } from '../../../lib/workoutSync';
 // Note: getPrograms is used post-applyProgressiveOverload to re-read updated weights for Firestore sync
 import { useAuth } from '../../../lib/AuthContext';
 
@@ -25,15 +25,43 @@ function fmtTime(s) {
   return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
 
+function playDoneSound() {
+  try {
+    const ctx = new (window.AudioContext || window['webkitAudioContext'])();
+    const beep = (startTime, freq = 660, duration = 0.18) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.18, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+    beep(ctx.currentTime);
+    beep(ctx.currentTime + 0.22);
+  } catch (_) {}
+}
+
 function RestTimer({ total, onDone }) {
   const [rem, setRem] = useState(total);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
   useEffect(() => {
+    // Blur any focused input so iOS shake-to-undo has nothing to act on
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+
     const iv = setInterval(() => {
       setRem(r => {
-        if (r <= 1) { clearInterval(iv); setTimeout(() => onDoneRef.current(), 0); return 0; }
+        if (r <= 1) {
+          clearInterval(iv);
+          playDoneSound();
+          setTimeout(() => onDoneRef.current(), 0);
+          return 0;
+        }
         return r - 1;
       });
     }, 1000);
@@ -146,6 +174,12 @@ export default function WorkoutLog() {
     }));
   }
 
+  function unlogSet(exIdx, setId) {
+    setExercises(prev => prev.map((ex, ei) =>
+      ei !== exIdx ? ex : { ...ex, sets: ex.sets.map(s => s.id !== setId ? s : { ...s, logged: false }) }
+    ));
+  }
+
   function deleteSet(exIdx, setId) {
     setExercises(prev => prev.map((ex, ei) =>
       ei !== exIdx ? ex : { ...ex, sets: ex.sets.filter(s => s.id !== setId) }
@@ -176,6 +210,37 @@ export default function WorkoutLog() {
     };
     saveSession(session);
     if (user) syncSessionToFirestore(user.uid, session);
+
+    // Write actual weights + any added sets back to the program template
+    const programs = getPrograms();
+    const progIdx = programs.findIndex(p => p.id === program.id);
+    if (progIdx !== -1) {
+      const dayIdx = programs[progIdx].days.findIndex(d => d.id === day.id);
+      if (dayIdx !== -1) {
+        programs[progIdx].days[dayIdx].exercises = exercises.map((ex, ei) => {
+          const origEx = programs[progIdx].days[dayIdx].exercises[ei];
+          return {
+            id: origEx?.id || `ex-${Date.now()}-${ei}`,
+            name: ex.name,
+            sets: ex.sets.map((s, si) => {
+              const orig = origEx?.sets[si];
+              return {
+                type: s.type,
+                rest: String(s.rest || orig?.rest || 90),
+                reps: orig?.reps || s.targetReps || '',
+                weight: s.actualWeight && s.actualWeight !== 'BW' ? s.actualWeight : (orig?.weight || s.targetWeight || ''),
+                ...(orig?.distance !== undefined || s.targetDistance ? { distance: orig?.distance || s.targetDistance } : {}),
+                ...(orig?.pace     !== undefined                     ? { pace: orig.pace }                               : {}),
+                ...(orig?.duration !== undefined || s.targetDuration ? { duration: s.actualDuration || orig?.duration }  : {}),
+                ...(orig?.sides    !== undefined                     ? { sides: s.sides || orig.sides }                  : {}),
+              };
+            }),
+          };
+        });
+        savePrograms(programs);
+        if (user) syncProgramsToFirestore(user.uid, programs);
+      }
+    }
 
     // Check for progressive overload (needs the session we just saved to be in getSessions())
     const bumps = checkProgressiveOverload(program.id, day.id);
@@ -368,6 +433,10 @@ export default function WorkoutLog() {
                   <span style={{ fontSize:13, fontWeight:700, color:C.success }}>{progType === 'running' ? 'Interval' : progType === 'stretching' ? 'Hold' : 'Set'} {idx+1} logged</span>
                   <span style={{ fontSize:12, color:C.muted, marginLeft:10 }}>{summary}</span>
                 </div>
+                <button onClick={() => unlogSet(activeEx, set.id)} style={{
+                  flexShrink:0, background:'rgba(255,255,255,0.06)', border:`1px solid ${C.border}`,
+                  borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:600, color:C.muted, cursor:'pointer',
+                }}>Edit</button>
               </div>
             );
           }
