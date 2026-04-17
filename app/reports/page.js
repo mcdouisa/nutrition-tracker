@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef, createContext, useContext } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
-import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr } from '../../lib/dataSync'
+import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr, loadBodyWeightHistory } from '../../lib/dataSync'
+import { getSessions } from '../../lib/workoutSync'
 import {
   CalendarIcon, ClockIcon, TrendingUpIcon, PencilIcon, GridIcon,
   TrophyIcon, FlameIcon, UtensilsIcon, BarChartIcon, DropletIcon,
   LeafIcon, TargetIcon, ActivityIcon, CheckSquareIcon, CheckCircleIcon,
-  XCircleIcon, ChevronLeftIcon, ChevronRightIcon, SlidersIcon
+  XCircleIcon, ChevronLeftIcon, ChevronRightIcon, SlidersIcon, DumbbellIcon
 } from '../../lib/icons'
 
 const DARK = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#222222', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888', faint: '#3A3A3A' }
@@ -897,6 +898,8 @@ export default function ReportsPage() {
   const [waterGoal, setWaterGoal] = useState(0)
   const [showExport, setShowExport] = useState(false)
   const [selectedDayKey, setSelectedDayKey] = useState(null)
+  const [workoutSessions, setWorkoutSessions] = useState([])
+  const [bodyWeightHistory, setBodyWeightHistory] = useState([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -922,6 +925,11 @@ export default function ReportsPage() {
       setLoading(false)
     }
     loadData()
+    // Load workout sessions (localStorage) and body weight (Firestore)
+    setWorkoutSessions(getSessions())
+    if (user && isConfigured) {
+      loadBodyWeightHistory(user.uid, 90).then(bw => { if (bw?.length) setBodyWeightHistory(bw) })
+    }
   }, [user, isConfigured])
 
   const parseLocalDate = (dateStr) => {
@@ -1300,11 +1308,12 @@ export default function ReportsPage() {
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 16px' }}>
 
           {/* Tab selector */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: 20, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: 20, marginBottom: 20 }}>
             {[
               { mode: 'daily', label: 'Daily', activeBg: 'rgba(10,132,255,0.12)', activeBorder: 'rgba(10,132,255,0.3)', activeColor: T_ACCENT },
               { mode: 'weekly', label: 'Weekly', activeBg: 'rgba(191,90,242,0.12)', activeBorder: 'rgba(191,90,242,0.3)', activeColor: T_PURPLE },
               { mode: 'monthly', label: 'Monthly', activeBg: 'rgba(255,159,10,0.12)', activeBorder: 'rgba(255,159,10,0.3)', activeColor: T_WARNING },
+              { mode: 'workout', label: 'Workout', activeBg: 'rgba(48,209,88,0.12)', activeBorder: 'rgba(48,209,88,0.3)', activeColor: T_SUCCESS },
             ].map(({ mode, label, activeBg, activeBorder, activeColor }) => (
               <button key={mode} onClick={() => setViewMode(mode)}
                 style={{
@@ -1894,6 +1903,148 @@ export default function ReportsPage() {
               </div>
             </>
           )}
+
+          {/* ── WORKOUT TAB ─────────────────────────────────────────── */}
+          {viewMode === 'workout' && (() => {
+            const sessions = workoutSessions
+            const totalSessions = sessions.length
+            const totalMinutes = sessions.reduce((s, s2) => s + (s2.duration ? Math.round(s2.duration / 60) : 0), 0)
+
+            // Sessions per week over last 8 weeks
+            const weekBuckets = {}
+            sessions.forEach(s => {
+              const d = new Date(s.date)
+              const monday = new Date(d)
+              monday.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+              const key = monday.toISOString().slice(0, 10)
+              weekBuckets[key] = (weekBuckets[key] || 0) + 1
+            })
+            const weeks = Object.entries(weekBuckets).sort((a, b) => a[0].localeCompare(b[0])).slice(-8)
+            const maxWeekSessions = Math.max(...weeks.map(w => w[1]), 1)
+
+            // PRs per exercise (max weight logged across all sessions)
+            const prMap = {}
+            sessions.forEach(s => {
+              s.exercises?.forEach(ex => {
+                ex.sets?.filter(st => st.logged && st.weight && st.weight !== 'BW').forEach(st => {
+                  const w = parseFloat(st.weight)
+                  if (!isNaN(w) && (!prMap[ex.name] || w > prMap[ex.name])) prMap[ex.name] = w
+                })
+              })
+            })
+            const prs = Object.entries(prMap).sort((a, b) => b[1] - a[1]).slice(0, 10)
+
+            // Body weight trend (last 12 entries)
+            const bwEntries = bodyWeightHistory.slice(-12)
+            const bwMin = bwEntries.length ? Math.min(...bwEntries.map(e => e.weight)) - 3 : 0
+            const bwMax = bwEntries.length ? Math.max(...bwEntries.map(e => e.weight)) + 3 : 1
+            const bwRange = bwMax - bwMin || 1
+
+            return (
+              <>
+                {/* Summary stats */}
+                <Card>
+                  <SectionHeader icon={<DumbbellIcon size={17} color={T_SUCCESS} strokeWidth={2} />} title="All Time" iconBg="rgba(48,209,88,0.12)" iconBorder="rgba(48,209,88,0.3)" />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                    {[
+                      { label: 'Sessions', value: totalSessions },
+                      { label: 'Hours', value: Math.round(totalMinutes / 60) },
+                      { label: 'This Week', value: sessions.filter(s => {
+                        const d = new Date(s.date), now = new Date()
+                        const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7)); monday.setHours(0,0,0,0)
+                        return d >= monday
+                      }).length },
+                    ].map(({ label, value }) => (
+                      <div key={label} style={{ background: T.card2, borderRadius: 12, padding: '14px 10px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 28, fontWeight: 900, color: T_SUCCESS, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>{value}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4 }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Sessions per week */}
+                {weeks.length > 0 && (
+                  <Card>
+                    <SectionHeader icon={<BarChartIcon size={17} color={T_ACCENT} strokeWidth={2} />} title="Sessions per Week" />
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
+                      {weeks.map(([weekKey, count]) => {
+                        const label = new Date(weekKey + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        const h = Math.round((count / maxWeekSessions) * 70)
+                        return (
+                          <div key={weekKey} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: T_ACCENT }}>{count}</span>
+                            <div style={{ width: '100%', height: h, background: `linear-gradient(180deg, ${T_ACCENT}, rgba(10,132,255,0.4))`, borderRadius: '4px 4px 0 0', minHeight: 4 }} />
+                            <span style={{ fontSize: 9, color: T.muted, whiteSpace: 'nowrap' }}>{label}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Personal records */}
+                {prs.length > 0 && (
+                  <Card>
+                    <SectionHeader icon={<TrophyIcon size={17} color={T_WARNING} strokeWidth={2} />} title="Personal Records" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {prs.map(([name, weight]) => (
+                        <div key={name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: T.card2, borderRadius: 10 }}>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{name}</span>
+                          <span style={{ fontSize: 16, fontWeight: 900, color: T_WARNING, fontFamily: "'Barlow Condensed', sans-serif" }}>{weight} lbs</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Body weight trend */}
+                {bwEntries.length > 1 && (
+                  <Card>
+                    <SectionHeader icon={<TrendingUpIcon size={17} color="#BF5AF2" strokeWidth={2} />} title="Body Weight Trend" iconBg="rgba(191,90,242,0.12)" iconBorder="rgba(191,90,242,0.3)" />
+                    <svg width="100%" height="100" viewBox={`0 0 ${bwEntries.length * 40} 100`} preserveAspectRatio="none" style={{ display: 'block', marginBottom: 8 }}>
+                      <polyline
+                        fill="none" stroke="#BF5AF2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        points={bwEntries.map((e, i) => {
+                          const x = i * 40 + 20
+                          const y = 90 - ((e.weight - bwMin) / bwRange) * 80
+                          return `${x},${y}`
+                        }).join(' ')}
+                      />
+                      {bwEntries.map((e, i) => (
+                        <circle key={i} cx={i * 40 + 20} cy={90 - ((e.weight - bwMin) / bwRange) * 80} r="4" fill="#BF5AF2" />
+                      ))}
+                    </svg>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      {bwEntries.map((e, i) => (
+                        <div key={i} style={{ textAlign: 'center', flex: 1 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#BF5AF2' }}>{e.weight}</div>
+                          <div style={{ fontSize: 9, color: T.muted }}>{e.date.slice(5)}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {bwEntries.length >= 2 && (() => {
+                      const diff = (bwEntries[bwEntries.length - 1].weight - bwEntries[0].weight).toFixed(1)
+                      const up = parseFloat(diff) > 0
+                      return (
+                        <div style={{ marginTop: 12, padding: '10px 14px', background: up ? 'rgba(255,69,58,0.08)' : 'rgba(48,209,88,0.08)', borderRadius: 10, border: `1px solid ${up ? 'rgba(255,69,58,0.2)' : 'rgba(48,209,88,0.2)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 13, color: T.muted }}>Change over period</span>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: up ? T_DANGER : T_SUCCESS }}>{up ? '+' : ''}{diff} {bwEntries[0].unit || 'lbs'}</span>
+                        </div>
+                      )
+                    })()}
+                  </Card>
+                )}
+
+                {totalSessions === 0 && (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', color: T.muted }}>
+                    <DumbbellIcon size={48} color="rgba(48,209,88,0.3)" strokeWidth={1.25} />
+                    <p style={{ marginTop: 16, fontSize: 15 }}>No workouts logged yet.</p>
+                  </div>
+                )}
+              </>
+            )
+          })()}
 
         </div>
       </div>

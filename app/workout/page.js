@@ -90,6 +90,8 @@ export default function WorkoutHome() {
   const [aiLoading,      setAiLoading]      = useState(false);
   const [aiError,        setAiError]        = useState('');
   const [aiPreview,      setAiPreview]      = useState(null); // parsed program preview
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [expandedSession, setExpandedSession] = useState(null);
 
   useEffect(() => {
     const progs = getPrograms();
@@ -390,40 +392,71 @@ export default function WorkoutHome() {
               })}
             </div>
 
-            {/* RECENT SESSIONS */}
-            {recentSessions.length > 0 && (
+            {/* SESSION HISTORY */}
+            {sessions.length > 0 && (
               <>
-                <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing:2.5, color:C.muted, marginBottom:12 }}>
-                  RECENT SESSIONS
-                </h4>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                  <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing:2.5, color:C.muted, margin:0 }}>
+                    WORKOUT HISTORY
+                  </h4>
+                  {sessions.length > 3 && (
+                    <button onClick={() => setShowAllHistory(h => !h)} style={{
+                      background:'none', border:`1px solid ${C.border}`, borderRadius:8,
+                      padding:'4px 10px', fontSize:11, fontWeight:700, color:C.muted, cursor:'pointer',
+                    }}>{showAllHistory ? 'Show Less' : `View All (${sessions.length})`}</button>
+                  )}
+                </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                  {recentSessions.map((s) => (
-                    <div key={s.id} style={{
-                      background:C.card, border:`1px solid ${C.border}`,
-                      borderRadius:13, padding:'12px 14px',
-                      display:'flex', alignItems:'center', gap:12,
-                    }}>
-                      <div style={{
-                        width:38, height:38, borderRadius:10, flexShrink:0,
-                        background:C.accentBg, border:`1px solid rgba(10,132,255,0.25)`,
-                        display:'flex', alignItems:'center', justifyContent:'center',
-                      }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round">
-                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                        </svg>
+                  {(showAllHistory ? sessions : sessions.slice(0, 3)).map((s) => {
+                    const isExpanded = expandedSession === s.id;
+                    return (
+                      <div key={s.id} style={{ background:C.card, border:`1px solid ${isExpanded ? 'rgba(10,132,255,0.4)' : C.border}`, borderRadius:13, overflow:'hidden' }}>
+                        <button onClick={() => setExpandedSession(isExpanded ? null : s.id)} style={{
+                          width:'100%', background:'none', border:'none', cursor:'pointer',
+                          padding:'12px 14px', display:'flex', alignItems:'center', gap:12, textAlign:'left',
+                        }}>
+                          <div style={{ width:38, height:38, borderRadius:10, flexShrink:0, background:C.accentBg, border:`1px solid rgba(10,132,255,0.25)`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:14, fontWeight:600, color:C.white, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.dayName}</div>
+                            <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>
+                              {new Date(s.date).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })}
+                              {s.duration ? ` · ${Math.round(s.duration / 60)} min` : ''}
+                              {s.exercises ? ` · ${s.exercises.length} exercises` : ''}
+                            </div>
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink:0, transform: isExpanded ? 'rotate(180deg)' : 'none', transition:'transform 0.2s' }}><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                        {isExpanded && s.exercises && (
+                          <div style={{ borderTop:`1px solid ${C.border}`, padding:'12px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+                            {s.exercises.map((ex, ei) => {
+                              const loggedSets = ex.sets?.filter(st => st.logged) || [];
+                              return (
+                                <div key={ei}>
+                                  <div style={{ fontSize:12, fontWeight:700, color:C.white, marginBottom:6 }}>{ex.name}</div>
+                                  <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                                    {loggedSets.map((st, si) => (
+                                      <div key={si} style={{ display:'flex', gap:8, fontSize:12, color:C.muted }}>
+                                        <span style={{ color:C.faint, minWidth:18 }}>#{si+1}</span>
+                                        {st.reps && st.weight ? (
+                                          <span>{st.reps} reps · <span style={{ color:C.accent }}>{st.weight}</span></span>
+                                        ) : st.distance ? (
+                                          <span>{st.distance} mi{st.time ? ` · ${st.time}` : ''}</span>
+                                        ) : st.duration ? (
+                                          <span>{st.duration}s {st.sides === 'each' ? 'each side' : ''}</span>
+                                        ) : <span>Logged</span>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:14, fontWeight:600, color:C.white, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                          {s.dayName}
-                        </div>
-                        <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>
-                          {new Date(s.date).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })}
-                          {s.duration ? ` · ${Math.round(s.duration / 60)} min` : ''}
-                        </div>
-                      </div>
-                      <span style={{ fontSize:13, fontWeight:700, color:C.success }}>✓</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}

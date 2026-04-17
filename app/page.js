@@ -24,7 +24,9 @@ import {
   dismissNotification,
   loadArchivedAnnouncements,
   completeOnboarding,
-  loadUserProfile
+  loadUserProfile,
+  saveBodyWeight,
+  loadBodyWeightHistory
 } from '../lib/dataSync'
 import {
   BarChartIcon, DumbbellIcon, TargetIcon, InboxIcon,
@@ -124,6 +126,12 @@ export default function NutritionTracker() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
+  // Body weight tracking
+  const [bodyWeight, setBodyWeight] = useState('')        // today's logged weight
+  const [bodyWeightUnit, setBodyWeightUnit] = useState('lbs')
+  const [bodyWeightInput, setBodyWeightInput] = useState('')
+  const [showWeightInput, setShowWeightInput] = useState(false)
+
   // Yesterday entry prompt
   const [showYesterdayPrompt, setShowYesterdayPrompt] = useState(false)
   const [eveningCutoff, setEveningCutoff] = useState('19:30') // HH:MM 24hr, default 7:30 PM
@@ -221,6 +229,17 @@ export default function NutritionTracker() {
             setMeals(padded)
           }
         }
+
+        // Load today's body weight
+        loadBodyWeightHistory(user.uid, 1).then(entries => {
+          if (cancelled || entries.length === 0) return
+          const today = toLocalDateStr()
+          const todayEntry = entries.find(e => e.date === today)
+          if (todayEntry) {
+            setBodyWeight(String(todayEntry.weight))
+            setBodyWeightUnit(todayEntry.unit || 'lbs')
+          }
+        })
 
         // Load today's data from cloud (checks both dailyData and history collections)
         try {
@@ -1414,6 +1433,15 @@ export default function NutritionTracker() {
     }
   }
 
+  const logBodyWeight = async () => {
+    const val = parseFloat(bodyWeightInput)
+    if (isNaN(val) || val <= 0) return
+    setBodyWeight(String(val))
+    setBodyWeightInput('')
+    setShowWeightInput(false)
+    if (user) saveBodyWeight(user.uid, toLocalDateStr(), val, bodyWeightUnit)
+  }
+
   const saveWaterButtons = (buttons) => {
     localStorage.setItem('water-buttons', JSON.stringify(buttons))
     setWaterButtons(buttons)
@@ -2492,6 +2520,52 @@ Reason: 5-7 words max — the single most important factor.`
             )}
           </div>
         )}
+
+        {/* Body Weight */}
+        <div style={{ marginBottom: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: 'rgba(191,90,242,0.12)', border: '1px solid rgba(191,90,242,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a6 6 0 0 0 11 0"/><path d="M12 8v13"/><path d="M8 21h8"/></svg>
+              </div>
+              <h2 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted, textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif" }}>Body Weight</h2>
+            </div>
+            <button onClick={() => setBodyWeightUnit(u => u === 'lbs' ? 'kg' : 'lbs')} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: '700', color: T.muted, cursor: 'pointer' }}>{bodyWeightUnit === 'lbs' ? '⇄ KG' : '⇄ LBS'}</button>
+          </div>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '16px', padding: '16px' }}>
+            {showWeightInput ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  autoFocus
+                  type="text" inputMode="decimal"
+                  value={bodyWeightInput}
+                  onChange={e => setBodyWeightInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') logBodyWeight(); if (e.key === 'Escape') setShowWeightInput(false) }}
+                  placeholder={`Weight in ${bodyWeightUnit}`}
+                  style={{ flex: 1, background: T.card2, border: `1px solid ${T.border}`, borderRadius: '10px', padding: '10px 14px', fontSize: '16px', color: T.text, outline: 'none' }}
+                />
+                <button onClick={logBodyWeight} style={{ background: 'rgba(191,90,242,0.15)', border: '1px solid rgba(191,90,242,0.4)', borderRadius: '10px', padding: '10px 16px', fontSize: '14px', fontWeight: '700', color: '#BF5AF2', cursor: 'pointer' }}>Save</button>
+                <button onClick={() => setShowWeightInput(false)} style={{ background: T.card2, border: `1px solid ${T.border}`, borderRadius: '10px', padding: '10px 12px', fontSize: '14px', color: T.muted, cursor: 'pointer' }}>✕</button>
+              </div>
+            ) : (
+              <button onClick={() => { setBodyWeightInput(bodyWeight); setShowWeightInput(true) }} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 0 }}>
+                <div style={{ textAlign: 'left' }}>
+                  {bodyWeight ? (
+                    <>
+                      <span style={{ fontSize: '32px', fontWeight: '900', color: '#BF5AF2', fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>{bodyWeight}</span>
+                      <span style={{ fontSize: '14px', color: T.muted, marginLeft: '6px' }}>{bodyWeightUnit}</span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '15px', color: T.muted }}>Tap to log today's weight</span>
+                  )}
+                </div>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(191,90,242,0.12)', border: '1px solid rgba(191,90,242,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Water Tracker */}
         {waterButtons.length > 0 && (
