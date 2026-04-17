@@ -25,46 +25,50 @@ function fmtTime(s) {
   return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
 
-function playDoneSound() {
+function playDoneSound(ctx) {
   try {
-    const ctx = new (window.AudioContext || window['webkitAudioContext'])();
-    const beep = (startTime, freq = 660, duration = 0.18) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, startTime);
-      gain.gain.setValueAtTime(0.18, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-      osc.start(startTime);
-      osc.stop(startTime + duration);
-    };
-    beep(ctx.currentTime);
-    beep(ctx.currentTime + 0.22);
+    // ctx must have been created during a user gesture (passed in from logSet tap)
+    if (!ctx || ctx.state === 'closed') return;
+    const resume = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+    resume.then(() => {
+      const beep = (startTime, freq = 660, duration = 0.18) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0.18, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+      beep(ctx.currentTime);
+      beep(ctx.currentTime + 0.22);
+    });
   } catch (_) {}
 }
 
-function RestTimer({ total, onDone }) {
+function RestTimer({ total, onDone, audioCtx }) {
   const [rem, setRem] = useState(total);
   const onDoneRef = useRef(onDone);
+  const deadlineRef = useRef(Date.now() + total * 1000);
   onDoneRef.current = onDone;
 
   useEffect(() => {
     // Blur any focused input so iOS shake-to-undo has nothing to act on
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
+    // Use wall-clock deadline so iOS pausing setInterval doesn't lose time
     const iv = setInterval(() => {
-      setRem(r => {
-        if (r <= 1) {
-          clearInterval(iv);
-          playDoneSound();
-          setTimeout(() => onDoneRef.current(), 0);
-          return 0;
-        }
-        return r - 1;
-      });
-    }, 1000);
+      const remaining = Math.max(0, Math.round((deadlineRef.current - Date.now()) / 1000));
+      setRem(remaining);
+      if (remaining <= 0) {
+        clearInterval(iv);
+        playDoneSound(audioCtx);
+        setTimeout(() => onDoneRef.current(), 0);
+      }
+    }, 500); // poll every 500ms so we catch the zero crossing even if a tick is skipped
     return () => clearInterval(iv);
   }, []);
 
@@ -109,6 +113,7 @@ export default function WorkoutLog() {
   const [activeEx,  setActiveEx]  = useState(0);
   const [showDone,  setShowDone]  = useState(false);
   const [weightBumps, setWeightBumps] = useState([]);
+  const audioCtxRef = useRef(null);
 
   useEffect(() => {
     const ctx = getCurrentWorkout();
@@ -148,7 +153,16 @@ export default function WorkoutLog() {
   function logSet(exIdx, setId) {
     setExercises(prev => {
       const set = prev[exIdx]?.sets.find(s => s.id === setId);
-      if (set && !set.logged) setRestTimer(set.rest || 90);
+      if (set && !set.logged) {
+        // Create AudioContext here — inside a user gesture tap — so iOS allows sound later
+        try {
+          if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+            audioCtxRef.current = new (window.AudioContext || window['webkitAudioContext'])();
+          }
+          audioCtxRef.current.resume();
+        } catch (_) {}
+        setRestTimer(set.rest || 90);
+      }
       return prev.map((ex, ei) => ei !== exIdx ? ex : {
         ...ex,
         sets: ex.sets.map(s => s.id !== setId || s.logged ? s : { ...s, logged: true }),
@@ -278,7 +292,7 @@ export default function WorkoutLog() {
         input[type=number]{-moz-appearance:textfield}
       `}</style>
 
-      {restTimer && <RestTimer total={restTimer} onDone={() => setRestTimer(null)}/>}
+      {restTimer && <RestTimer total={restTimer} onDone={() => setRestTimer(null)} audioCtx={audioCtxRef.current}/>}
 
       {/* DONE OVERLAY */}
       {showDone && (
