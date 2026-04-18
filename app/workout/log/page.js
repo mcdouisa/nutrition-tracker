@@ -241,8 +241,8 @@ export default function WorkoutLog() {
               return {
                 type: s.type,
                 rest: String(s.rest || orig?.rest || 90),
-                reps: orig?.reps || s.targetReps || '',
-                weight: s.actualWeight && s.actualWeight !== 'BW' ? s.actualWeight : (orig?.weight || s.targetWeight || ''),
+                reps: (s.logged && s.actualReps) ? s.actualReps : (orig?.reps || s.targetReps || ''),
+                weight: (s.logged && s.actualWeight && s.actualWeight !== 'BW') ? s.actualWeight : (orig?.weight || s.targetWeight || ''),
                 ...(orig?.distance !== undefined || s.targetDistance ? { distance: orig?.distance || s.targetDistance } : {}),
                 ...(orig?.pace     !== undefined                     ? { pace: orig.pace }                               : {}),
                 ...(orig?.duration !== undefined || s.targetDuration ? { duration: s.actualDuration || orig?.duration }  : {}),
