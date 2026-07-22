@@ -523,6 +523,7 @@ export default function GroupsPage() {
   const { user, loading: authLoading } = useAuth()
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [displayName, setDisplayName] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [showJoin, setShowJoin] = useState(false)
@@ -534,8 +535,10 @@ export default function GroupsPage() {
 
     loadUserProfile(user.uid).then(profile => {
       setDisplayName(profile?.displayName || user.email?.split('@')[0] || 'You')
+      setIsAdmin(profile?.isAdmin || false)
+      if (!profile?.isAdmin) { setLoading(false); return }
+      loadUserGroups(user.uid).then(g => { setGroups(g); setLoading(false) })
     })
-    loadUserGroups(user.uid).then(g => { setGroups(g); setLoading(false) })
   }, [user, authLoading])
 
   if (authLoading || loading) {
@@ -543,6 +546,22 @@ export default function GroupsPage() {
       <div style={{ background: C.bg, minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 32, height: 32, borderRadius: '50%', border: `3px solid ${C.border}`, borderTopColor: C.accent, animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <div style={{ fontFamily: font.body, background: C.bg, minHeight: '100dvh', color: C.white, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center' }}>
+        <style>{`*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}`}</style>
+        <div style={{ fontSize: 52, marginBottom: 20 }}>👥</div>
+        <h2 style={{ fontFamily: font.heading, fontSize: 28, fontWeight: 900, letterSpacing: 1, marginBottom: 12 }}>COMING SOON</h2>
+        <p style={{ fontSize: 15, color: C.muted, maxWidth: 280, lineHeight: 1.6, marginBottom: 28 }}>
+          Fitness groups are on the way. We're putting the finishing touches on to make sure everything works perfectly for you.
+        </p>
+        <button onClick={() => router.push('/')} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, color: C.muted, cursor: 'pointer' }}>
+          Back to Home
+        </button>
       </div>
     )
   }

@@ -127,6 +127,9 @@ export default function NutritionTracker() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
+  // Admin flag — used to gate in-progress features
+  const [isAdmin, setIsAdmin] = useState(false)
+
   // Body weight tracking
   const [bodyWeight, setBodyWeight] = useState('')        // today's logged weight
   const [bodyWeightUnit, setBodyWeightUnit] = useState('lbs')
@@ -444,6 +447,7 @@ export default function NutritionTracker() {
 
       try {
         const profile = await loadUserProfile(user.uid)
+        if (profile?.isAdmin) setIsAdmin(true)
 
         // Only show onboarding if:
         // 1. User hasn't completed onboarding before
@@ -2211,29 +2215,31 @@ Reason: 5-7 words max — the single most important factor.`
             >
               <BarChartIcon size={14} color="currentColor" strokeWidth={2} /> Reports
             </Link>
-            <Link
-              href="/groups"
-              style={{
-                padding: '11px 8px',
-                backgroundColor: 'rgba(191,90,242,0.1)',
-                border: '1px solid rgba(191,90,242,0.3)',
-                borderRadius: '12px',
-                color: '#BF5AF2',
-                fontSize: '13px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                letterSpacing: '0.5px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              👥 Groups
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/groups"
+                style={{
+                  padding: '11px 8px',
+                  backgroundColor: 'rgba(191,90,242,0.1)',
+                  border: '1px solid rgba(191,90,242,0.3)',
+                  borderRadius: '12px',
+                  color: '#BF5AF2',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  letterSpacing: '0.5px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                👥 Groups
+              </Link>
+            )}
             <button
               onClick={() => setShowSettings(true)}
               style={{
