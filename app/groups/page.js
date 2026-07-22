@@ -46,14 +46,20 @@ function fmtDate(iso) {
 function CreateModal({ displayName, onClose, onCreated }) {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const { user } = useAuth()
 
   const handleCreate = async () => {
     if (!name.trim()) return
-    setLoading(true)
-    const group = await createGroup(user.uid, name.trim(), displayName)
-    setLoading(false)
-    if (group) onCreated(group)
+    setLoading(true); setError('')
+    try {
+      const group = await createGroup(user.uid, name.trim(), displayName)
+      setLoading(false)
+      onCreated(group)
+    } catch (e) {
+      setLoading(false)
+      setError(e.message)
+    }
   }
 
   return (
@@ -65,7 +71,8 @@ function CreateModal({ displayName, onClose, onCreated }) {
         <input autoFocus value={name} onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleCreate()}
           placeholder="e.g. Monday Crew, Work Wellness..."
-          style={{ width: '100%', background: C.card2, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px', fontSize: 15, color: C.white, outline: 'none', marginBottom: 20 }} />
+          style={{ width: '100%', background: C.card2, border: `1px solid ${error ? C.danger : C.border}`, borderRadius: 12, padding: '14px 16px', fontSize: 15, color: C.white, outline: 'none', marginBottom: error ? 10 : 20 }} />
+        {error && <p style={{ fontSize: 13, color: C.danger, marginBottom: 16, lineHeight: 1.5 }}>{error}</p>}
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{ flex: 1, background: 'none', border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, color: C.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
           <button onClick={handleCreate} disabled={!name.trim() || loading} style={{ flex: 2, background: name.trim() && !loading ? `linear-gradient(90deg,${C.accent},#5856D6)` : C.faint, border: 'none', borderRadius: 12, padding: 14, fontFamily: font.heading, fontSize: 18, fontWeight: 700, letterSpacing: 1, color: C.white, cursor: 'pointer' }}>
