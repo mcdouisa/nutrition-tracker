@@ -157,19 +157,30 @@ export default function NutritionTracker() {
     if (!user) return
 
     setSyncStatus('syncing')
-    try {
+    const attempt = async () => {
       await saveTodayData(user.uid, data)
-      // Also save to history collection so reports page can find it
       await saveHistoryEntry(user.uid, data.date, data)
-      if (settings) {
-        await saveUserSettings(user.uid, settings)
-      }
+      if (settings) await saveUserSettings(user.uid, settings)
+    }
+
+    try {
+      await attempt()
       setSyncStatus('synced')
       setTimeout(() => setSyncStatus(''), 2000)
     } catch (error) {
-      console.error('Sync error:', error)
-      setSyncStatus('error')
-      setTimeout(() => setSyncStatus(''), 3000)
+      console.error('Sync error, retrying in 4s:', error)
+      // Retry once after 4 seconds before giving up
+      setTimeout(async () => {
+        try {
+          await attempt()
+          setSyncStatus('synced')
+          setTimeout(() => setSyncStatus(''), 2000)
+        } catch (retryError) {
+          console.error('Sync retry failed:', retryError)
+          setSyncStatus('error')
+          setTimeout(() => setSyncStatus(''), 3000)
+        }
+      }, 4000)
     }
   }, [user])
 
@@ -258,7 +269,9 @@ export default function NutritionTracker() {
           }
         } catch (error) {
           console.error('Failed to load today data from cloud:', error)
-          // Don't set cloudLoadSucceeded — prevents saving zeros over real data
+          // Unblock saves after 8s — a transient network error on load shouldn't
+          // silently block every save for the entire session
+          setTimeout(() => { if (!cancelled) cloudLoadSucceeded.current = true }, 8000)
         }
 
         if (cancelled) return
@@ -277,8 +290,9 @@ export default function NutritionTracker() {
               if (data.water !== undefined) setWater(data.water)
               if (data.waterHistory) setWaterHistory(data.waterHistory)
               if (data.nutritionHistory) setNutritionHistory(data.nutritionHistory)
-              // Reset flag after state updates
-              setTimeout(() => { isRemoteUpdate.current = false }, 100)
+              // Reset flag after state updates — 1s gives React time to flush
+              // the remote update before we start treating changes as local again
+              setTimeout(() => { isRemoteUpdate.current = false }, 1000)
             }
           })
         }
