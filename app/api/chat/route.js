@@ -26,8 +26,8 @@ export async function POST(request) {
         Array.isArray(m.content) && m.content.some(c => c.type === 'image_url')
       )
       const model = hasImage
-        ? 'meta-llama/llama-4-scout-17b-16e-instruct'
-        : 'llama-3.3-70b-versatile'
+        ? 'openai/gpt-oss-120b'
+        : 'openai/gpt-oss-120b'
 
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
