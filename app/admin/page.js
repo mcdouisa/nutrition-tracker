@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/AuthContext'
-import { loadUserProfile, loadAllFeedback, loadAllUsers, loadAllActivityData, updateFeedbackItem, deleteFeedbackItem, toLocalDateStr, createAnnouncementForAllUsers } from '../../lib/dataSync'
+import { loadUserProfile, loadAllFeedback, loadAllUsers, loadAllActivityData, updateFeedbackItem, deleteFeedbackItem, toLocalDateStr, createAnnouncementForAllUsers, setUserAdminStatus } from '../../lib/dataSync'
 
 const PRIORITY_CONFIG = {
   none:     { label: 'No Priority', color: '#999',    bg: '#f5f5f5' },
@@ -866,8 +866,9 @@ export default function AdminPage() {
                   .sort((a, b) => (b.lastActive || '').localeCompare(a.lastActive || ''))
                   .map(u => (
                     <div key={u.id} style={{
-                      display: 'grid', gridTemplateColumns: '2fr 1fr 1fr',
-                      padding: '11px 16px', borderBottom: '1px solid #f0f0f0', fontSize: '13px'
+                      display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto',
+                      padding: '11px 16px', borderBottom: '1px solid #f0f0f0', fontSize: '13px',
+                      alignItems: 'center',
                     }}>
                       <div style={{ color: '#1a1a1a', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {u.email}
@@ -879,6 +880,23 @@ export default function AdminPage() {
                       </div>
                       <div style={{ color: '#999' }}>{formatDate(u.createdAt)}</div>
                       <div style={{ color: '#999' }}>{formatDate(u.lastActive)}</div>
+                      <button
+                        onClick={async () => {
+                          const next = !u.isAdmin
+                          await setUserAdminStatus(u.id, next)
+                          setUsers(prev => prev.map(p => p.id === u.id ? { ...p, isAdmin: next } : p))
+                        }}
+                        style={{
+                          padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600',
+                          cursor: 'pointer', border: '1px solid',
+                          backgroundColor: u.isAdmin ? 'rgba(255,69,58,0.08)' : 'rgba(10,132,255,0.08)',
+                          borderColor: u.isAdmin ? 'rgba(255,69,58,0.3)' : 'rgba(10,132,255,0.3)',
+                          color: u.isAdmin ? '#FF453A' : '#0A84FF',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {u.isAdmin ? 'Revoke' : 'Make Admin'}
+                      </button>
                     </div>
                   ))}
               </div>
