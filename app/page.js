@@ -26,8 +26,9 @@ import {
   completeOnboarding,
   loadUserProfile,
   saveBodyWeight,
-  loadBodyWeightHistory
+  loadBodyWeightHistory,
 } from '../lib/dataSync'
+import { syncWeightToGroups } from '../lib/groupSync'
 import {
   BarChartIcon, DumbbellIcon, TargetIcon, InboxIcon,
   CheckSquareIcon, DropletIcon, LeafIcon, ZapIcon,
@@ -1453,7 +1454,14 @@ export default function NutritionTracker() {
     setBodyWeight(String(val))
     setBodyWeightInput('')
     setShowWeightInput(false)
-    if (user) saveBodyWeight(user.uid, toLocalDateStr(), val, bodyWeightUnit)
+    if (user) {
+      const dateStr = toLocalDateStr()
+      await saveBodyWeight(user.uid, dateStr, val, bodyWeightUnit)
+      // Load full history and push to any groups where weight sharing is enabled
+      loadBodyWeightHistory(user.uid, 90).then(history => {
+        if (history.length > 0) syncWeightToGroups(user.uid, history)
+      })
+    }
   }
 
   const saveWaterButtons = (buttons) => {

@@ -5,8 +5,9 @@ import { useAuth } from '../../lib/AuthContext'
 import {
   createGroup, joinGroup, loadUserGroups, loadGroupMembers,
   addChallenge, removeChallenge, checkInChallenge, uncheckInChallenge,
-  loadGroupProgress, leaveGroup,
+  loadGroupProgress, leaveGroup, loadGroupSharedData, setSharing, pushWeightToGroup,
 } from '../../lib/groupSync'
+import { loadBodyWeightHistory } from '../../lib/dataSync'
 import { loadUserProfile } from '../../lib/dataSync'
 
 const C = {
@@ -203,14 +204,43 @@ function AddChallengeModal({ groupId, userId, onClose, onAdded }) {
 function GroupDetail({ group, userId, displayName, onBack, onGroupUpdated }) {
   const [members, setMembers] = useState([])
   const [progress, setProgress] = useState({})
+  const [sharedData, setSharedData] = useState({})
   const [showAddChallenge, setShowAddChallenge] = useState(false)
   const [showCode, setShowCode] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [sharingWeight, setSharingWeight] = useState(false)
+  const [syncingWeight, setSyncingWeight] = useState(false)
 
   useEffect(() => {
     loadGroupMembers(group.id).then(setMembers)
     loadGroupProgress(group.id).then(setProgress)
+    loadGroupSharedData(group.id).then(data => {
+      setSharedData(data)
+      setSharingWeight(data[userId]?.sharing?.bodyWeight || false)
+    })
   }, [group.id])
+
+  const handleToggleWeightSharing = async (enable) => {
+    setSharingWeight(enable)
+    await setSharing(group.id, userId, { bodyWeight: enable })
+    if (enable) {
+      setSyncingWeight(true)
+      const history = await loadBodyWeightHistory(userId, 90)
+      if (history.length > 0) {
+        await pushWeightToGroup(group.id, userId, history)
+        setSharedData(prev => ({
+          ...prev,
+          [userId]: { ...(prev[userId] || {}), sharing: { bodyWeight: true }, weightHistory: history }
+        }))
+      }
+      setSyncingWeight(false)
+    } else {
+      setSharedData(prev => ({
+        ...prev,
+        [userId]: { ...(prev[userId] || {}), sharing: { bodyWeight: false }, weightHistory: [] }
+      }))
+    }
+  }
 
   const todayStr = today()
   const isCreator = group.createdBy === userId
@@ -285,6 +315,91 @@ function GroupDetail({ group, userId, displayName, onBack, onGroupUpdated }) {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* ── SHARED STATS ──────────────────────────────────────────── */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 2, marginBottom: 12 }}>SHARED STATS</div>
+
+          {/* My weight sharing toggle */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>Share My Body Weight</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                  {sharingWeight ? 'Your weight is visible to the group — updates automatically' : 'Only you can see your weight'}
+                </div>
+              </div>
+              <button onClick={() => handleToggleWeightSharing(!sharingWeight)} disabled={syncingWeight} style={{
+                width: 48, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer',
+                background: sharingWeight ? C.success : C.faint,
+                position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+              }}>
+                <div style={{
+                  position: 'absolute', top: 3, left: sharingWeight ? 23 : 3,
+                  width: 22, height: 22, borderRadius: '50%', background: C.white,
+                  transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }} />
+              </button>
+            </div>
+            {syncingWeight && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>Syncing your weight history...</div>}
+          </div>
+
+          {/* Weight leaderboard */}
+          {(() => {
+            const weightEntries = members
+              .map(m => {
+                const history = sharedData[m.userId]?.weightHistory || []
+                if (!sharedData[m.userId]?.sharing?.bodyWeight || history.length === 0) return null
+                const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date))
+                const start = sorted[0]
+                const current = sorted[sorted.length - 1]
+                const change = parseFloat((current.weight - start.weight).toFixed(1))
+                return { ...m, start, current, change }
+              })
+              .filter(Boolean)
+              .sort((a, b) => a.change - b.change) // most lost first
+
+            if (weightEntries.length === 0) return (
+              <div style={{ background: C.card2, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: C.muted }}>No one is sharing weight yet — toggle above to start</div>
+              </div>
+            )
+
+            return (
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: 1.5 }}>WEIGHT LEADERBOARD</div>
+                  <div style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>Ranked by most weight lost</div>
+                </div>
+                {weightEntries.map((m, i) => {
+                  const isMe = m.userId === userId
+                  const lost = m.change < 0
+                  const gained = m.change > 0
+                  const color = lost ? C.success : gained ? C.danger : C.muted
+                  return (
+                    <div key={m.userId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: i < weightEntries.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                      <span style={{ fontFamily: font.heading, fontWeight: 900, fontSize: 16, color: i === 0 ? C.orange : C.muted, width: 20, textAlign: 'center' }}>{i + 1}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: isMe ? C.accent : C.white }}>
+                          {m.displayName}{isMe ? ' (you)' : ''}
+                        </div>
+                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                          Started {m.start.weight} {m.start.unit} → Now {m.current.weight} {m.current.unit}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: font.heading, fontSize: 20, fontWeight: 900, color, lineHeight: 1 }}>
+                          {lost ? '' : gained ? '+' : ''}{m.change}
+                        </div>
+                        <div style={{ fontSize: 10, color: C.muted }}>{m.current.unit}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
         </div>
 
         {/* Challenges */}
