@@ -92,6 +92,7 @@ export default function WorkoutHome() {
   const [aiPreview,      setAiPreview]      = useState(null); // parsed program preview
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [expandedSession, setExpandedSession] = useState(null);
+  const [inProgressWorkout, setInProgressWorkout] = useState(null);
 
   useEffect(() => {
     const progs = getPrograms();
@@ -99,6 +100,12 @@ export default function WorkoutHome() {
     setPrograms(progs);
     setActivePId(activeId);
     setSessions(getSessions());
+
+    // Check for an in-progress workout the user navigated away from
+    try {
+      const saved = JSON.parse(localStorage.getItem('lytz-workout-inprogress') || 'null');
+      if (saved?.programId && saved?.dayId) setInProgressWorkout(saved);
+    } catch (_) {}
   }, []);
 
   useEffect(() => {
@@ -289,6 +296,32 @@ export default function WorkoutHome() {
             READY TO<br/>TRAIN?
           </h1>
         </div>
+
+        {/* RESUME BANNER — shown when user navigated away mid-workout */}
+        {inProgressWorkout && (
+          <div style={{
+            background:'linear-gradient(90deg,rgba(48,209,88,0.15),rgba(48,209,88,0.08))',
+            border:'1px solid rgba(48,209,88,0.35)', borderRadius:16,
+            padding:'14px 16px', marginBottom:16,
+            display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+          }}>
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, color:C.success, letterSpacing:2, marginBottom:3 }}>WORKOUT IN PROGRESS</div>
+              <div style={{ fontSize:14, fontWeight:600, color:C.white }}>You left mid-workout — pick up where you left off</div>
+            </div>
+            <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+              <button onClick={() => router.push('/workout/log')} style={{
+                background:`linear-gradient(90deg,${C.success},#20b857)`, border:'none',
+                borderRadius:10, padding:'10px 18px',
+                fontFamily:font.heading, fontSize:15, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer',
+              }}>RESUME</button>
+              <button onClick={() => { localStorage.removeItem('lytz-workout-inprogress'); setInProgressWorkout(null); }} style={{
+                background:'none', border:`1px solid ${C.border}`,
+                borderRadius:10, padding:'10px 12px', fontSize:13, color:C.muted, cursor:'pointer',
+              }}>Discard</button>
+            </div>
+          </div>
+        )}
 
         {activeProgram ? (
           <>

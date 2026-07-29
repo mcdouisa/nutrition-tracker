@@ -49,10 +49,10 @@ function playDoneSound(ctx) {
   } catch (_) {}
 }
 
-function RestTimer({ total, onDone, audioCtx }) {
-  const [rem, setRem] = useState(total);
+function RestTimer({ total, deadline, onDone, audioCtx }) {
+  const [rem, setRem] = useState(Math.max(0, Math.round((deadline - Date.now()) / 1000)));
   const onDoneRef = useRef(onDone);
-  const deadlineRef = useRef(Date.now() + total * 1000);
+  const deadlineRef = useRef(deadline); // use persisted deadline — survives navigation
   onDoneRef.current = onDone;
 
   useEffect(() => {
@@ -109,12 +109,17 @@ export default function WorkoutLog() {
   const [exercises, setExercises] = useState([]);
   const [elapsed,   setElapsed]   = useState(0);
   const [useKg,     setUseKg]     = useState(false);
-  const [restTimer, setRestTimer] = useState(null);
+  const [restTimer, setRestTimer] = useState(null);         // seconds remaining (display only)
+  const [restDeadline, setRestDeadline] = useState(null);   // absolute timestamp for persistence
   const [activeEx,  setActiveEx]  = useState(0);
   const [showDone,  setShowDone]  = useState(false);
   const [weightBumps, setWeightBumps] = useState([]);
   const audioCtxRef = useRef(null);
+  const workoutStartRef = useRef(null); // absolute timestamp so elapsed survives navigation
 
+  const INPROGRESS_KEY = 'lytz-workout-inprogress';
+
+  // Load program + restore any in-progress state from localStorage
   useEffect(() => {
     const ctx = getCurrentWorkout();
     if (!ctx) { router.replace('/workout'); return; }
@@ -124,6 +129,24 @@ export default function WorkoutLog() {
     const d = prog.days.find(d => d.id === ctx.dayId);
     if (!d) { router.replace('/workout'); return; }
     setProgram(prog); setDay(d);
+
+    // Check for saved in-progress state for this exact workout
+    try {
+      const saved = JSON.parse(localStorage.getItem(INPROGRESS_KEY) || 'null');
+      if (saved && saved.programId === ctx.programId && saved.dayId === ctx.dayId) {
+        setExercises(saved.exercises);
+        workoutStartRef.current = saved.workoutStart;
+        setElapsed(Math.round((Date.now() - saved.workoutStart) / 1000));
+        if (saved.restDeadline && saved.restDeadline > Date.now()) {
+          setRestDeadline(saved.restDeadline);
+          setRestTimer(Math.round((saved.restDeadline - Date.now()) / 1000));
+        }
+        return;
+      }
+    } catch (_) {}
+
+    // Fresh start
+    workoutStartRef.current = Date.now();
     setExercises(d.exercises.map(ex => ({
       id: ex.id, name: ex.name,
       sets: ex.sets.map((s, i) => ({
@@ -132,10 +155,8 @@ export default function WorkoutLog() {
         rest: parseInt(s.rest) || 90,
         actualReps: s.reps?.replace(/[^0-9∞]/g, '') || '',
         actualWeight: s.weight === 'BW' ? 'BW' : (s.weight || ''),
-        // running fields
         targetDistance: s.distance || '', targetPace: s.pace || '',
         actualDistance: s.distance || '', actualTime: '',
-        // stretching fields
         targetDuration: s.duration || '30', sides: s.sides || 'both',
         actualDuration: s.duration || '30',
         logged: false,
@@ -143,10 +164,23 @@ export default function WorkoutLog() {
     })));
   }, []);
 
-  // Session clock — fixed with setInterval + ref
-  const elapsedRef = useRef(0);
+  // Persist in-progress state whenever exercises or rest deadline changes
   useEffect(() => {
-    const iv = setInterval(() => { elapsedRef.current += 1; setElapsed(e => e + 1); }, 1000);
+    if (!program || !day || !workoutStartRef.current) return;
+    localStorage.setItem(INPROGRESS_KEY, JSON.stringify({
+      programId: program.id, dayId: day.id,
+      exercises, workoutStart: workoutStartRef.current,
+      restDeadline: restDeadline || null,
+    }));
+  }, [exercises, restDeadline, program, day]);
+
+  // Session clock — driven by wall clock so it survives navigation
+  useEffect(() => {
+    const iv = setInterval(() => {
+      if (workoutStartRef.current) {
+        setElapsed(Math.round((Date.now() - workoutStartRef.current) / 1000));
+      }
+    }, 1000);
     return () => clearInterval(iv);
   }, []);
 
@@ -161,7 +195,10 @@ export default function WorkoutLog() {
           }
           audioCtxRef.current.resume();
         } catch (_) {}
-        setRestTimer(set.rest || 90);
+        const secs = set.rest || 90;
+        const deadline = Date.now() + secs * 1000;
+        setRestTimer(secs);
+        setRestDeadline(deadline);
       }
       return prev.map((ex, ei) => ei !== exIdx ? ex : {
         ...ex,
@@ -224,6 +261,7 @@ export default function WorkoutLog() {
     };
     saveSession(session);
     if (user) syncSessionToFirestore(user.uid, session);
+    localStorage.removeItem(INPROGRESS_KEY); // clear saved state — workout is done
 
     // Write actual weights + any added sets back to the program template
     const programs = getPrograms();
@@ -292,7 +330,14 @@ export default function WorkoutLog() {
         input[type=number]{-moz-appearance:textfield}
       `}</style>
 
-      {restTimer && <RestTimer total={restTimer} onDone={() => setRestTimer(null)} audioCtx={audioCtxRef.current}/>}
+      {restTimer && restDeadline && (
+        <RestTimer
+          total={restTimer}
+          deadline={restDeadline}
+          onDone={() => { setRestTimer(null); setRestDeadline(null); }}
+          audioCtx={audioCtxRef.current}
+        />
+      )}
 
       {/* DONE OVERLAY */}
       {showDone && (
@@ -375,6 +420,14 @@ export default function WorkoutLog() {
           <span style={{ fontFamily:font.mono, fontSize:19, fontWeight:700, color:C.accent, lineHeight:1 }}>{fmtTime(elapsed)}</span>
           <span style={{ fontSize:9, color:C.muted, fontWeight:700, letterSpacing:1 }}>TOTAL</span>
         </div>
+        <button onClick={() => router.push('/')} title="Go home — workout is saved" style={{
+          background:C.card2, border:`1px solid ${C.border}`,
+          borderRadius:10, padding:'10px 12px', color:C.muted, lineHeight:0, flexShrink:0,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </button>
       </header>
 
       {/* PROGRESS BAR */}
