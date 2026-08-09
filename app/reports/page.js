@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, createContext, useContext } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/AuthContext'
-import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr, loadBodyWeightHistory } from '../../lib/dataSync'
+import { loadHistory, loadUserSettings, saveHistoryEntry, toLocalDateStr, loadBodyWeightHistory, loadDayData } from '../../lib/dataSync'
 import { getSessions } from '../../lib/workoutSync'
 import {
   CalendarIcon, ClockIcon, TrendingUpIcon, PencilIcon, GridIcon,
@@ -1026,7 +1026,20 @@ export default function ReportsPage() {
   const saveEditedDay = async () => {
     if (!editingDay) return
     const updatedMetrics = metrics.map(m => ({ ...m, value: parseInt(editValues[m.key]) || 0 }))
-    const updatedDay = { ...editingDay, water: parseInt(editValues.water) || 0, nutritionMetrics: updatedMetrics }
+
+    // editingDay may be a stale snapshot from when this page's `history` was
+    // fetched (e.g. food entries were logged elsewhere since then). Re-read
+    // the live doc right before writing so we merge onto current data instead
+    // of blindly writing back a stale nutritionHistory/checklistItems array —
+    // saveHistoryEntry uses merge:true, which replaces array fields wholesale
+    // rather than deep-merging them, so a stale write silently drops entries.
+    let baseDay = editingDay
+    if (user && isConfigured) {
+      const live = await loadDayData(user.uid, editingDay.date)
+      if (live) baseDay = { ...editingDay, ...live }
+    }
+
+    const updatedDay = { ...baseDay, water: parseInt(editValues.water) || 0, nutritionMetrics: updatedMetrics }
     const updatedHistory = history.map(d => d.date === editingDay.date ? updatedDay : d)
     if (!history.find(d => d.date === editingDay.date)) updatedHistory.push(updatedDay)
     setHistory(updatedHistory)
