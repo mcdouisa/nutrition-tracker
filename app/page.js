@@ -82,6 +82,7 @@ export default function NutritionTracker() {
   }
   const isRemoteUpdate = useRef(false) // Track if update came from real-time listener
   const cloudLoadSucceeded = useRef(false) // Track if cloud data was loaded successfully
+  const isNavigatingDay = useRef(false) // Reentrancy lock for navigateDay — closes the gap before loadingPastDay(true) takes effect
   // Customizable checklist items (empty by default)
   const [checklistItems, setChecklistItems] = useState([])
 
@@ -748,103 +749,116 @@ export default function NutritionTracker() {
 
   // Navigate checklist to a different day
   const navigateDay = async (direction) => {
-    const today = toLocalDateStr()
-
-    // Save current data before navigating (prevents data loss)
-    if (user && isConfigured) {
-      if (viewDate !== null) {
-        // Viewing a past day - save that day's data using pastDayData (not today's state)
-        if (pastDayData) {
-          const currentData = {
-            ...pastDayData,
-            date: viewDate
-          }
-          await saveHistoryEntry(user.uid, viewDate, currentData)
-        }
-      } else {
-        // Viewing today - save today's data before navigating away
-        const todayData = {
-          checklistItems,
-          nutritionMetrics,
-          water,
-          waterHistory,
-          nutritionHistory,
-          date: today
-        }
-        await saveTodayData(user.uid, todayData)
-        await saveHistoryEntry(user.uid, today, todayData)
-      }
-    }
-
-    let targetDate
-    if (viewDate === null) {
-      // Currently viewing today
-      if (direction === 'back') {
-        const d = new Date()
-        d.setDate(d.getDate() - 1)
-        targetDate = toLocalDateStr(d)
-      } else {
-        return // Already on today, can't go forward
-      }
-    } else {
-      const parts = viewDate.split('-')
-      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
-      d.setDate(d.getDate() + (direction === 'back' ? -1 : 1))
-      targetDate = toLocalDateStr(d)
-
-      // Don't go forward past today
-      if (targetDate >= today && direction === 'forward') {
-        setViewDate(null)
-        setPastDayData(null)
-        return
-      }
-
-      // Limit to 30 days back (more generous than 7 days)
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      if (d < thirtyDaysAgo) return
-    }
-
-    setLoadingPastDay(true)
+    // Reentrancy lock: a fast double-tap can fire a second call before
+    // setLoadingPastDay(true) below has disabled the buttons (it doesn't fire
+    // until after the awaited saves), and before this call's own setViewDate
+    // has committed. Two overlapping calls each read stale viewDate/pastDayData
+    // closures, which can land an edit on the wrong day or clobber a fresher
+    // load with a stale one. This check-and-set is synchronous, so it closes
+    // the gap completely — a second tap while one call is in flight is a no-op.
+    if (isNavigatingDay.current) return
+    isNavigatingDay.current = true
     try {
-      let dayData = null
+      const today = toLocalDateStr()
 
-      // Try cloud first if logged in
+      // Save current data before navigating (prevents data loss)
       if (user && isConfigured) {
-        dayData = await loadDayData(user.uid, targetDate)
-      }
-
-      // Fall back to localStorage history
-      if (!dayData) {
-        const historyStr = localStorage.getItem('nutrition-history')
-        if (historyStr) {
-          const history = JSON.parse(historyStr)
-          const entry = history.find(h => h.date === targetDate)
-          if (entry) dayData = entry
+        if (viewDate !== null) {
+          // Viewing a past day - save that day's data using pastDayData (not today's state)
+          if (pastDayData) {
+            const currentData = {
+              ...pastDayData,
+              date: viewDate
+            }
+            await saveHistoryEntry(user.uid, viewDate, currentData)
+          }
+        } else {
+          // Viewing today - save today's data before navigating away
+          const todayData = {
+            checklistItems,
+            nutritionMetrics,
+            water,
+            waterHistory,
+            nutritionHistory,
+            date: today
+          }
+          await saveTodayData(user.uid, todayData)
+          await saveHistoryEntry(user.uid, today, todayData)
         }
       }
 
-      // Merge loaded data with current structure (for all sections)
-      const merged = {
-        checklistItems: checklistItems.map(item => {
-          const saved = (dayData?.checklistItems || []).find(s => s.name === item.name)
-          return { ...item, checked: saved ? saved.checked : false }
-        }),
-        nutritionMetrics: nutritionMetrics.map(metric => {
-          const saved = (dayData?.nutritionMetrics || []).find(m => m.key === metric.key)
-          return { ...metric, value: saved ? saved.value : 0 }
-        }),
-        water: dayData?.water || 0,
-        waterHistory: dayData?.waterHistory || [],
-        nutritionHistory: dayData?.nutritionHistory || []
+      let targetDate
+      if (viewDate === null) {
+        // Currently viewing today
+        if (direction === 'back') {
+          const d = new Date()
+          d.setDate(d.getDate() - 1)
+          targetDate = toLocalDateStr(d)
+        } else {
+          return // Already on today, can't go forward
+        }
+      } else {
+        const parts = viewDate.split('-')
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+        d.setDate(d.getDate() + (direction === 'back' ? -1 : 1))
+        targetDate = toLocalDateStr(d)
+
+        // Don't go forward past today
+        if (targetDate >= today && direction === 'forward') {
+          setViewDate(null)
+          setPastDayData(null)
+          return
+        }
+
+        // Limit to 30 days back (more generous than 7 days)
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        if (d < thirtyDaysAgo) return
       }
 
-      setViewDate(targetDate)
-      setPastDayData(merged)
-    } catch (error) {
-      console.error('Error loading past day:', error)
+      setLoadingPastDay(true)
+      try {
+        let dayData = null
+
+        // Try cloud first if logged in
+        if (user && isConfigured) {
+          dayData = await loadDayData(user.uid, targetDate)
+        }
+
+        // Fall back to localStorage history
+        if (!dayData) {
+          const historyStr = localStorage.getItem('nutrition-history')
+          if (historyStr) {
+            const history = JSON.parse(historyStr)
+            const entry = history.find(h => h.date === targetDate)
+            if (entry) dayData = entry
+          }
+        }
+
+        // Merge loaded data with current structure (for all sections)
+        const merged = {
+          checklistItems: checklistItems.map(item => {
+            const saved = (dayData?.checklistItems || []).find(s => s.name === item.name)
+            return { ...item, checked: saved ? saved.checked : false }
+          }),
+          nutritionMetrics: nutritionMetrics.map(metric => {
+            const saved = (dayData?.nutritionMetrics || []).find(m => m.key === metric.key)
+            return { ...metric, value: saved ? saved.value : 0 }
+          }),
+          water: dayData?.water || 0,
+          waterHistory: dayData?.waterHistory || [],
+          nutritionHistory: dayData?.nutritionHistory || []
+        }
+
+        setViewDate(targetDate)
+        setPastDayData(merged)
+      } catch (error) {
+        console.error('Error loading past day:', error)
+      } finally {
+        setLoadingPastDay(false)
+      }
     } finally {
-      setLoadingPastDay(false)
+      isNavigatingDay.current = false
     }
   }
 
