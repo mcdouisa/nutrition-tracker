@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getPrograms, savePrograms, getCurrentWorkout,
-  syncProgramsToFirestore, PROGRAM_TYPES,
+  syncProgramsToFirestore, getFreshPrograms, PROGRAM_TYPES,
 } from '../../../lib/workoutSync';
 import { useAuth } from '../../../lib/AuthContext';
 
@@ -282,8 +282,11 @@ export default function WorkoutDetail() {
   }, []);
 
   // ── Persistence helpers ───────────────────────────────────────────────────
-  function persist(updatedDay) {
-    const programs = getPrograms();
+  async function persist(updatedDay) {
+    // Reconcile with Firestore before writing — everything except the day being
+    // actively edited should reflect the latest cloud state, not a possibly
+    // stale local cache (syncProgramsToFirestore overwrites the whole array).
+    const programs = await getFreshPrograms(user?.uid);
     const pi = programs.findIndex(p => p.id === program.id);
     if (pi === -1) return;
     const di = programs[pi].days.findIndex(d => d.id === updatedDay.id);

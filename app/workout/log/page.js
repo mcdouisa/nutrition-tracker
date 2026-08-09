@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPrograms, savePrograms, getCurrentWorkout, saveSession, syncSessionToFirestore, checkProgressiveOverload, applyProgressiveOverload, syncProgramsToFirestore } from '../../../lib/workoutSync';
+import { getPrograms, savePrograms, getCurrentWorkout, saveSession, syncSessionToFirestore, checkProgressiveOverload, applyProgressiveOverload, syncProgramsToFirestore, getFreshPrograms } from '../../../lib/workoutSync';
 // Note: getPrograms is used post-applyProgressiveOverload to re-read updated weights for Firestore sync
 import { useAuth } from '../../../lib/AuthContext';
 
@@ -241,7 +241,7 @@ export default function WorkoutLog() {
   const loggedSets = exercises.reduce((s, ex) => s + ex.sets.filter(s => s.logged).length, 0);
   const allDone    = totalSets > 0 && loggedSets === totalSets;
 
-  function finishWorkout() {
+  async function finishWorkout() {
     if (!day || !program) return;
     const session = {
       id: `session-${Date.now()}`,
@@ -263,8 +263,10 @@ export default function WorkoutLog() {
     if (user) syncSessionToFirestore(user.uid, session);
     localStorage.removeItem(INPROGRESS_KEY); // clear saved state — workout is done
 
-    // Write actual weights + any added sets back to the program template
-    const programs = getPrograms();
+    // Write actual weights + any added sets back to the program template.
+    // Reconcile with Firestore first — this device's local cache may be stale
+    // relative to edits made elsewhere since this workout started.
+    const programs = await getFreshPrograms(user?.uid);
     const progIdx = programs.findIndex(p => p.id === program.id);
     if (progIdx !== -1) {
       const dayIdx = programs[progIdx].days.findIndex(d => d.id === day.id);

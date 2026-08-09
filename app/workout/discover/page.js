@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   getPrograms, savePrograms, getActiveProgramId, setActiveProgramId,
   syncProgramsToFirestore, getPublicPrograms, PROGRAM_TYPES,
-  incrementProgramCopies,
+  incrementProgramCopies, getFreshPrograms,
 } from '../../../lib/workoutSync';
 import { useAuth } from '../../../lib/AuthContext';
 
@@ -538,7 +538,7 @@ export default function DiscoverPage() {
 
   const alreadyHave = (id) => myPrograms.some(p => p.id === id || p.copiedFromId === id);
 
-  function copyProgram(prog) {
+  async function copyProgram(prog) {
     const newId = `prog-${Date.now()}`;
     const copy = {
       ...prog,
@@ -553,7 +553,8 @@ export default function DiscoverPage() {
         accent: GRAD_OPTIONS[i % 5].accent,
       })),
     };
-    const updated = [...myPrograms, copy];
+    const base = await getFreshPrograms(user?.uid);
+    const updated = [...base, copy];
     setMyPrograms(updated);
     savePrograms(updated);
     setActiveProgramId(newId);
@@ -566,11 +567,12 @@ export default function DiscoverPage() {
     setTimeout(() => setCopied(null), 2500);
   }
 
-  function removeProgram(prog) {
+  async function removeProgram(prog) {
     // Remove from my library
-    const copiedVersion = myPrograms.find(p => p.id === prog.id || p.copiedFromId === prog.id);
+    const base = await getFreshPrograms(user?.uid);
+    const copiedVersion = base.find(p => p.id === prog.id || p.copiedFromId === prog.id);
     if (!copiedVersion) return;
-    const updated = myPrograms.filter(p => p.id !== copiedVersion.id);
+    const updated = base.filter(p => p.id !== copiedVersion.id);
     setMyPrograms(updated);
     savePrograms(updated);
     if (user) syncProgramsToFirestore(user.uid, updated);

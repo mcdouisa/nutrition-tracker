@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   getPrograms, savePrograms, getActiveProgramId, setActiveProgramId,
   getSessions, getCompletedDaysThisWeek, setCurrentWorkout,
-  syncProgramsToFirestore, loadProgramsFromFirestore,
+  syncProgramsToFirestore, loadProgramsFromFirestore, getFreshPrograms,
   PROGRAM_TYPES, publishProgram, unpublishProgram,
 } from '../../lib/workoutSync';
 import { useAuth } from '../../lib/AuthContext';
@@ -136,7 +136,7 @@ export default function WorkoutHome() {
     setShowProgramMenu(false);
   }
 
-  function createProgram() {
+  async function createProgram() {
     if (!newName.trim() || newDays.length === 0) return;
     const id = `prog-${Date.now()}`;
     const program = {
@@ -148,7 +148,8 @@ export default function WorkoutHome() {
         exercises: [],
       })),
     };
-    const updated = [...programs, program];
+    const base = await getFreshPrograms(user?.uid);
+    const updated = [...base, program];
     setPrograms(updated);
     savePrograms(updated);
     setActiveProgramId(id);
@@ -187,10 +188,11 @@ export default function WorkoutHome() {
   }
 
   async function togglePublic(programId) {
-    const prog = programs.find(p => p.id === programId);
+    const base = await getFreshPrograms(user?.uid);
+    const prog = base.find(p => p.id === programId);
     if (!prog) return;
     const nowPublic = !prog.isPublic;
-    const updated = programs.map(p => p.id === programId ? { ...p, isPublic: nowPublic } : p);
+    const updated = base.map(p => p.id === programId ? { ...p, isPublic: nowPublic } : p);
     setPrograms(updated);
     savePrograms(updated);
     if (user) {
@@ -200,7 +202,7 @@ export default function WorkoutHome() {
     }
   }
 
-  function saveAiProgram() {
+  async function saveAiProgram() {
     if (!aiPreview) return;
     const id = `prog-${Date.now()}`;
     const program = {
@@ -226,7 +228,8 @@ export default function WorkoutHome() {
         })),
       })),
     };
-    const updated = [...programs, program];
+    const base = await getFreshPrograms(user?.uid);
+    const updated = [...base, program];
     setPrograms(updated);
     savePrograms(updated);
     setActiveProgramId(id);
