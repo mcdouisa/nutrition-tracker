@@ -30,31 +30,39 @@ import {
 } from '../lib/dataSync'
 import { syncWeightToGroups } from '../lib/groupSync'
 import {
-  BarChartIcon, DumbbellIcon, TargetIcon, InboxIcon,
-  CheckSquareIcon, DropletIcon, LeafIcon, ZapIcon,
-  SparklesIcon, InfoIcon, CheckCircleIcon, CloseIcon,
-  FlameIcon, UtensilsIcon, ChevronDownIcon, ChevronRightIcon
+  BarChartIcon, DumbbellIcon, TargetIcon, InboxIcon, CalendarIcon,
+  SparklesIcon, InfoIcon, CheckCircleIcon, CloseIcon, PersonIcon, PlusIcon,
+  FlameIcon, UtensilsIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon
 } from '../lib/icons'
 
 // ─── THEME TOKENS ─────────────────────────────────────────────────────────────
 const DARK = {
-  bg:     '#0D0D0D',
-  card:   '#1A1A1A',
-  card2:  '#242424',
-  border: '#2C2C2C',
-  text:   '#FFFFFF',
-  muted:  '#888888',
-  faint:  '#555555',
+  bg:     '#0B0C0E',
+  card:   '#15171A',
+  card2:  '#1D2024',
+  border: '#25282D',
+  text:   '#F2F3F5',
+  soft:   '#B4B8BF',
+  muted:  '#8B9098',
+  faint:  '#5A5F66',
+  // Per-metric row colors, cycled in order
+  hues:   ['#E9E4D8', '#E58A5C', '#D77BB8', '#7CC8FF', '#B9A3FF', '#F2C94C'],
 }
 const LIGHT = {
-  bg:     '#F5F5F5',
+  bg:     '#F4F4F2',
   card:   '#FFFFFF',
-  card2:  '#EBEBEB',
-  border: '#E0E0E0',
-  text:   '#1A1A1A',
-  muted:  '#666666',
-  faint:  '#999999',
+  card2:  '#ECECEA',
+  border: '#E2E2DF',
+  text:   '#141518',
+  soft:   '#3E4249',
+  muted:  '#62666D',
+  faint:  '#9A9EA4',
+  hues:   ['#8A7F66', '#D0652F', '#B5509A', '#2E7BD6', '#7A5CE0', '#B8860B'],
 }
+
+// Status colors shared by both themes: goal reached / limit exceeded
+const DONE = '#B8F06A'
+const OVER = '#FF6B3D'
 
 // Theme context — makes T available to all sub-components without prop drilling
 const ThemeContext = createContext(DARK)
@@ -100,6 +108,7 @@ export default function NutritionTracker() {
   // Custom entry values
   const [customValues, setCustomValues] = useState({})
   const [customEntryName, setCustomEntryName] = useState('')
+  const [showCustomEntry, setShowCustomEntry] = useState(false)
 
   // History for undo
   const [nutritionHistory, setNutritionHistory] = useState([])
@@ -1810,13 +1819,38 @@ Reason: 5-7 words max — the single most important factor.`
     )
   }
 
+
+  // ── Today screen: date labels for the header ─────────────────────────────────
+  const shownDate = (() => {
+    if (viewDate === null) return new Date()
+    const [y, m, d] = viewDate.split('-').map(Number)
+    return new Date(y, m - 1, d)
+  })()
+  const isYesterdayShown = (() => {
+    if (viewDate === null) return false
+    const y = new Date()
+    y.setHours(0, 0, 0, 0)
+    y.setDate(y.getDate() - 1)
+    return shownDate.toDateString() === y.toDateString()
+  })()
+  const dayTitle = loadingPastDay ? 'Loading…'
+    : viewDate === null ? 'Today'
+    : isYesterdayShown ? 'Yesterday'
+    : shownDate.toLocaleDateString('en-US', { weekday: 'long' })
+  const daySubtitle = viewDate === null || isYesterdayShown
+    ? shownDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    : shownDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const syncLabel = syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'synced' ? 'Synced' : syncStatus === 'error' ? 'Sync error' : ''
+
   return (
     <ThemeContext.Provider value={T}>
     <div style={{
       minHeight: '100vh',
       backgroundColor: T.bg,
-      padding: '0 0 80px 0',
-      fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      padding: '0 0 calc(96px + env(safe-area-inset-bottom)) 0',
+      fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, sans-serif",
+      fontVariantNumeric: 'tabular-nums',
+      WebkitFontSmoothing: 'antialiased',
       color: T.text,
     }}>
       {/* Onboarding Modal */}
@@ -1902,7 +1936,7 @@ Reason: 5-7 words max — the single most important factor.`
         </div>
       )}
 
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 16px' }}>
         {/* Header */}
         <div style={{
           position: 'sticky',
@@ -1911,120 +1945,76 @@ Reason: 5-7 words max — the single most important factor.`
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           backgroundColor: T.bg + 'ee',
-          borderBottom: '1px solid ' + T.border,
-          marginBottom: '20px',
-          padding: '12px 0 14px',
-          marginLeft: '-16px',
-          marginRight: '-16px',
-          paddingLeft: '16px',
-          paddingRight: '16px'
+          margin: '0 -16px 12px',
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px'
         }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: '12px'
-          }}>
-            <div>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: T.muted, letterSpacing: '2.5px', marginBottom: '3px', fontFamily: "'Barlow Condensed', sans-serif" }}>
-                {greeting()}
-              </div>
-              <h1 style={{
-                margin: '0 0 3px 0',
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontSize: '26px',
-                fontWeight: '900',
-                color: T.text,
-                letterSpacing: '4px',
-                textTransform: 'uppercase',
-                lineHeight: 1
-              }}>
-                LYTZ
+          <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+            <button
+              onClick={() => navigateDay('back')}
+              disabled={loadingPastDay}
+              aria-label="Previous day"
+              style={{ ...iconButton, width: '36px', color: T.muted, opacity: loadingPastDay ? 0.4 : 1 }}
+            >
+              <ChevronLeftIcon size={20} strokeWidth={2} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}>
+              <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 500, letterSpacing: '-0.01em', color: T.text, whiteSpace: 'nowrap' }}>
+                {dayTitle}
               </h1>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <span style={{
-                  color: T.muted,
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  letterSpacing: '0.5px'
-                }}>
-                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </span>
-                {syncStatus && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{
-                      width: '6px', height: '6px', borderRadius: '50%',
-                      backgroundColor: syncStatus === 'synced' ? '#30D158' : syncStatus === 'error' ? '#FF453A' : '#888888',
-                      boxShadow: syncStatus === 'synced' ? '0 0 5px #30D158' : 'none',
-                      display: 'inline-block'
-                    }}/>
-                    <span style={{
-                      fontSize: '10px',
-                      color: syncStatus === 'synced' ? '#30D158' : syncStatus === 'error' ? '#FF453A' : '#888888',
-                      fontWeight: '600'
-                    }}>
-                      {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'synced' ? 'Synced' : 'Error'}
-                    </span>
-                  </span>
-                )}
-              </div>
+              <span style={{ fontSize: '15px', color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {daySubtitle}
+              </span>
             </div>
+            {viewDate !== null && (
+              <button
+                onClick={() => navigateDay('forward')}
+                disabled={loadingPastDay}
+                aria-label="Next day"
+                style={{ ...iconButton, width: '36px', color: T.muted, opacity: loadingPastDay ? 0.4 : 1 }}
+              >
+                <ChevronRightIcon size={20} strokeWidth={2} />
+              </button>
+            )}
+          </div>
 
-            {/* Return to Today button — only shown when viewing a past day */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {/* Return to Today — only shown when viewing a past day */}
             {viewDate !== null && (
               <button
                 onClick={() => { setViewDate(null); setPastDayData(null) }}
-                style={{
-                  padding: '8px 14px',
-                  background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: '#fff',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '0.3px',
-                  boxShadow: '0 2px 12px rgba(10,132,255,0.4)'
-                }}
+                style={{ height: '36px', padding: '0 14px', borderRadius: '999px', border: 'none', backgroundColor: T.text, color: T.bg, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 Today
               </button>
             )}
+            <button
+              onClick={() => setShowChat(true)}
+              aria-label="Ask Lytz AI"
+              style={{ ...iconButton, borderRadius: '50%', backgroundColor: T.card, color: T.text }}
+            >
+              <SparklesIcon size={18} strokeWidth={1.75} />
+            </button>
 
-            {/* User Account Button */}
+            {/* User Account Button — the dot shows sync status */}
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => user ? setShowUserMenu(!showUserMenu) : router.push('/login')}
-                style={{
-                  padding: '9px 14px',
-                  backgroundColor: user ? 'rgba(48,209,88,0.12)' : T.card,
-                  border: '1px solid',
-                  borderColor: user ? 'rgba(48,209,88,0.35)' : T.border,
-                  borderRadius: '10px',
-                  color: user ? '#30D158' : '#888888',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
+                aria-label={user ? `Account menu${syncLabel ? `, ${syncLabel}` : ''}` : 'Sign in'}
+                title={syncLabel || undefined}
+                style={{ ...iconButton, position: 'relative', borderRadius: '50%', backgroundColor: T.card, color: T.text, fontSize: '15px', fontWeight: 600 }}
               >
-                {user ? (
-                  <>
-                    <span style={{ fontSize: '14px' }}>{'☁️'}</span>
-                    <span>Synced</span>
-                  </>
-                ) : (
-                  <>
-                    <span style={{ fontSize: '14px' }}>{'👤'}</span>
-                    <span>Sign In</span>
-                  </>
+                {user?.email ? user.email[0].toUpperCase() : <PersonIcon size={18} strokeWidth={1.75} />}
+                {syncStatus && (
+                  <span aria-hidden="true" style={{
+                    position: 'absolute', right: '2px', bottom: '2px',
+                    width: '10px', height: '10px', borderRadius: '50%',
+                    border: `2px solid ${T.bg}`,
+                    backgroundColor: syncStatus === 'synced' ? DONE : syncStatus === 'error' ? OVER : T.muted
+                  }} />
                 )}
               </button>
 
@@ -2184,116 +2174,6 @@ Reason: 5-7 words max — the single most important factor.`
               )}
             </div>
           </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '8px'
-          }}>
-            <button
-              onClick={() => setShowChat(true)}
-              style={{
-                padding: '11px 8px',
-                backgroundColor: showChat ? '#0A84FF' : 'rgba(191,90,242,0.1)',
-                border: `1px solid ${showChat ? '#0A84FF' : 'rgba(191,90,242,0.3)'}`,
-                borderRadius: '12px',
-                color: showChat ? '#fff' : '#BF5AF2',
-                fontSize: '13px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                whiteSpace: 'nowrap',
-                letterSpacing: '0.5px'
-              }}
-            >
-              🤖 AI
-            </button>
-            <Link
-              href="/reports"
-              style={{
-                padding: '11px 8px',
-                backgroundColor: 'rgba(10,132,255,0.1)',
-                border: '1px solid rgba(10,132,255,0.3)',
-                borderRadius: '12px',
-                color: '#0A84FF',
-                fontSize: '13px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                letterSpacing: '0.5px'
-              }}
-            >
-              <BarChartIcon size={14} color="currentColor" strokeWidth={2} /> Reports
-            </Link>
-            {isAdmin && (
-              <Link
-                href="/groups"
-                style={{
-                  padding: '11px 8px',
-                  backgroundColor: 'rgba(191,90,242,0.1)',
-                  border: '1px solid rgba(191,90,242,0.3)',
-                  borderRadius: '12px',
-                  color: '#BF5AF2',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px',
-                  letterSpacing: '0.5px',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                👥 Groups
-              </Link>
-            )}
-            <button
-              onClick={() => setShowSettings(true)}
-              style={{
-                padding: '11px 8px',
-                backgroundColor: showSettings ? '#0A84FF' : 'rgba(48,209,88,0.1)',
-                border: `1px solid ${showSettings ? '#0A84FF' : 'rgba(48,209,88,0.3)'}`,
-                borderRadius: '12px',
-                color: showSettings ? '#fff' : '#30D158',
-                fontSize: '13px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                letterSpacing: '0.5px'
-              }}
-            >
-              <TargetIcon size={14} color="currentColor" strokeWidth={2} /> Goals
-            </button>
-            <Link
-              href="/workout"
-              style={{
-                padding: '11px 8px',
-                backgroundColor: 'rgba(255,159,10,0.1)',
-                border: '1px solid rgba(255,159,10,0.3)',
-                borderRadius: '12px',
-                color: '#FF9F0A',
-                fontSize: '13px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                whiteSpace: 'nowrap',
-                letterSpacing: '0.5px'
-              }}
-            >
-              <DumbbellIcon size={14} color="currentColor" strokeWidth={2} /> Workout
-            </Link>
-          </div>
         </div>
 
         {/* Notification Banners */}
@@ -2384,459 +2264,111 @@ Reason: 5-7 words max — the single most important factor.`
           </div>
         )}
 
-        {/* Page-level Date Navigation */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 16px',
-          backgroundColor: viewDate !== null ? (darkMode ? '#1a1228' : '#f0ebff') : T.card,
-          borderRadius: '14px',
-          marginBottom: '20px',
-          border: `1px solid ${viewDate !== null ? '#BF5AF2' : '#0A84FF'}`
-        }}>
-          {/* Back arrow */}
-          <button
-            onClick={() => navigateDay('back')}
-            disabled={loadingPastDay}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: 'transparent',
-              border: '1px solid #0A84FF',
-              borderRadius: '8px',
-              color: '#0A84FF',
-              fontSize: '18px',
-              fontWeight: '700',
-              cursor: loadingPastDay ? 'not-allowed' : 'pointer',
-              opacity: loadingPastDay ? 0.5 : 1
-            }}
-          >
-            ‹
-          </button>
-
-          {/* Date display */}
-          <div style={{
-            flex: 1,
-            textAlign: 'center',
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontWeight: '700',
-            fontSize: '16px',
-            letterSpacing: '1px',
-            color: T.text
-          }}>
-            {loadingPastDay ? (
-              'Loading...'
-            ) : viewDate !== null ? (
-              (() => {
-                const parts = viewDate.split('-')
-                const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
-                const today = new Date()
-                today.setHours(0,0,0,0)
-                const yesterday = new Date(today)
-                yesterday.setDate(yesterday.getDate() - 1)
-
-                if (d.toDateString() === yesterday.toDateString()) {
-                  return 'Yesterday'
-                }
-                return d.toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric'
-                })
-              })()
-            ) : (
-              'Today'
-            )}
-          </div>
-
-          {/* Forward arrow */}
-          <button
-            onClick={() => navigateDay('forward')}
-            disabled={viewDate === null || loadingPastDay}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: 'transparent',
-              border: `1px solid ${viewDate === null ? '#ddd' : '#0A84FF'}`,
-              borderRadius: '8px',
-              color: viewDate === null ? '#ddd' : '#0A84FF',
-              fontSize: '18px',
-              fontWeight: '700',
-              cursor: viewDate === null || loadingPastDay ? 'not-allowed' : 'pointer',
-              opacity: viewDate === null || loadingPastDay ? 0.5 : 1
-            }}
-          >
-            ›
-          </button>
-        </div>
-
-        {/* Daily Checklist */}
+        {/* Daily Habits */}
         {checklistItems.length > 0 && (
-          <div style={{ marginBottom: '28px' }}>
-            {(() => {
+          <div style={{ marginBottom: '16px' }}>
+            {loadingPastDay ? (
+              <div style={{ textAlign: 'center', padding: '14px', color: T.muted, fontSize: '13px' }}>
+                Loading...
+              </div>
+            ) : (() => {
               const displayItems = viewDate !== null && pastDayData?.checklistItems ? pastDayData.checklistItems : checklistItems
-              const completed = displayItems.filter(item => {
-                if ((item.frequency || 'daily') === 'multiple') return (item.count || 0) >= (item.targetCount || 1)
-                return item.checked
-              }).length
-              const pct = displayItems.length > 0 ? Math.round(completed / displayItems.length * 100) : 0
-              const ringColor = pct === 100 ? '#30D158' : '#0A84FF'
               return (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-                      background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}><CheckSquareIcon size={17} color="#0A84FF" strokeWidth={2} /></div>
-                    <h2 style={{
-                      margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
-                      textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
-                    }}>Daily Habits</h2>
-                  </div>
-                  <ProgressRing pct={pct} size={52} sw={4} color={ringColor} />
+                <div role="group" aria-label="Habits" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {displayItems.map((item, i) => {
+                    const freq = item.frequency || 'daily'
+                    const isMultiple = freq === 'multiple'
+                    const count = item.count || 0
+                    const target = item.targetCount || 1
+                    const isDone = isMultiple ? count >= target : !!item.checked
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => viewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
+                        aria-pressed={isDone}
+                        style={{
+                          flex: '1 1 auto',
+                          minHeight: '48px',
+                          maxWidth: '100%',
+                          padding: '0 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          border: 'none',
+                          borderRadius: '14px',
+                          backgroundColor: isDone ? DONE : T.card,
+                          color: isDone ? '#0B0C0E' : T.soft,
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s, color 0.2s'
+                        }}
+                      >
+                        {isMultiple ? (
+                          <span style={{ fontSize: '12px', fontWeight: 600, opacity: 0.75, flexShrink: 0 }}>{count}/{target}</span>
+                        ) : isDone && (
+                          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <path d="M5 12.5l4.5 4.5L19 7.5" />
+                          </svg>
+                        )}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                        {freq === 'weekly' && (
+                          <span title="Weekly" style={{ fontSize: '10px', fontWeight: 600, opacity: 0.6, flexShrink: 0 }}>W</span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               )
             })()}
-            {loadingPastDay ? (
-              <div style={{ textAlign: 'center', padding: '20px', color: T.muted, fontSize: '13px' }}>
-                Loading...
-              </div>
-            ) : (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: checklistItems.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                gap: '8px'
-              }}>
-                {(viewDate !== null && pastDayData?.checklistItems ? pastDayData?.checklistItems : checklistItems).map((item, i) => {
-                  const freq = item.frequency || 'daily'
-                  const isMultiple = freq === 'multiple'
-                  const isWeekly = freq === 'weekly'
-                  const count = item.count || 0
-                  const target = item.targetCount || 1
-                  const isDone = isMultiple ? count >= target : item.checked
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => viewDate !== null ? togglePastChecklistItem(i) : toggleChecklistItem(i)}
-                      style={{
-                        padding: '14px 14px',
-                        backgroundColor: isDone ? 'rgba(10,132,255,0.08)' : T.card,
-                        border: '1px solid',
-                        borderColor: isDone ? '#0A84FF' : '#2C2C2C',
-                        borderRadius: '14px',
-                        color: isDone ? '#0A84FF' : '#888888',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: isDone ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.04)'
-                      }}
-                    >
-                      {isMultiple ? (
-                        <div style={{
-                          minWidth: '32px',
-                          height: '18px',
-                          borderRadius: '9px',
-                          backgroundColor: isDone ? '#0A84FF' : count > 0 ? '#e8f4f4' : '#f0f0f0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '10px',
-                          fontWeight: '600',
-                          color: isDone ? '#fff' : count > 0 ? '#0A84FF' : '#666666',
-                          flexShrink: 0,
-                          padding: '0 4px'
-                        }}>
-                          {count}/{target}
-                        </div>
-                      ) : (
-                        <div style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          border: isDone ? 'none' : '2px solid #d0d0d0',
-                          backgroundColor: isDone ? '#0A84FF' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#1A1A1A',
-                          fontSize: '10px',
-                          flexShrink: 0
-                        }}>
-                          {isDone && '✓'}
-                        </div>
-                      )}
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                        {item.name}
-                      </span>
-                      {isWeekly && (
-                        <span style={{ fontSize: '9px', fontWeight: '600', color: T.faint, backgroundColor: T.card2, borderRadius: '4px', padding: '1px 4px', flexShrink: 0 }}>
-                          W
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
           </div>
         )}
 
-        {/* Body Weight */}
-        <div style={{ marginBottom: '28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: 'rgba(191,90,242,0.12)', border: '1px solid rgba(191,90,242,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a6 6 0 0 0 11 0"/><path d="M12 8v13"/><path d="M8 21h8"/></svg>
-              </div>
-              <h2 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted, textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif" }}>Body Weight</h2>
-            </div>
-            <button onClick={() => setBodyWeightUnit(u => u === 'lbs' ? 'kg' : 'lbs')} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: '700', color: T.muted, cursor: 'pointer' }}>{bodyWeightUnit === 'lbs' ? '⇄ KG' : '⇄ LBS'}</button>
-          </div>
-          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '16px', padding: '16px' }}>
-            {showWeightInput ? (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  autoFocus
-                  type="text" inputMode="decimal"
-                  value={bodyWeightInput}
-                  onChange={e => setBodyWeightInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') logBodyWeight(); if (e.key === 'Escape') setShowWeightInput(false) }}
-                  placeholder={`Weight in ${bodyWeightUnit}`}
-                  style={{ flex: 1, background: T.card2, border: `1px solid ${T.border}`, borderRadius: '10px', padding: '10px 14px', fontSize: '16px', color: T.text, outline: 'none' }}
-                />
-                <button onClick={logBodyWeight} style={{ background: 'rgba(191,90,242,0.15)', border: '1px solid rgba(191,90,242,0.4)', borderRadius: '10px', padding: '10px 16px', fontSize: '14px', fontWeight: '700', color: '#BF5AF2', cursor: 'pointer' }}>Save</button>
-                <button onClick={() => setShowWeightInput(false)} style={{ background: T.card2, border: `1px solid ${T.border}`, borderRadius: '10px', padding: '10px 12px', fontSize: '14px', color: T.muted, cursor: 'pointer' }}>✕</button>
-              </div>
-            ) : (
-              <button onClick={() => { setBodyWeightInput(bodyWeight); setShowWeightInput(true) }} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 0 }}>
-                <div style={{ textAlign: 'left' }}>
-                  {bodyWeight ? (
-                    <>
-                      <span style={{ fontSize: '32px', fontWeight: '900', color: '#BF5AF2', fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>{bodyWeight}</span>
-                      <span style={{ fontSize: '14px', color: T.muted, marginLeft: '6px' }}>{bodyWeightUnit}</span>
-                    </>
-                  ) : (
-                    <span style={{ fontSize: '15px', color: T.muted }}>Tap to log today's weight</span>
-                  )}
-                </div>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(191,90,242,0.12)', border: '1px solid rgba(191,90,242,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </div>
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Water */}
+        {waterButtons.length > 0 && (() => {
+          const displayWater = viewDate !== null && pastDayData ? pastDayData.water : water
+          const displayWaterHistory = (viewDate !== null && pastDayData ? pastDayData.waterHistory : waterHistory) || []
+          return (
+            <WaterCard
+              water={displayWater || 0}
+              goal={waterGoal}
+              buttons={waterButtons}
+              canUndo={displayWaterHistory.length > 0}
+              onAdd={addWater}
+              onUndo={undoWater}
+            />
+          )
+        })()}
 
-        {/* Water Tracker */}
-        {waterButtons.length > 0 && (
-          <div style={{ marginBottom: '28px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{
-                width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-                background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}><DropletIcon size={17} color="#0A84FF" strokeWidth={2} /></div>
-              <h2 style={{
-                margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
-                textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
-              }}>Hydration</h2>
-            </div>
-            <div style={{
-              background: 'linear-gradient(145deg,' + T.card + ' 0%,' + T.card2 + ' 100%)',
-              borderRadius: '18px',
-              padding: '20px 16px',
-              border: `1px solid ${T.border}`,
-              boxShadow: 'none'
-            }}>
-              {(() => {
-                // Determine which data to display (past day or today)
-                const displayWater = viewDate !== null && pastDayData
-                  ? pastDayData.water
-                  : water
-                const displayWaterHistory = viewDate !== null && pastDayData
-                  ? pastDayData.waterHistory
-                  : waterHistory
+        {/* Nutrition */}
+        {nutritionMetrics.length > 0 && (() => {
+          // Determine which data to display (past day or today)
+          const displayNutritionMetrics = viewDate !== null && pastDayData
+            ? pastDayData.nutritionMetrics
+            : nutritionMetrics
+          const displayNutritionHistory = viewDate !== null && pastDayData
+            ? pastDayData.nutritionHistory
+            : nutritionHistory
 
-                return (
-                  <>
-              <div style={{
-                display: 'flex',
-                gap: '24px',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '20px'
-              }}>
-                {/* Water Bottle Visualization */}
-                {waterGoal > 0 && (() => {
-                  const fillPercent = Math.min(displayWater / waterGoal, 1)
-                  // Bottle body goes from y=30 (top) to y=190 (bottom) = 160 fillable units
-                  const bottleBottom = 190
-                  const fillableHeight = 160
-                  const waterHeight = fillPercent * fillableHeight
-                  const waterTop = bottleBottom - waterHeight
-                  const isFull = fillPercent >= 1
-                  return (
-                    <WaterBottle
-                      waterTop={waterTop}
-                      waterHeight={waterHeight}
-                      water={displayWater}
-                      fillPercent={fillPercent}
-                      isFull={isFull}
-                    />
-                  )
-                })()}
-
-                {/* Stats */}
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    fontSize: '52px',
-                    fontWeight: '900',
-                    color: T.text,
-                    marginBottom: '2px',
-                    letterSpacing: '-1px',
-                    fontFamily: "'Barlow Condensed', sans-serif"
-                  }}>
-                    {displayWater}
-                  </div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: T.muted,
-                    fontWeight: '500',
-                    letterSpacing: '0.5px',
-                    marginBottom: waterGoal > 0 ? '4px' : '0'
-                  }}>
-                    oz consumed
-                  </div>
-                  {waterGoal > 0 && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: T.muted,
-                      fontWeight: '500'
-                    }}>
-                      Goal: {waterGoal} oz
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                gap: '6px',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-                marginBottom: '12px'
-              }}>
-                {waterButtons.map((amount, i) => (
+          return (
+          <div style={{ marginBottom: '8px' }}>
+            {displayNutritionHistory.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: T.muted }}>Nutrition</span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={undoNutrition} style={pillButton(T)}>Undo</button>
                   <button
-                    key={i}
-                    onClick={() => addWater(amount)}
-                    style={{
-                      padding: '12px 18px',
-                      backgroundColor: T.card2,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: '12px',
-                      color: T.text,
-                      fontSize: '15px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      minWidth: '60px'
-                    }}
+                    onClick={() => setShowNutritionLog(!showNutritionLog)}
+                    aria-expanded={showNutritionLog}
+                    style={{ ...pillButton(T), ...(showNutritionLog ? { backgroundColor: T.card2, color: T.text } : {}) }}
                   >
-                    +{amount}
-                  </button>
-                ))}
-              </div>
-              {displayWaterHistory.length > 0 && (
-                <div style={{ textAlign: 'center' }}>
-                  <button onClick={undoWater} style={{
-                    padding: '6px 12px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: T.faint,
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    textDecoration: 'underline'
-                  }}>
-                    Undo
+                    {showNutritionLog ? 'Hide entries' : `Entries (${displayNutritionHistory.length})`}
                   </button>
                 </div>
-              )}
-                  </>
-                )
-              })()}
-            </div>
-          </div>
-        )}
-
-        {/* Nutrition Totals */}
-        {nutritionMetrics.length > 0 && (
-          <div style={{ marginBottom: '28px' }}>
-            {(() => {
-              // Determine which data to display (past day or today)
-              const displayNutritionMetrics = viewDate !== null && pastDayData
-                ? pastDayData.nutritionMetrics
-                : nutritionMetrics
-              const displayNutritionHistory = viewDate !== null && pastDayData
-                ? pastDayData.nutritionHistory
-                : nutritionHistory
-
-              return (
-                <>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '12px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-                  background: 'rgba(48,209,88,0.12)', border: '1px solid rgba(48,209,88,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}><LeafIcon size={17} color="#30D158" strokeWidth={2} /></div>
-                <h2 style={{
-                  margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
-                  textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
-                }}>Nutrition</h2>
               </div>
-              {displayNutritionHistory.length > 0 && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={undoNutrition} style={{
-                    padding: '5px 12px',
-                    backgroundColor: 'transparent',
-                    border: `1px solid ${T.border}`,
-                    borderRadius: '20px',
-                    color: T.muted,
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    letterSpacing: '0.3px'
-                  }}>
-                    Undo
-                  </button>
-                  <button onClick={() => setShowNutritionLog(!showNutritionLog)} style={{
-                    padding: '5px 12px',
-                    backgroundColor: showNutritionLog ? 'rgba(10,132,255,0.12)' : 'transparent',
-                    border: `1px solid ${showNutritionLog ? 'rgba(10,132,255,0.4)' : T.border}`,
-                    borderRadius: '20px',
-                    color: showNutritionLog ? '#0A84FF' : T.muted,
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    letterSpacing: '0.3px'
-                  }}>
-                    {showNutritionLog ? 'Hide Log' : 'Log'}
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Nutrition Entry Log */}
             {showNutritionLog && displayNutritionHistory.length > 0 && (
@@ -3018,412 +2550,237 @@ Reason: 5-7 words max — the single most important factor.`
               </div>
             )}
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: displayNutritionMetrics.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-              gap: '8px'
-            }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {displayNutritionMetrics.map((metric, i) => {
                 const goalType = metric.goalType || 'min'
                 const value = metric.value || 0
                 const goal = metric.goal || 0
                 const goalMax = metric.goalMax || 0
-                const isEditing = editingMetric === i
+                const unit = metric.unit ? ` ${metric.unit}` : ''
 
-                // Calculate progress and colors based on goal type
-                let progress = 0
-                let fillColor = 'rgba(10,132,255,0.10)'
-                let statusColor = T.muted
-                let goalLabel = ''
-
+                // Progress, state and the short status line, by goal type
+                let pct = 0
+                let state = 'progress' // 'progress' | 'done' | 'over'
+                let sub = ''
                 if (goal > 0) {
-                  if (goalType === 'min') {
-                    progress = Math.min(value / goal * 100, 100)
-                    fillColor = progress >= 100 ? 'rgba(48,209,88,0.12)' : 'rgba(10,132,255,0.10)'
-                    statusColor = progress >= 100 ? '#30D158' : T.muted
-                    goalLabel = `Goal: ${goal}+`
-                  } else if (goalType === 'max') {
-                    progress = Math.min(value / goal * 100, 100)
-                    const ratio = value / goal
-                    if (ratio > 1) {
-                      fillColor = 'rgba(255,69,58,0.12)'
-                      statusColor = '#FF453A'
-                    } else if (ratio > 0.8) {
-                      fillColor = 'rgba(255,159,10,0.12)'
-                      statusColor = '#FF9F0A'
-                    } else {
-                      fillColor = 'rgba(48,209,88,0.12)'
-                      statusColor = '#30D158'
-                    }
-                    goalLabel = `Limit: ${goal}`
+                  if (goalType === 'max') {
+                    pct = Math.min(value / goal * 100, 100)
+                    if (value > goal) { state = 'over'; sub = `${fmtNum(value - goal)}${unit} over` }
+                    else sub = `${fmtNum(goal - value)}${unit} left`
                   } else if (goalType === 'range' && goalMax > 0) {
-                    progress = Math.min(value / goalMax * 100, 100)
-                    if (value >= goal && value <= goalMax) {
-                      fillColor = 'rgba(48,209,88,0.12)'
-                      statusColor = '#30D158'
-                    } else if (value < goal) {
-                      fillColor = 'rgba(10,132,255,0.10)'
-                      statusColor = T.muted
-                    } else {
-                      fillColor = 'rgba(255,69,58,0.12)'
-                      statusColor = '#FF453A'
-                    }
-                    goalLabel = `Range: ${goal}–${goalMax}`
+                    pct = Math.min(value / goalMax * 100, 100)
+                    if (value < goal) sub = `${fmtNum(goal - value)}${unit} to go`
+                    else if (value > goalMax) { state = 'over'; sub = `${fmtNum(value - goalMax)}${unit} over` }
+                    else { state = 'done'; sub = 'In range' }
+                  } else {
+                    pct = Math.min(value / goal * 100, 100)
+                    if (value >= goal) { state = 'done'; sub = 'Done' }
+                    else sub = `of ${fmtNum(goal)}${unit}`
                   }
+                }
+                const color = state === 'done' ? DONE : state === 'over' ? OVER : T.hues[i % T.hues.length]
+                const step = metricStep(goalType === 'range' && goalMax > 0 ? goalMax : goal)
+
+                // "−" undoes this metric's most recent single add (the "+" button's entries)
+                let lastAddIndex = -1
+                for (let h = displayNutritionHistory.length - 1; h >= 0; h--) {
+                  if (displayNutritionHistory[h].metricIndex === i) { lastAddIndex = h; break }
                 }
 
                 return (
-                  <div key={i} onClick={() => {
-                    if (!isEditing) {
-                      setEditingMetric(i)
-                      setEditMetricValue(String(value))
-                    }
-                  }} style={{
-                    padding: '18px',
-                    backgroundColor: T.card,
-                    border: isEditing ? '1px solid #0A84FF' : `1px solid ${T.border}`,
-                    borderRadius: '16px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    cursor: isEditing ? 'default' : 'pointer'
-                  }}>
-                    {/* Progress background */}
-                    {goal > 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: `${progress}%`,
-                        backgroundColor: fillColor,
-                        transition: 'height 0.3s ease, background-color 0.3s ease',
-                        zIndex: 0
-                      }} />
-                    )}
-
-                    <div style={{ position: 'relative', zIndex: 1 }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        marginBottom: '8px'
-                      }}>
-                        {metric.icon && (
-                          <span style={{ fontSize: '14px' }}>{metric.icon}</span>
-                        )}
-                        <div style={{
-                          fontSize: '12px',
-                          color: T.muted,
-                          fontWeight: '600',
-                          letterSpacing: '1.5px',
-                          textTransform: 'uppercase',
-                          fontFamily: "'Barlow Condensed', sans-serif"
-                        }}>
-                          {metric.name}
-                        </div>
-                      </div>
-                      {isEditing ? (
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="number"
-                            value={editMetricValue}
-                            onChange={(e) => setEditMetricValue(e.target.value)}
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveMetricEdit(i)
-                              if (e.key === 'Escape') { setEditingMetric(null); setEditMetricValue('') }
-                            }}
-                            style={{
-                              width: '100%',
-                              fontSize: '24px',
-                              fontWeight: '600',
-                              color: T.text,
-                              border: 'none',
-                              borderBottom: '2px solid #3b82f6',
-                              outline: 'none',
-                              padding: '2px 0',
-                              backgroundColor: 'transparent',
-                              boxSizing: 'border-box',
-                              minWidth: 0
-                            }}
-                          />
-                          <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-                            <button onClick={() => saveMetricEdit(i)} style={{
-                              flex: 1, padding: '8px', backgroundColor: '#30D158', border: 'none',
-                              borderRadius: '8px', color: '#0D0D0D', fontSize: '12px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.3px'
-                            }}>Save</button>
-                            <button onClick={() => { setEditingMetric(null); setEditMetricValue('') }} style={{
-                              flex: 1, padding: '8px', backgroundColor: 'transparent', border: `1px solid ${T.border}`,
-                              borderRadius: '8px', color: T.muted, fontSize: '12px', fontWeight: '600', cursor: 'pointer'
-                            }}>Cancel</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div style={{
-                            fontSize: '32px',
-                            fontWeight: '900',
-                            color: T.text,
-                            fontFamily: "'Barlow Condensed', sans-serif",
-                            letterSpacing: '-0.5px'
-                          }}>
-                            {value}
-                            {metric.unit && <span style={{ fontSize: '14px', color: T.muted, fontWeight: '500' }}> {metric.unit}</span>}
-                          </div>
-                          {goal > 0 && (
-                            <div style={{
-                              marginTop: '4px',
-                              fontSize: '11px',
-                              color: T.muted,
-                              fontWeight: '500'
-                            }}>
-                              {goalLabel}
-                              <span style={{
-                                marginLeft: '6px',
-                                color: statusColor,
-                                fontWeight: '600'
-                              }}>
-                                {goalType === 'max' ? (
-                                  value > goal ? `Over by ${value - goal}` : `${goal - value} left`
-                                ) : goalType === 'range' && goalMax > 0 ? (
-                                  value < goal ? `${goal - value} to go` : value > goalMax ? `Over by ${value - goalMax}` : 'In range'
-                                ) : (
-                                  `${Math.round(progress)}%`
-                                )}
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  <TrackerRow
+                    key={i}
+                    color={color}
+                    pct={pct}
+                    label={metric.name}
+                    value={fmtNum(value)}
+                    unit={metric.unit}
+                    sub={sub}
+                    onValueClick={() => { setEditingMetric(i); setEditMetricValue(String(value)) }}
+                    valueAria={`Edit ${metric.name}, currently ${fmtNum(value)}${unit}`}
+                    editor={editingMetric === i ? (
+                      <ValueEditor
+                        label={metric.name}
+                        value={editMetricValue}
+                        onChange={setEditMetricValue}
+                        onSave={() => saveMetricEdit(i)}
+                        onCancel={() => { setEditingMetric(null); setEditMetricValue('') }}
+                      />
+                    ) : null}
+                    actions={<>
+                      <button
+                        onClick={() => removeNutritionEntry(lastAddIndex)}
+                        disabled={lastAddIndex < 0}
+                        aria-label={`Undo last ${metric.name} add`}
+                        style={{ ...iconButton, borderRadius: '12px', color: T.soft, opacity: lastAddIndex < 0 ? 0.3 : 1, cursor: lastAddIndex < 0 ? 'default' : 'pointer' }}
+                      >
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 12h12" /></svg>
+                      </button>
+                      <button
+                        onClick={() => addToMetric(i, step)}
+                        aria-label={`Add ${fmtNum(step)}${unit} to ${metric.name}`}
+                        style={stepButton(T)}
+                      >
+                        +{fmtNum(step)}
+                      </button>
+                    </>}
+                  />
                 )
               })}
             </div>
-                </>
-              )
-            })()}
           </div>
-        )}
+          )
+        })()}
 
-        {/* Quick Add — meal buttons only when configured; custom entry always shown */}
-        {(meals.some(m => m) || nutritionMetrics.length > 0) && <div style={{ marginBottom: '28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-            <div style={{
-              width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-              background: 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}><ZapIcon size={17} color="#FF9F0A" strokeWidth={2} /></div>
-            <h2 style={{
-              margin: 0, fontSize: '13px', fontWeight: '700', color: T.muted,
-              textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Barlow Condensed', sans-serif"
-            }}>Quick Add</h2>
-          </div>
-          {meals.some(m => m) && <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '8px',
-            marginBottom: '12px'
-          }}>
-            {meals.map((meal, i) => (
-              meal ? (
+        {/* Body Weight */}
+        <div style={{ marginBottom: '16px' }}>
+          <TrackerRow
+            color={bodyWeight ? '#B9A3FF' : null}
+            pct={0}
+            label="Weight"
+            value={bodyWeight || '—'}
+            unit={bodyWeight ? bodyWeightUnit : ''}
+            sub={bodyWeight ? '' : 'Not logged today'}
+            onValueClick={() => { setBodyWeightInput(bodyWeight); setShowWeightInput(true) }}
+            valueAria={bodyWeight ? `Edit weight, ${bodyWeight} ${bodyWeightUnit}` : "Log today's weight"}
+            editor={showWeightInput ? (
+              <ValueEditor
+                label={`Weight in ${bodyWeightUnit}`}
+                placeholder={`Weight in ${bodyWeightUnit}`}
+                type="text"
+                inputMode="decimal"
+                value={bodyWeightInput}
+                onChange={setBodyWeightInput}
+                onSave={logBodyWeight}
+                onCancel={() => setShowWeightInput(false)}
+              />
+            ) : null}
+            actions={<>
+              <button
+                onClick={() => setBodyWeightUnit(u => u === 'lbs' ? 'kg' : 'lbs')}
+                aria-label={`Switch to ${bodyWeightUnit === 'lbs' ? 'kg' : 'lbs'}`}
+                style={{ ...iconButton, width: 'auto', padding: '0 10px', borderRadius: '12px', color: T.muted, fontSize: '13px' }}
+              >
+                {bodyWeightUnit}
+              </button>
+              <button
+                onClick={() => { setBodyWeightInput(bodyWeight); setShowWeightInput(true) }}
+                style={stepButton(T)}
+              >
+                {bodyWeight ? 'Edit' : 'Log'}
+              </button>
+            </>}
+          />
+        </div>
+
+        {/* Quick Add — meal buttons when configured; custom entry behind its own chip */}
+        {(meals.some(m => m) || nutritionMetrics.length > 0) && (
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ fontSize: '13px', color: T.muted, marginBottom: '10px' }}>Quick add</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {meals.map((meal, i) => meal ? (
                 <button
                   key={i}
                   onClick={() => addMeal(meal)}
-                  style={{
-                    padding: '14px 12px',
-                    backgroundColor: T.card,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: '14px',
-                    color: T.text,
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-                  }}
+                  title={nutritionMetrics.map(metric =>
+                    meal[metric.key] ? `${meal[metric.key]}${metric.unit || ''} ${metric.name}` : ''
+                  ).filter(Boolean).join(' · ')}
+                  style={chipButton(T)}
                 >
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    marginBottom: '4px'
-                  }}>
-                    {meal.icon && (
-                      <span style={{ fontSize: '16px' }}>{meal.icon}</span>
-                    )}
-                    <div style={{
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      color: T.text,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {meal.name}
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: '11px',
-                    color: T.faint,
-                    lineHeight: '1.4',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {nutritionMetrics.map((metric) =>
-                      meal[metric.key] ? `${meal[metric.key]}${metric.unit || ''}` : ''
-                    ).filter(Boolean).join(' • ')}
-                  </div>
+                  <PlusIcon size={14} color={T.muted} strokeWidth={2} />
+                  {meal.name}
                 </button>
-              ) : null
-            ))}
-          </div>}
-
-          {/* Custom Entry */}
-          {nutritionMetrics.length > 0 && (
-            <div style={{
-              padding: '16px',
-              backgroundColor: T.card,
-              border: `1px solid ${T.border}`,
-              borderRadius: '14px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-            }}>
-              <div style={{
-                fontSize: '12px',
-                color: T.faint,
-                marginBottom: '12px',
-                fontWeight: '500',
-                letterSpacing: '0.5px'
-              }}>
-                Custom Entry
-              </div>
-              {/* Optional entry name */}
-              <input
-                type="text"
-                placeholder="Entry name (optional, e.g., 'Chicken Breast')"
-                value={customEntryName}
-                onChange={(e) => setCustomEntryName(e.target.value)}
-                maxLength={50}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  borderRadius: '10px',
-                  border: `1px solid ${T.border}`,
-                  marginBottom: '12px',
-                  backgroundColor: T.bg,
-                  color: T.text,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '8px',
-                marginBottom: '12px'
-              }}>
-                {nutritionMetrics.map((metric, i) => (
-                  <input
-                    key={i}
-                    type="number"
-                    placeholder={metric.name}
-                    value={customValues[metric.key] || ''}
-                    onChange={(e) => setCustomValues({ ...customValues, [metric.key]: e.target.value })}
-                    style={{
-                      padding: '10px 12px',
-                      backgroundColor: T.bg,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: '8px',
-                      color: T.text,
-                      fontSize: '16px',
-                      fontWeight: '500',
-                      width: '100%',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                ))}
-              </div>
-              <button onClick={addCustomEntry} style={{
-                width: '100%',
-                padding: '12px',
-                background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
-                border: 'none',
-                borderRadius: '10px',
-                color: '#fff',
-                fontSize: '14px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                letterSpacing: '0.5px',
-                fontFamily: "'Barlow Condensed', sans-serif",
-                boxShadow: '0 2px 12px rgba(10,132,255,0.35)'
-              }}>
-                ADD ENTRY
-              </button>
+              ) : null)}
+              {nutritionMetrics.length > 0 && (
+                <button
+                  onClick={() => setShowCustomEntry(v => !v)}
+                  aria-expanded={showCustomEntry}
+                  style={{ ...chipButton(T), borderStyle: 'dashed', color: T.muted }}
+                >
+                  {showCustomEntry ? 'Close custom' : 'Custom…'}
+                </button>
+              )}
             </div>
-          )}
-        </div>}
+
+            {/* Custom Entry */}
+            {showCustomEntry && nutritionMetrics.length > 0 && (
+              <div style={{ marginTop: '10px', padding: '14px', backgroundColor: T.card, borderRadius: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="Name (optional, e.g. Chicken breast)"
+                  aria-label="Entry name"
+                  value={customEntryName}
+                  onChange={(e) => setCustomEntryName(e.target.value)}
+                  maxLength={50}
+                  style={fieldStyle(T)}
+                />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+                  {nutritionMetrics.map((metric, i) => (
+                    <input
+                      key={i}
+                      type="number"
+                      inputMode="decimal"
+                      placeholder={metric.unit ? `${metric.name} (${metric.unit})` : metric.name}
+                      aria-label={metric.name}
+                      value={customValues[metric.key] || ''}
+                      onChange={(e) => setCustomValues({ ...customValues, [metric.key]: e.target.value })}
+                      style={fieldStyle(T)}
+                    />
+                  ))}
+                </div>
+                <button onClick={addCustomEntry} style={{ ...primaryButton, width: '100%' }}>
+                  Add entry
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Empty State Message */}
         {checklistItems.length === 0 && nutritionMetrics.length === 0 && waterButtons.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '60px 24px',
-            background: 'linear-gradient(145deg,#0a0f1e 0%,#111827 55%,#0d0d0d 100%)',
-            borderRadius: '22px',
-            border: `1px solid ${T.border}`,
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle,rgba(10,132,255,0.09) 0%,transparent 70%)', pointerEvents: 'none' }}/>
-            <div style={{
-              marginBottom: '16px',
-              display: 'flex', justifyContent: 'center'
-            }}>
-              <BarChartIcon size={52} color="rgba(10,132,255,0.4)" strokeWidth={1.25} />
+          <div style={{ padding: '40px 24px', backgroundColor: T.card, borderRadius: '24px', textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 500, marginBottom: '6px' }}>Nothing to track yet</div>
+            <div style={{ fontSize: '15px', color: T.muted, marginBottom: '20px', lineHeight: 1.5 }}>
+              Pick the habits, water and nutrition goals you want on this screen.
             </div>
-            <div style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontSize: '28px',
-              fontWeight: '900',
-              color: T.text,
-              letterSpacing: '1px',
-              marginBottom: '8px'
-            }}>
-              READY TO TRACK
-            </div>
-            <div style={{
-              fontSize: '14px',
-              color: T.muted,
-              marginBottom: '28px',
-              lineHeight: '1.5'
-            }}>
-              Configure your tracker to get started
-            </div>
-            <button
-              onClick={() => setShowSettings(true)}
-              style={{
-                padding: '12px 28px',
-                background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
-                border: 'none',
-                borderRadius: '14px',
-                color: '#fff',
-                fontSize: '15px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                fontFamily: "'Barlow Condensed', sans-serif",
-                letterSpacing: '1px',
-                boxShadow: '0 4px 20px rgba(10,132,255,0.35)'
-              }}
-            >
-              OPEN YOUR GOALS
+            <button onClick={() => setShowSettings(true)} style={primaryButton}>
+              Set up goals
             </button>
           </div>
         )}
       </div>
+
+      {/* Bottom tab bar */}
+      <nav aria-label="Primary" style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 60,
+        backgroundColor: T.bg + 'f2',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderTop: `1px solid ${T.border}`,
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', padding: '6px 8px' }}>
+          <TabItem
+            label="Today"
+            current
+            onClick={() => {
+              if (viewDate !== null) { setViewDate(null); setPastDayData(null) }
+              else window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
+            icon={<CalendarIcon size={22} strokeWidth={1.75} />}
+          />
+          <TabItem label="Reports" href="/reports" icon={<BarChartIcon size={22} strokeWidth={1.75} />} />
+          <TabItem label="Train" href="/workout" icon={<DumbbellIcon size={22} strokeWidth={1.75} />} />
+          {isAdmin && (
+            <TabItem label="Groups" href="/groups" icon={<GroupsIcon size={22} />} />
+          )}
+          <TabItem label="Goals" onClick={() => setShowSettings(true)} icon={<TargetIcon size={22} strokeWidth={1.75} />} />
+        </div>
+      </nav>
 
       {/* Settings Modal */}
       {showSettings && (
@@ -3485,217 +2842,277 @@ Reason: 5-7 words max — the single most important factor.`
   )
 }
 
-// Greeting helper
-function greeting() {
-  const h = new Date().getHours()
-  if (h < 12) return 'GOOD MORNING'
-  if (h < 17) return 'GOOD AFTERNOON'
-  return 'GOOD EVENING'
+// ─── Today screen building blocks ─────────────────────────────────────────────
+
+const fmtNum = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 1 })
+
+// Size of one "+" tap, scaled to the metric's goal (2,400 cal → 100, 150 g → 10)
+const metricStep = (target) => target >= 1000 ? 100 : target >= 100 ? 10 : target >= 20 ? 5 : 1
+
+const iconButton = {
+  width: '44px',
+  height: '44px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  border: 'none',
+  background: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  flexShrink: 0,
+  fontFamily: 'inherit'
 }
 
-// Circular progress ring (mirrors workout platform)
-function ProgressRing({ pct = 0, size = 52, sw = 4, color = '#0A84FF' }) {
-  const r = (size - sw) / 2
-  const circ = 2 * Math.PI * r
-  const dash = circ - (pct / 100) * circ
+const primaryButton = {
+  height: '44px',
+  padding: '0 20px',
+  borderRadius: '12px',
+  border: 'none',
+  backgroundColor: DONE,
+  color: '#0B0C0E',
+  fontSize: '15px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontFamily: 'inherit'
+}
+
+const stepButton = (T) => ({
+  height: '44px',
+  minWidth: '56px',
+  padding: '0 12px',
+  flexShrink: 0,
+  border: 'none',
+  borderRadius: '12px',
+  backgroundColor: T.card2,
+  color: T.text,
+  fontSize: '14px',
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'inherit'
+})
+
+const pillButton = (T) => ({
+  height: '32px',
+  padding: '0 12px',
+  borderRadius: '999px',
+  border: `1px solid ${T.border}`,
+  backgroundColor: 'transparent',
+  color: T.muted,
+  fontSize: '13px',
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'inherit'
+})
+
+const chipButton = (T) => ({
+  height: '40px',
+  padding: '0 14px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  borderRadius: '999px',
+  border: `1px solid ${T.border}`,
+  backgroundColor: 'transparent',
+  color: T.soft,
+  fontSize: '14px',
+  cursor: 'pointer',
+  fontFamily: 'inherit'
+})
+
+const fieldStyle = (T) => ({
+  width: '100%',
+  height: '44px',
+  padding: '0 12px',
+  borderRadius: '12px',
+  border: `1px solid ${T.border}`,
+  backgroundColor: T.bg,
+  color: T.text,
+  fontSize: '16px',
+  fontFamily: 'inherit',
+  boxSizing: 'border-box'
+})
+
+// One tracker row: the row itself fills like a progress bar; tap the number to type a value
+function TrackerRow({ color, pct, label, value, unit, sub, onValueClick, valueAria, editor, actions }) {
+  const T = useContext(ThemeContext)
   return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={sw}/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw}
-          strokeDasharray={circ} strokeDashoffset={dash} strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 4px ${color}99)`, transition: 'stroke-dashoffset 0.6s ease' }}/>
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 13, color: '#fff', lineHeight: 1 }}>{pct}%</span>
+    <div style={{ position: 'relative', minHeight: '68px', borderRadius: '18px', backgroundColor: T.card, overflow: 'hidden' }}>
+      {pct > 0 && (
+        <div aria-hidden="true" style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0,
+          width: `${pct}%`,
+          backgroundColor: color + '24',
+          boxShadow: `inset -2px 0 0 ${color}`,
+          transition: 'width 0.5s cubic-bezier(.2,.8,.2,1), background-color 0.3s'
+        }} />
+      )}
+      <div style={{ position: 'relative', minHeight: '68px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px 0 18px' }}>
+        <span aria-hidden="true" style={{
+          width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, boxSizing: 'border-box',
+          ...(color ? { backgroundColor: color } : { border: `1.5px solid ${T.faint}` })
+        }} />
+        {editor || (
+          <button
+            onClick={onValueClick}
+            aria-label={valueAria}
+            style={{ flex: 1, minWidth: 0, padding: '10px 0', display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'left', border: 'none', background: 'none', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <span style={{ fontSize: '13px', color: T.soft }}>{label}</span>
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: 0, maxWidth: '100%' }}>
+              <span style={{ fontSize: '24px', fontWeight: 500, letterSpacing: '-0.02em', color: T.text, whiteSpace: 'nowrap' }}>
+                {value}
+                {unit && <span style={{ fontSize: '13px', fontWeight: 400, color: T.muted, marginLeft: '3px' }}>{unit}</span>}
+              </span>
+              {sub && (
+                <span style={{ fontSize: '13px', color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</span>
+              )}
+            </span>
+          </button>
+        )}
+        {!editor && actions}
       </div>
     </div>
   )
 }
 
-// Water Bottle Component — redesigned with gradient fill, glass shine, level marks, adaptive color
-function WaterBottle({ waterTop, waterHeight, water, fillPercent, isFull }) {
+// Inline number entry used inside a TrackerRow
+function ValueEditor({ label, value, onChange, onSave, onCancel, type = 'number', inputMode, placeholder }) {
   const T = useContext(ThemeContext)
-  const [showWaves, setShowWaves] = useState(true)
-  const [displayedWaterTop, setDisplayedWaterTop] = useState(waterTop)
-
-  useEffect(() => {
-    setShowWaves(false)
-    const timer = setTimeout(() => {
-      setDisplayedWaterTop(waterTop)
-      setShowWaves(true)
-    }, 1600)
-    return () => clearTimeout(timer)
-  }, [water])
-
-  // Adaptive colors based on fill level
-  const waterTop2  = isFull ? '#5ced8a' : fillPercent > 0.6 ? '#5ac8fa' : '#93c5fd'
-  const waterBot   = isFull ? '#20b857' : fillPercent > 0.6 ? '#0A84FF' : '#3b82f6'
-  const outlineClr = isFull ? 'rgba(48,209,88,0.7)' : 'rgba(255,255,255,0.14)'
-  const glowClr    = isFull ? 'rgba(48,209,88,0.18)' : 'rgba(10,132,255,0.12)'
-
-  // Bottle shape path (same coordinate space as parent calculations)
-  const BOTTLE = "M 46 22 L 46 12 Q 46 5 60 5 Q 74 5 74 12 L 74 22 Q 86 27 88 38 L 88 182 Q 88 192 76 192 L 44 192 Q 32 192 32 182 L 32 38 Q 34 27 46 22 Z"
-
   return (
-    <div style={{ textAlign: 'center', position: 'relative', display: 'inline-block' }}>
+    <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 0' }}>
+      <input
+        autoFocus
+        type={type}
+        inputMode={inputMode}
+        value={value}
+        placeholder={placeholder}
+        aria-label={label}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') onSave(); if (e.key === 'Escape') onCancel() }}
+        style={{ ...fieldStyle(T), flex: 1, minWidth: 0, width: 'auto', backgroundColor: T.card2, fontSize: '18px' }}
+      />
+      <button onClick={onSave} style={{ ...primaryButton, padding: '0 14px', fontSize: '14px' }}>Save</button>
+      <button onClick={onCancel} aria-label="Cancel" style={{ ...iconButton, borderRadius: '12px', color: T.muted }}>
+        <CloseIcon size={18} strokeWidth={2} />
+      </button>
+    </div>
+  )
+}
+
+// Water card — the liquid rises with progress and two wave layers drift across the top
+const WATER = { bg: '#0F1A26', front: '#2E7BD6B3', back: '#2E7BD666' }
+const WAVE_BACK = 'M0 12 C 100 2, 100 2, 200 12 S 300 22, 400 12 S 500 2, 600 12 S 700 22, 800 12 V 24 H 0 Z'
+const WAVE_FRONT = 'M0 12 C 100 4, 100 4, 200 12 S 300 20, 400 12 S 500 4, 600 12 S 700 20, 800 12 V 24 H 0 Z'
+
+function WaterCard({ water, goal, buttons, canUndo, onAdd, onUndo }) {
+  const met = goal > 0 && water >= goal
+  // Cap the fill below the top edge so the waves always stay visible
+  const level = water > 0 ? Math.min(88, Math.max(8, (goal > 0 ? water / goal : 0) * 88)) : 0
+  return (
+    <section aria-label="Water" style={{ position: 'relative', marginBottom: '16px', borderRadius: '24px', backgroundColor: WATER.bg, overflow: 'hidden', color: '#F2F3F5' }}>
       <style>{`
-        @keyframes waveScroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-40px); }
-        }
-        @keyframes waveScroll2 {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(40px); }
-        }
+        @keyframes lytzWave { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+        .lytz-wave { animation: lytzWave 6s linear infinite }
+        .lytz-wave-slow { animation: lytzWave 10s linear infinite }
+        @media (prefers-reduced-motion: reduce) { .lytz-wave, .lytz-wave-slow { animation: none } }
       `}</style>
 
-      {/* Outer glow — grows with fill, blooms green when full */}
-      {water > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '110px', height: '190px',
-          borderRadius: '50%',
-          background: `radial-gradient(ellipse, ${glowClr} 0%, transparent 70%)`,
-          pointerEvents: 'none',
-          transition: 'background 1s ease'
-        }}/>
-      )}
-
-      <svg
-        width="88"
-        height="160"
-        viewBox="0 0 120 200"
-        style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}
-      >
-        <defs>
-          <clipPath id="bottleClip">
-            <path d={BOTTLE}/>
-          </clipPath>
-          {/* Gradient for water fill — bottom-to-top */}
-          <linearGradient id="waterGrad" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%"   stopColor={waterBot} stopOpacity="1"/>
-            <stop offset="100%" stopColor={waterTop2} stopOpacity="0.85"/>
-          </linearGradient>
-          {/* Glass gloss overlay */}
-          <linearGradient id="glassGloss" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"   stopColor="rgba(255,255,255,0.07)"/>
-            <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
-          </linearGradient>
-        </defs>
-
-        {/* Bottle background (dark, subtle) */}
-        <path d={BOTTLE} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" strokeWidth="1.5"/>
-
-        {/* Water fill clipped to bottle */}
-        {water > 0 && (
-          <g clipPath="url(#bottleClip)">
-            {/* Main water body */}
-            <rect
-              x="28" y={waterTop + 3} width="64" height={200 - waterTop}
-              fill="url(#waterGrad)"
-              style={{ transition: 'y 1.5s ease-out, height 1.5s ease-out' }}
-            />
-
-            {/* Primary wave */}
-            {showWaves && (
-              <g style={{ animation: 'waveScroll 3s linear infinite' }}>
-                <path
-                  d={`M -10 ${displayedWaterTop + 3}
-                      Q 0  ${displayedWaterTop - 3}, 10 ${displayedWaterTop + 3}
-                      T 30 ${displayedWaterTop + 3}
-                      T 50 ${displayedWaterTop + 3}
-                      T 70 ${displayedWaterTop + 3}
-                      T 90 ${displayedWaterTop + 3}
-                      T 110 ${displayedWaterTop + 3}
-                      T 130 ${displayedWaterTop + 3}
-                      L 130 ${displayedWaterTop + 14}
-                      L -10 ${displayedWaterTop + 14} Z`}
-                  fill={waterTop2}
-                  opacity="0.6"
-                />
-              </g>
-            )}
-
-            {/* Secondary wave (opposite direction, slower) */}
-            {showWaves && (
-              <g style={{ animation: 'waveScroll2 4.5s linear infinite' }}>
-                <path
-                  d={`M -10 ${displayedWaterTop + 7}
-                      Q 5  ${displayedWaterTop + 2}, 20 ${displayedWaterTop + 7}
-                      T 50 ${displayedWaterTop + 7}
-                      T 80 ${displayedWaterTop + 7}
-                      T 110 ${displayedWaterTop + 7}
-                      T 140 ${displayedWaterTop + 7}
-                      L 140 ${displayedWaterTop + 16}
-                      L -10 ${displayedWaterTop + 16} Z`}
-                  fill={waterBot}
-                  opacity="0.4"
-                />
-              </g>
-            )}
-
-            {/* Inner shine strip — left side */}
-            <rect
-              x="37" y={waterTop + 10} width="5" height={Math.max(waterHeight - 20, 0)}
-              fill="rgba(255,255,255,0.22)" rx="2.5"
-              style={{ transition: 'y 1.5s ease-out, height 1.5s ease-out' }}
-            />
-          </g>
+      <div aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: `${level}%`, transition: 'height 0.6s cubic-bezier(.2,.8,.2,1)' }}>
+        {level > 0 && (
+          <>
+            <svg className="lytz-wave-slow" viewBox="0 0 800 24" preserveAspectRatio="none" style={{ position: 'absolute', left: 0, top: '-18px', width: '200%', height: '24px', display: 'block' }}>
+              <path d={WAVE_BACK} fill={WATER.back} />
+            </svg>
+            <svg className="lytz-wave" viewBox="0 0 800 24" preserveAspectRatio="none" style={{ position: 'absolute', left: 0, top: '-12px', width: '200%', height: '14px', display: 'block' }}>
+              <path d={WAVE_FRONT} fill={WATER.front} />
+            </svg>
+          </>
         )}
-
-        {/* Bottle outline — adaptive color */}
-        <path
-          d={BOTTLE} fill="none"
-          stroke={outlineClr} strokeWidth="1.8"
-          style={{ transition: 'stroke 0.8s ease' }}
-        />
-
-        {/* Glass gloss overlay (always on top) */}
-        <path d={BOTTLE} fill="url(#glassGloss)"/>
-
-        {/* Left-edge shine streak */}
-        <path
-          d="M 38 42 Q 37 110 38 175"
-          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" strokeLinecap="round"
-        />
-
-        {/* Fill-level tick marks (right side, at 25 / 50 / 75%) */}
-        {[
-          { pct: 0.25, y: 182 - 0.25 * 160 },
-          { pct: 0.50, y: 182 - 0.50 * 160 },
-          { pct: 0.75, y: 182 - 0.75 * 160 },
-        ].map(({ pct, y }) => (
-          <line
-            key={pct}
-            x1="82" y1={y} x2="87" y2={y}
-            stroke={fillPercent >= pct ? outlineClr : 'rgba(255,255,255,0.1)'}
-            strokeWidth="1.5" strokeLinecap="round"
-            style={{ transition: 'stroke 0.8s ease' }}
-          />
-        ))}
-
-        {/* Cap */}
-        <rect x="47" y="3" width="26" height="9" rx="3"
-          fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
-        <rect x="50" y="5" width="20" height="5" rx="2" fill="rgba(255,255,255,0.06)"/>
-      </svg>
-
-      {/* Percentage label */}
-      <div style={{
-        marginTop: '6px',
-        fontSize: '12px',
-        fontWeight: '700',
-        fontFamily: "'Barlow Condensed', sans-serif",
-        letterSpacing: '1.5px',
-        color: isFull ? '#30D158' : water > 0 ? '#0A84FF' : '#3A3A3A',
-        transition: 'color 0.8s ease'
-      }}>
-        {water > 0 ? `${Math.round(fillPercent * 100)}%${isFull ? ' ✓' : ''}` : '—'}
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: WATER.front }} />
       </div>
-    </div>
+
+      <div style={{ position: 'relative', minHeight: '196px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', padding: '18px 16px 14px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+          <div>
+            <div style={{ fontSize: '14px', color: '#C9DDF0' }}>Water</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+              <span style={{ fontSize: '52px', fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1.05 }}>{fmtNum(water)}</span>
+              <span style={{ fontSize: '15px', color: '#C9DDF0' }}>{goal > 0 ? `/ ${fmtNum(goal)} oz` : 'oz'}</span>
+            </div>
+          </div>
+          {goal > 0 && (
+            <span style={{
+              height: '28px', display: 'flex', alignItems: 'center', padding: '0 10px',
+              borderRadius: '999px', fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap',
+              backgroundColor: met ? DONE : 'rgba(255,255,255,0.12)',
+              color: met ? '#0B0C0E' : '#E6F1FB'
+            }}>
+              {met ? 'Goal hit' : `${fmtNum(goal - water)} oz to go`}
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          <button
+            onClick={onUndo}
+            disabled={!canUndo}
+            aria-label="Undo last water"
+            style={{ ...iconButton, borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.10)', color: '#E6F1FB', opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'default' }}
+          >
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 14L4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" />
+            </svg>
+          </button>
+          {buttons.map((amount, i) => (
+            <button
+              key={i}
+              onClick={() => onAdd(amount)}
+              aria-label={`Add ${amount} ounces of water`}
+              style={{ flex: '1 0 52px', height: '44px', border: 'none', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.14)', color: '#F2F3F5', fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              +{amount}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Bottom tab bar item — a Link for other pages, a button for in-page actions
+function TabItem({ label, icon, href, onClick, current }) {
+  const T = useContext(ThemeContext)
+  const style = {
+    flex: 1,
+    minHeight: '52px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    border: 'none',
+    background: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    textDecoration: 'none',
+    fontFamily: 'inherit',
+    fontSize: '11px',
+    color: current ? T.text : T.muted
+  }
+  const content = <>{icon}<span>{label}</span></>
+  return href
+    ? <Link href={href} style={style}>{content}</Link>
+    : <button onClick={onClick} aria-current={current ? 'page' : undefined} style={style}>{content}</button>
+}
+
+function GroupsIcon({ size = 20, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 19c0-3 3-5 6-5s6 2 6 5" />
+      <path d="M16 5.5a3 3 0 0 1 0 5.5" />
+      <path d="M21 19c0-2.3-1.5-4-4-4.7" />
+    </svg>
   )
 }
 
