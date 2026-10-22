@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/AuthContext'
 import { LockIcon } from '../../lib/icons'
+import { DARK, LIGHT } from '../../lib/theme'
 
-const DARK  = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#242424', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888' }
-const LIGHT = { bg: '#F5F5F5', card: '#FFFFFF',  card2: '#EBEBEB', border: '#E0E0E0', text: '#1A1A1A', muted: '#666666' }
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -158,7 +157,7 @@ export default function LoginPage() {
             margin: '0 0 12px 0',
             fontSize: '20px',
             fontWeight: '600',
-            color: '#0A84FF'
+            color: '#B8F06A'
           }}>
             Firebase Not Configured
           </h2>
@@ -190,10 +189,10 @@ export default function LoginPage() {
             style={{
               marginTop: '20px',
               padding: '12px 24px',
-              backgroundColor: '#0A84FF',
+              backgroundColor: '#B8F06A',
               border: 'none',
               borderRadius: '8px',
-              color: '#1A1A1A',
+              color: '#15171A',
               fontSize: '14px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -227,12 +226,12 @@ export default function LoginPage() {
         }}>
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><LockIcon size={48} color="#0A84FF" strokeWidth={1.25} /></div>
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><LockIcon size={48} color="#B8F06A" strokeWidth={1.25} /></div>
             <h1 style={{
               margin: '0 0 4px 0',
               fontSize: '24px',
               fontWeight: '600',
-              color: '#0A84FF',
+              color: '#B8F06A',
               letterSpacing: '-0.5px'
             }}>
               Reset Password
@@ -249,12 +248,12 @@ export default function LoginPage() {
           {/* Error message */}
           {error && (
             <div style={{
-              backgroundColor: 'rgba(255,69,58,0.1)',
+              backgroundColor: 'rgba(255,107,61,0.1)',
               border: '1px solid #fecaca',
               borderRadius: '8px',
               padding: '12px 16px',
               marginBottom: '20px',
-              color: '#dc2626',
+              color: '#FF6B3D',
               fontSize: '13px',
               fontWeight: '500'
             }}>
@@ -265,12 +264,12 @@ export default function LoginPage() {
           {/* Success message */}
           {success && (
             <div style={{
-              backgroundColor: 'rgba(48,209,88,0.1)',
+              backgroundColor: 'rgba(184,240,106,0.1)',
               border: '1px solid #bbf7d0',
               borderRadius: '8px',
               padding: '12px 16px',
               marginBottom: '20px',
-              color: '#30D158',
+              color: '#B8F06A',
               fontSize: '13px',
               fontWeight: '500'
             }}>
@@ -315,10 +314,10 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '14px',
-                backgroundColor: loading ? '#a0b8bb' : '#0A84FF',
+                backgroundColor: loading ? '#a0b8bb' : '#B8F06A',
                 border: 'none',
                 borderRadius: '8px',
-                color: '#1A1A1A',
+                color: '#15171A',
                 fontSize: '14px',
                 fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -334,7 +333,7 @@ export default function LoginPage() {
             textAlign: 'center',
             marginTop: '24px',
             paddingTop: '24px',
-            borderTop: '1px solid #2C2C2C'
+            borderTop: '1px solid #25282D'
           }}>
             <button
               onClick={() => {
@@ -345,7 +344,7 @@ export default function LoginPage() {
               style={{
                 backgroundColor: 'transparent',
                 border: 'none',
-                color: '#0A84FF',
+                color: '#B8F06A',
                 fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -383,7 +382,7 @@ export default function LoginPage() {
           <p style={{
             margin: 0,
             fontSize: '14px',
-            color: '#888'
+            color: '#8B9098'
           }}>
             {isSignUp ? 'Your existing data will be preserved' : 'Sign in to sync your data'}
           </p>
@@ -395,12 +394,12 @@ export default function LoginPage() {
         {/* Error message */}
         {error && (
           <div style={{
-            backgroundColor: 'rgba(255,69,58,0.1)',
+            backgroundColor: 'rgba(255,107,61,0.1)',
             border: '1px solid #fecaca',
             borderRadius: '8px',
             padding: '12px 16px',
             marginBottom: '20px',
-            color: '#dc2626',
+            color: '#FF6B3D',
             fontSize: '13px',
             fontWeight: '500'
           }}>
@@ -529,10 +528,10 @@ export default function LoginPage() {
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: loading ? '#a0b8bb' : '#0A84FF',
+              backgroundColor: loading ? '#a0b8bb' : '#B8F06A',
               border: 'none',
               borderRadius: '8px',
-              color: '#1A1A1A',
+              color: '#15171A',
               fontSize: '14px',
               fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -548,7 +547,7 @@ export default function LoginPage() {
           textAlign: 'center',
           marginTop: '24px',
           paddingTop: '24px',
-          borderTop: '1px solid #2C2C2C'
+          borderTop: '1px solid #25282D'
         }}>
           <span style={{ fontSize: '13px', color: T.muted }}>
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}
@@ -562,7 +561,7 @@ export default function LoginPage() {
               marginLeft: '6px',
               backgroundColor: 'transparent',
               border: 'none',
-              color: '#0A84FF',
+              color: '#B8F06A',
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',

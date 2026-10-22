@@ -26,7 +26,7 @@ const isStaging = process.env.NEXT_PUBLIC_ENV === 'staging'
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" style={{ backgroundColor: '#0D0D0D' }}>
+    <html lang="en" style={{ backgroundColor: '#0B0C0E' }}>
       <body>
         <AuthProvider>
           {isStaging && (

@@ -34,35 +34,10 @@ import {
   SparklesIcon, InfoIcon, CheckCircleIcon, CloseIcon, PersonIcon, PlusIcon,
   FlameIcon, UtensilsIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon
 } from '../lib/icons'
+import { DARK, LIGHT, DONE, OVER } from '../lib/theme'
+import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
 
-// ─── THEME TOKENS ─────────────────────────────────────────────────────────────
-const DARK = {
-  bg:     '#0B0C0E',
-  card:   '#15171A',
-  card2:  '#1D2024',
-  border: '#25282D',
-  text:   '#F2F3F5',
-  soft:   '#B4B8BF',
-  muted:  '#8B9098',
-  faint:  '#5A5F66',
-  // Per-metric row colors, cycled in order
-  hues:   ['#E9E4D8', '#E58A5C', '#D77BB8', '#7CC8FF', '#B9A3FF', '#F2C94C'],
-}
-const LIGHT = {
-  bg:     '#F4F4F2',
-  card:   '#FFFFFF',
-  card2:  '#ECECEA',
-  border: '#E2E2DF',
-  text:   '#141518',
-  soft:   '#3E4249',
-  muted:  '#62666D',
-  faint:  '#9A9EA4',
-  hues:   ['#8A7F66', '#D0652F', '#B5509A', '#2E7BD6', '#7A5CE0', '#B8860B'],
-}
-
-// Status colors shared by both themes: goal reached / limit exceeded
-const DONE = '#B8F06A'
-const OVER = '#FF6B3D'
+// ─── THEME TOKENS (shared across screens) ─────────────────────────────────────
 
 // Theme context — makes T available to all sub-components without prop drilling
 const ThemeContext = createContext(DARK)
@@ -88,6 +63,13 @@ export default function NutritionTracker() {
     setDarkMode(next)
     localStorage.setItem('lytz-darkMode', String(next))
   }
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('goals') === '1') {
+      setShowSettings(true)
+      window.history.replaceState(null, '', '/')
+    }
+  }, [])
   const isRemoteUpdate = useRef(false) // Track if update came from real-time listener
   const cloudLoadSucceeded = useRef(false) // Track if cloud data was loaded successfully
   const isNavigatingDay = useRef(false) // Reentrancy lock for navigateDay — closes the gap before loadingPastDay(true) takes effect
@@ -120,6 +102,8 @@ export default function NutritionTracker() {
   const [showNutritionLog, setShowNutritionLog] = useState(false)
   const [editingMetric, setEditingMetric] = useState(null) // index of metric being edited
   const [editMetricValue, setEditMetricValue] = useState('')
+  const [addingMetric, setAddingMetric] = useState(null) // index of metric whose "+" amount field is open
+  const [addMetricValue, setAddMetricValue] = useState('')
 
   // AI Chat modal
   const [showChat, setShowChat] = useState(false)
@@ -571,7 +555,7 @@ export default function NutritionTracker() {
           unit: 'g',
           goal: goals.protein,
           goalType: 'min',
-          color: '#0A84FF'
+          color: '#B8F06A'
         })
       }
       // Only add optional metrics if user selected them
@@ -582,7 +566,7 @@ export default function NutritionTracker() {
           unit: 'g',
           goal: goals.fiber,
           goalType: 'min',
-          color: 'rgba(10,132,255,0.25)'
+          color: 'rgba(184,240,106,0.25)'
         })
       }
       if (goals.carbs && optionalMetrics?.carbs) {
@@ -1774,10 +1758,10 @@ Reason: 5-7 words max — the single most important factor.`
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: '#0A84FF',
+              backgroundColor: '#B8F06A',
               border: 'none',
               borderRadius: '8px',
-              color: '#1A1A1A',
+              color: '#15171A',
               fontSize: '14px',
               fontWeight: '600',
               cursor: 'pointer',
@@ -1847,7 +1831,7 @@ Reason: 5-7 words max — the single most important factor.`
     <div style={{
       minHeight: '100vh',
       backgroundColor: T.bg,
-      padding: '0 0 calc(96px + env(safe-area-inset-bottom)) 0',
+      padding: `0 0 ${TAB_BAR_SPACE} 0`,
       fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, sans-serif",
       fontVariantNumeric: 'tabular-nums',
       WebkitFontSmoothing: 'antialiased',
@@ -1903,15 +1887,15 @@ Reason: 5-7 words max — the single most important factor.`
                 display: 'block',
                 width: '100%',
                 padding: '14px',
-                background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
-                color: '#fff',
+                background: '#B8F06A',
+                color: '#0B0C0E',
                 border: 'none',
                 borderRadius: '12px',
                 fontSize: '15px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 marginBottom: '10px',
-                boxShadow: '0 4px 20px rgba(10,132,255,0.35)'
+                boxShadow: 'none'
               }}
             >
               Go to Yesterday
@@ -2088,7 +2072,7 @@ Reason: 5-7 words max — the single most important factor.`
                       backgroundColor: 'transparent',
                       border: 'none',
                       borderBottom: `1px solid ${T.border}`,
-                      color: '#0A84FF',
+                      color: '#B8F06A',
                       fontSize: '13px',
                       fontWeight: '500',
                       cursor: 'pointer',
@@ -2108,7 +2092,7 @@ Reason: 5-7 words max — the single most important factor.`
                       backgroundColor: 'transparent',
                       border: 'none',
                       borderBottom: `1px solid ${T.border}`,
-                      color: '#0A84FF',
+                      color: '#B8F06A',
                       fontSize: '13px',
                       fontWeight: '500',
                       cursor: 'pointer',
@@ -2161,7 +2145,7 @@ Reason: 5-7 words max — the single most important factor.`
                       padding: '12px 14px',
                       backgroundColor: 'transparent',
                       border: 'none',
-                      color: signingOut ? '#666666' : '#ef4444',
+                      color: signingOut ? '#666666' : '#FF6B3D',
                       fontSize: '13px',
                       fontWeight: '500',
                       cursor: signingOut ? 'not-allowed' : 'pointer',
@@ -2199,10 +2183,10 @@ Reason: 5-7 words max — the single most important factor.`
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                backgroundColor: showCatchUp ? 'rgba(10,132,255,0.1)' : T.card,
-                border: `1px solid ${showCatchUp ? 'rgba(10,132,255,0.35)' : T.border}`,
+                backgroundColor: showCatchUp ? 'rgba(184,240,106,0.1)' : T.card,
+                border: `1px solid ${showCatchUp ? 'rgba(184,240,106,0.35)' : T.border}`,
                 borderRadius: '12px',
-                color: showCatchUp ? '#0A84FF' : T.muted,
+                color: showCatchUp ? '#B8F06A' : T.muted,
                 fontSize: '12px',
                 fontWeight: '700',
                 cursor: 'pointer',
@@ -2238,11 +2222,10 @@ Reason: 5-7 words max — the single most important factor.`
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <SparklesIcon size={14} color="#0A84FF" strokeWidth={2} />
+                          <SparklesIcon size={14} color="#B8F06A" strokeWidth={2} />
                           <span style={{
-                            fontSize: '12px', fontWeight: '700', color: '#0A84FF',
-                            textTransform: 'uppercase', letterSpacing: '0.5px',
-                            fontFamily: "'Barlow Condensed', sans-serif"
+                            fontSize: '12px', fontWeight: '700', color: '#B8F06A', letterSpacing: '0.5px',
+                            fontFamily: 'inherit'
                           }}>
                             {notif.title || 'Announcement'}
                           </span>
@@ -2386,7 +2369,6 @@ Reason: 5-7 words max — the single most important factor.`
                   fontSize: '11px',
                   fontWeight: '600',
                   color: T.muted,
-                  textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
                   Today&apos;s Entries ({displayNutritionHistory.length})
@@ -2427,7 +2409,7 @@ Reason: 5-7 words max — the single most important factor.`
                           )}
                           <div style={{
                             fontSize: '12px',
-                            color: entry.type === 'manual_named' ? '#888888' : '#FFFFFF',
+                            color: entry.type === 'manual_named' ? '#8B9098' : '#FFFFFF',
                             fontWeight: entry.type === 'manual_named' ? '400' : '500',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -2443,10 +2425,10 @@ Reason: 5-7 words max — the single most important factor.`
                           onClick={() => removeNutritionEntry(entryIndex)}
                           style={{
                             padding: '4px 10px',
-                            backgroundColor: 'rgba(255,69,58,0.1)',
+                            backgroundColor: 'rgba(255,107,61,0.1)',
                             border: '1px solid #fecaca',
                             borderRadius: '6px',
-                            color: '#ef4444',
+                            color: '#FF6B3D',
                             fontSize: '11px',
                             fontWeight: '500',
                             cursor: 'pointer',
@@ -2505,7 +2487,7 @@ Reason: 5-7 words max — the single most important factor.`
                           <span style={{ color: T.muted, fontWeight: '400', fontSize: '11px' }}>{time}</span>
                           {entry.score && (() => {
                             const g = entry.score.grade?.charAt(0)
-                            const c = g === 'A' ? '#30D158' : g === 'B' ? '#0A84FF' : g === 'C' ? '#FF9F0A' : '#FF453A'
+                            const c = g === 'A' ? '#B8F06A' : g === 'B' ? '#B8F06A' : g === 'C' ? '#F2C94C' : '#FF6B3D'
                             return (
                               <span style={{
                                 fontSize: '10px', fontWeight: '700', color: c,
@@ -2532,10 +2514,10 @@ Reason: 5-7 words max — the single most important factor.`
                         onClick={() => removeNutritionEntry(entryIndex)}
                         style={{
                           padding: '4px 10px',
-                          backgroundColor: 'rgba(255,69,58,0.1)',
+                          backgroundColor: 'rgba(255,107,61,0.1)',
                           border: '1px solid #fecaca',
                           borderRadius: '6px',
-                          color: '#ef4444',
+                          color: '#FF6B3D',
                           fontSize: '11px',
                           fontWeight: '500',
                           cursor: 'pointer',
@@ -2579,7 +2561,6 @@ Reason: 5-7 words max — the single most important factor.`
                   }
                 }
                 const color = state === 'done' ? DONE : state === 'over' ? OVER : T.hues[i % T.hues.length]
-                const step = metricStep(goalType === 'range' && goalMax > 0 ? goalMax : goal)
 
                 // "−" undoes this metric's most recent single add (the "+" button's entries)
                 let lastAddIndex = -1
@@ -2596,15 +2577,31 @@ Reason: 5-7 words max — the single most important factor.`
                     value={fmtNum(value)}
                     unit={metric.unit}
                     sub={sub}
-                    onValueClick={() => { setEditingMetric(i); setEditMetricValue(String(value)) }}
-                    valueAria={`Edit ${metric.name}, currently ${fmtNum(value)}${unit}`}
+                    onValueClick={() => { setAddingMetric(null); setEditingMetric(i); setEditMetricValue(String(value)) }}
+                    valueAria={`Set ${metric.name} total, currently ${fmtNum(value)}${unit}`}
                     editor={editingMetric === i ? (
                       <ValueEditor
-                        label={metric.name}
+                        label={`${metric.name} total`}
+                        placeholder={`Total ${metric.name.toLowerCase()}`}
                         value={editMetricValue}
                         onChange={setEditMetricValue}
                         onSave={() => saveMetricEdit(i)}
                         onCancel={() => { setEditingMetric(null); setEditMetricValue('') }}
+                      />
+                    ) : addingMetric === i ? (
+                      <ValueEditor
+                        label={`Amount of ${metric.name} to add`}
+                        placeholder={`Add ${metric.name.toLowerCase()}${metric.unit ? ` (${metric.unit})` : ''}`}
+                        inputMode="decimal"
+                        saveLabel="Add"
+                        value={addMetricValue}
+                        onChange={setAddMetricValue}
+                        onSave={() => {
+                          const amount = parseFloat(addMetricValue)
+                          if (amount > 0) addToMetric(i, amount)
+                          setAddingMetric(null); setAddMetricValue('')
+                        }}
+                        onCancel={() => { setAddingMetric(null); setAddMetricValue('') }}
                       />
                     ) : null}
                     actions={<>
@@ -2617,11 +2614,11 @@ Reason: 5-7 words max — the single most important factor.`
                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 12h12" /></svg>
                       </button>
                       <button
-                        onClick={() => addToMetric(i, step)}
-                        aria-label={`Add ${fmtNum(step)}${unit} to ${metric.name}`}
+                        onClick={() => { setEditingMetric(null); setAddingMetric(i); setAddMetricValue('') }}
+                        aria-label={`Add ${metric.name}`}
                         style={stepButton(T)}
                       >
-                        +{fmtNum(step)}
+                        <PlusIcon size={18} strokeWidth={2} />
                       </button>
                     </>}
                   />
@@ -2751,36 +2748,15 @@ Reason: 5-7 words max — the single most important factor.`
       </div>
 
       {/* Bottom tab bar */}
-      <nav aria-label="Primary" style={{
-        position: 'fixed',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 60,
-        backgroundColor: T.bg + 'f2',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderTop: `1px solid ${T.border}`,
-        paddingBottom: 'env(safe-area-inset-bottom)'
-      }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', padding: '6px 8px' }}>
-          <TabItem
-            label="Today"
-            current
-            onClick={() => {
-              if (viewDate !== null) { setViewDate(null); setPastDayData(null) }
-              else window.scrollTo({ top: 0, behavior: 'smooth' })
-            }}
-            icon={<CalendarIcon size={22} strokeWidth={1.75} />}
-          />
-          <TabItem label="Reports" href="/reports" icon={<BarChartIcon size={22} strokeWidth={1.75} />} />
-          <TabItem label="Train" href="/workout" icon={<DumbbellIcon size={22} strokeWidth={1.75} />} />
-          {isAdmin && (
-            <TabItem label="Groups" href="/groups" icon={<GroupsIcon size={22} />} />
-          )}
-          <TabItem label="Goals" onClick={() => setShowSettings(true)} icon={<TargetIcon size={22} strokeWidth={1.75} />} />
-        </div>
-      </nav>
+      <AppTabBar
+        current="today"
+        T={T}
+        onToday={() => {
+          if (viewDate !== null) { setViewDate(null); setPastDayData(null) }
+          else window.scrollTo({ top: 0, behavior: 'smooth' })
+        }}
+        onGoals={() => setShowSettings(true)}
+      />
 
       {/* Settings Modal */}
       {showSettings && (
@@ -2846,9 +2822,6 @@ Reason: 5-7 words max — the single most important factor.`
 
 const fmtNum = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 1 })
 
-// Size of one "+" tap, scaled to the metric's goal (2,400 cal → 100, 150 g → 10)
-const metricStep = (target) => target >= 1000 ? 100 : target >= 100 ? 10 : target >= 20 ? 5 : 1
-
 const iconButton = {
   width: '44px',
   height: '44px',
@@ -2878,6 +2851,9 @@ const primaryButton = {
 
 const stepButton = (T) => ({
   height: '44px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   minWidth: '56px',
   padding: '0 12px',
   flexShrink: 0,
@@ -2976,7 +2952,7 @@ function TrackerRow({ color, pct, label, value, unit, sub, onValueClick, valueAr
 }
 
 // Inline number entry used inside a TrackerRow
-function ValueEditor({ label, value, onChange, onSave, onCancel, type = 'number', inputMode, placeholder }) {
+function ValueEditor({ label, value, onChange, onSave, onCancel, type = 'number', inputMode, placeholder, saveLabel = 'Save' }) {
   const T = useContext(ThemeContext)
   return (
     <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 0' }}>
@@ -2991,7 +2967,7 @@ function ValueEditor({ label, value, onChange, onSave, onCancel, type = 'number'
         onKeyDown={(e) => { if (e.key === 'Enter') onSave(); if (e.key === 'Escape') onCancel() }}
         style={{ ...fieldStyle(T), flex: 1, minWidth: 0, width: 'auto', backgroundColor: T.card2, fontSize: '18px' }}
       />
-      <button onClick={onSave} style={{ ...primaryButton, padding: '0 14px', fontSize: '14px' }}>Save</button>
+      <button onClick={onSave} style={{ ...primaryButton, padding: '0 14px', fontSize: '14px' }}>{saveLabel}</button>
       <button onClick={onCancel} aria-label="Cancel" style={{ ...iconButton, borderRadius: '12px', color: T.muted }}>
         <CloseIcon size={18} strokeWidth={2} />
       </button>
@@ -3076,43 +3052,6 @@ function WaterCard({ water, goal, buttons, canUndo, onAdd, onUndo }) {
         </div>
       </div>
     </section>
-  )
-}
-
-// Bottom tab bar item — a Link for other pages, a button for in-page actions
-function TabItem({ label, icon, href, onClick, current }) {
-  const T = useContext(ThemeContext)
-  const style = {
-    flex: 1,
-    minHeight: '52px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '4px',
-    border: 'none',
-    background: 'none',
-    padding: 0,
-    cursor: 'pointer',
-    textDecoration: 'none',
-    fontFamily: 'inherit',
-    fontSize: '11px',
-    color: current ? T.text : T.muted
-  }
-  const content = <>{icon}<span>{label}</span></>
-  return href
-    ? <Link href={href} style={style}>{content}</Link>
-    : <button onClick={onClick} aria-current={current ? 'page' : undefined} style={style}>{content}</button>
-}
-
-function GroupsIcon({ size = 20, color = 'currentColor' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="9" cy="8" r="3" />
-      <path d="M3 19c0-3 3-5 6-5s6 2 6 5" />
-      <path d="M16 5.5a3 3 0 0 1 0 5.5" />
-      <path d="M21 19c0-2.3-1.5-4-4-4.7" />
-    </svg>
   )
 }
 
@@ -3336,8 +3275,8 @@ function SettingsModal({
                 padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
-                borderBottom: settingsTab === tab.id ? '2px solid #0A84FF' : '2px solid transparent',
-                color: settingsTab === tab.id ? '#0A84FF' : '#666666',
+                borderBottom: settingsTab === tab.id ? '2px solid #B8F06A' : '2px solid transparent',
+                color: settingsTab === tab.id ? '#B8F06A' : '#666666',
                 fontSize: '13px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -3448,7 +3387,7 @@ function SettingsModal({
               {/* Appearance */}
               <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }}>
                 <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '1.5px' }}>APPEARANCE</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: 0 }}>Appearance</div>
                 </div>
                 <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
@@ -3463,9 +3402,9 @@ function SettingsModal({
                     onClick={onToggleTheme}
                     style={{
                       width: '52px', height: '30px', borderRadius: '15px', border: 'none', cursor: 'pointer',
-                      backgroundColor: darkMode ? '#0A84FF' : T.card2,
+                      backgroundColor: darkMode ? '#B8F06A' : T.card2,
                       position: 'relative', transition: 'background-color 0.2s',
-                      boxShadow: darkMode ? '0 0 10px rgba(10,132,255,0.4)' : 'none',
+                      boxShadow: darkMode ? '0 0 10px rgba(184,240,106,0.4)' : 'none',
                     }}
                   >
                     <div style={{
@@ -3483,7 +3422,7 @@ function SettingsModal({
               {user && (
                 <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }}>
                   <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '1.5px' }}>ACCOUNT</div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: 0 }}>Account</div>
                   </div>
                   <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
                     <div style={{ fontSize: '11px', color: T.muted, marginBottom: '2px' }}>Signed in as</div>
@@ -3493,7 +3432,7 @@ function SettingsModal({
                     onClick={onSignOut}
                     style={{
                       width: '100%', padding: '14px 16px', backgroundColor: 'transparent',
-                      border: 'none', color: '#ef4444', fontSize: '14px', fontWeight: '600',
+                      border: 'none', color: '#FF6B3D', fontSize: '14px', fontWeight: '600',
                       cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px'
                     }}
                   >
@@ -3523,9 +3462,9 @@ function SettingsModal({
             style={{
               padding: '10px 14px',
               backgroundColor: 'transparent',
-              border: '1px solid #ef4444',
+              border: '1px solid #FF6B3D',
               borderRadius: '8px',
-              color: '#ef4444',
+              color: '#FF6B3D',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer',
@@ -3555,10 +3494,10 @@ function SettingsModal({
             style={{
               flex: 1,
               padding: '10px 14px',
-              backgroundColor: '#0A84FF',
+              backgroundColor: '#B8F06A',
               border: 'none',
               borderRadius: '8px',
-              color: '#1A1A1A',
+              color: '#15171A',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -3625,11 +3564,11 @@ function FeedbackForm({ user }) {
               style={{
                 flex: 1,
                 padding: '10px 12px',
-                backgroundColor: type === t.id ? '#0A84FF' : '#1A1A1A',
+                backgroundColor: type === t.id ? '#B8F06A' : '#15171A',
                 border: '1px solid',
-                borderColor: type === t.id ? '#0A84FF' : '#2C2C2C',
+                borderColor: type === t.id ? '#B8F06A' : '#25282D',
                 borderRadius: '8px',
-                color: type === t.id ? '#fff' : '#888888',
+                color: type === t.id ? '#0B0C0E' : '#8B9098',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer'
@@ -3668,12 +3607,12 @@ function FeedbackForm({ user }) {
 
       {sent && (
         <div style={{
-          backgroundColor: 'rgba(48,209,88,0.1)',
+          backgroundColor: 'rgba(184,240,106,0.1)',
           border: '1px solid #bbf7d0',
           borderRadius: '8px',
           padding: '12px 16px',
           marginBottom: '16px',
-          color: '#30D158',
+          color: '#B8F06A',
           fontSize: '13px',
           fontWeight: '500'
         }}>
@@ -3687,10 +3626,10 @@ function FeedbackForm({ user }) {
         style={{
           width: '100%',
           padding: '14px',
-          backgroundColor: message.trim() && !sending ? '#0A84FF' : '#2C2C2C',
+          backgroundColor: message.trim() && !sending ? '#B8F06A' : '#25282D',
           border: 'none',
           borderRadius: '8px',
-          color: message.trim() && !sending ? '#fff' : '#666666',
+          color: message.trim() && !sending ? '#0B0C0E' : '#666666',
           fontSize: '14px',
           fontWeight: '600',
           cursor: message.trim() && !sending ? 'pointer' : 'not-allowed'
@@ -3717,11 +3656,11 @@ function NotificationBanner({ notification, onDismiss }) {
         label: 'Resolved',
         message: `Thank you for reporting the ${typeLabel} "${truncatedMessage}". The problem has been addressed.`,
         colors: {
-          bg: 'rgba(48,209,88,0.1)',
-          border: 'rgba(48,209,88,0.35)',
+          bg: 'rgba(184,240,106,0.1)',
+          border: 'rgba(184,240,106,0.35)',
           icon: '#16a34a',
           label: '#16a34a',
-          text: '#30D158'
+          text: '#B8F06A'
         }
       }
     }
@@ -3732,10 +3671,10 @@ function NotificationBanner({ notification, onDismiss }) {
         label: notif.title || 'NEW FEATURE',
         message: notif.message,
         colors: {
-          bg: 'rgba(10,132,255,0.08)',
-          border: 'rgba(10,132,255,0.35)',
-          icon: '#0A84FF',
-          label: '#0A84FF',
+          bg: 'rgba(184,240,106,0.08)',
+          border: 'rgba(184,240,106,0.35)',
+          icon: '#B8F06A',
+          label: '#B8F06A',
           text: T.text
         }
       }
@@ -3746,10 +3685,10 @@ function NotificationBanner({ notification, onDismiss }) {
       label: 'Notification',
       message: 'You have a new notification.',
       colors: {
-        bg: 'rgba(10,132,255,0.08)',
-        border: 'rgba(10,132,255,0.25)',
-        icon: '#0A84FF',
-        label: '#0A84FF',
+        bg: 'rgba(184,240,106,0.08)',
+        border: 'rgba(184,240,106,0.25)',
+        icon: '#B8F06A',
+        label: '#B8F06A',
         text: T.muted
       }
     }
@@ -3785,7 +3724,6 @@ function NotificationBanner({ notification, onDismiss }) {
             fontSize: '12px',
             fontWeight: '600',
             color: content.colors.label,
-            textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
             {content.label}
@@ -3843,10 +3781,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                 disabled={i === 0}
                 style={{
                   padding: '2px 8px',
-                  backgroundColor: i === 0 ? '#222222' : '#1A1A1A',
+                  backgroundColor: i === 0 ? '#1D2024' : '#15171A',
                   border: `1px solid ${T.border}`,
                   borderRadius: '4px',
-                  color: i === 0 ? '#ccc' : '#888888',
+                  color: i === 0 ? '#ccc' : '#8B9098',
                   fontSize: '10px',
                   cursor: i === 0 ? 'default' : 'pointer',
                   lineHeight: '1'
@@ -3857,10 +3795,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                 disabled={i === items.length - 1}
                 style={{
                   padding: '2px 8px',
-                  backgroundColor: i === items.length - 1 ? '#222222' : '#1A1A1A',
+                  backgroundColor: i === items.length - 1 ? '#1D2024' : '#15171A',
                   border: `1px solid ${T.border}`,
                   borderRadius: '4px',
-                  color: i === items.length - 1 ? '#ccc' : '#888888',
+                  color: i === items.length - 1 ? '#ccc' : '#8B9098',
                   fontSize: '10px',
                   cursor: i === items.length - 1 ? 'default' : 'pointer',
                   lineHeight: '1'
@@ -3914,10 +3852,10 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
                 onClick={() => onUpdate(i, 'frequency', opt.id)}
                 style={{
                   padding: '4px 8px',
-                  backgroundColor: (item.frequency || 'daily') === opt.id ? '#0A84FF' : '#222222',
+                  backgroundColor: (item.frequency || 'daily') === opt.id ? '#B8F06A' : '#1D2024',
                   border: 'none',
                   borderRadius: '6px',
-                  color: (item.frequency || 'daily') === opt.id ? '#fff' : '#888888',
+                  color: (item.frequency || 'daily') === opt.id ? '#0B0C0E' : '#8B9098',
                   fontSize: '11px',
                   fontWeight: '500',
                   cursor: 'pointer'
@@ -3975,40 +3913,40 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
 // ── Micronutrient preset definitions ──────────────────────────────────────────
 const MICRONUTRIENT_PRESETS = {
   vitamins: [
-    { key: 'vitaminA',   name: 'Vitamin A',   unit: 'mcg', goal: 700,  goalType: 'min', goalMax: 0, color: '#BF5AF2', icon: '💊' },
-    { key: 'vitaminC',   name: 'Vitamin C',   unit: 'mg',  goal: 90,   goalType: 'min', goalMax: 0, color: '#FF9F0A', icon: '💊' },
+    { key: 'vitaminA',   name: 'Vitamin A',   unit: 'mcg', goal: 700,  goalType: 'min', goalMax: 0, color: '#B9A3FF', icon: '💊' },
+    { key: 'vitaminC',   name: 'Vitamin C',   unit: 'mg',  goal: 90,   goalType: 'min', goalMax: 0, color: '#F2C94C', icon: '💊' },
     { key: 'vitaminD',   name: 'Vitamin D',   unit: 'mcg', goal: 20,   goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '💊' },
-    { key: 'vitaminE',   name: 'Vitamin E',   unit: 'mg',  goal: 15,   goalType: 'min', goalMax: 0, color: '#30D158', icon: '💊' },
+    { key: 'vitaminE',   name: 'Vitamin E',   unit: 'mg',  goal: 15,   goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
     { key: 'vitaminK',   name: 'Vitamin K',   unit: 'mcg', goal: 120,  goalType: 'min', goalMax: 0, color: '#32D74B', icon: '💊' },
     { key: 'vitaminB1',  name: 'Thiamine (B1)',  unit: 'mg',  goal: 1.2,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '💊' },
     { key: 'vitaminB2',  name: 'Riboflavin (B2)', unit: 'mg', goal: 1.3, goalType: 'min', goalMax: 0, color: '#5E5CE6', icon: '💊' },
     { key: 'vitaminB3',  name: 'Niacin (B3)', unit: 'mg',  goal: 16,   goalType: 'min', goalMax: 0, color: '#FF6B6B', icon: '💊' },
-    { key: 'vitaminB5',  name: 'Pantothenic Acid (B5)', unit: 'mg', goal: 5, goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '💊' },
+    { key: 'vitaminB5',  name: 'Pantothenic Acid (B5)', unit: 'mg', goal: 5, goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
     { key: 'vitaminB6',  name: 'Vitamin B6',  unit: 'mg',  goal: 1.7,  goalType: 'min', goalMax: 0, color: '#30B0C7', icon: '💊' },
-    { key: 'biotin',     name: 'Biotin (B7)', unit: 'mcg', goal: 30,   goalType: 'min', goalMax: 0, color: '#BF5AF2', icon: '💊' },
-    { key: 'folate',     name: 'Folate (B9)', unit: 'mcg', goal: 400,  goalType: 'min', goalMax: 0, color: '#30D158', icon: '💊' },
-    { key: 'vitaminB12', name: 'Vitamin B12', unit: 'mcg', goal: 2.4,  goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '💊' },
+    { key: 'biotin',     name: 'Biotin (B7)', unit: 'mcg', goal: 30,   goalType: 'min', goalMax: 0, color: '#B9A3FF', icon: '💊' },
+    { key: 'folate',     name: 'Folate (B9)', unit: 'mcg', goal: 400,  goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
+    { key: 'vitaminB12', name: 'Vitamin B12', unit: 'mcg', goal: 2.4,  goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
   ],
   minerals: [
     { key: 'calcium',    name: 'Calcium',    unit: 'mg',  goal: 1000, goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '⚗️' },
-    { key: 'iron',       name: 'Iron',       unit: 'mg',  goal: 18,   goalType: 'min', goalMax: 0, color: '#FF453A', icon: '⚗️' },
-    { key: 'magnesium',  name: 'Magnesium',  unit: 'mg',  goal: 420,  goalType: 'min', goalMax: 0, color: '#30D158', icon: '⚗️' },
+    { key: 'iron',       name: 'Iron',       unit: 'mg',  goal: 18,   goalType: 'min', goalMax: 0, color: '#FF6B3D', icon: '⚗️' },
+    { key: 'magnesium',  name: 'Magnesium',  unit: 'mg',  goal: 420,  goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '⚗️' },
     { key: 'phosphorus', name: 'Phosphorus', unit: 'mg',  goal: 700,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '⚗️' },
-    { key: 'potassium',  name: 'Potassium',  unit: 'mg',  goal: 3500, goalType: 'min', goalMax: 0, color: '#FF9F0A', icon: '⚗️' },
-    { key: 'sodium',     name: 'Sodium',     unit: 'mg',  goal: 2300, goalType: 'max', goalMax: 0, color: '#FF453A', icon: '⚗️' },
-    { key: 'zinc',       name: 'Zinc',       unit: 'mg',  goal: 11,   goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '⚗️' },
-    { key: 'copper',     name: 'Copper',     unit: 'mg',  goal: 0.9,  goalType: 'min', goalMax: 0, color: '#FF9F0A', icon: '⚗️' },
+    { key: 'potassium',  name: 'Potassium',  unit: 'mg',  goal: 3500, goalType: 'min', goalMax: 0, color: '#F2C94C', icon: '⚗️' },
+    { key: 'sodium',     name: 'Sodium',     unit: 'mg',  goal: 2300, goalType: 'max', goalMax: 0, color: '#FF6B3D', icon: '⚗️' },
+    { key: 'zinc',       name: 'Zinc',       unit: 'mg',  goal: 11,   goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '⚗️' },
+    { key: 'copper',     name: 'Copper',     unit: 'mg',  goal: 0.9,  goalType: 'min', goalMax: 0, color: '#F2C94C', icon: '⚗️' },
     { key: 'manganese',  name: 'Manganese',  unit: 'mg',  goal: 2.3,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '⚗️' },
-    { key: 'selenium',   name: 'Selenium',   unit: 'mcg', goal: 55,   goalType: 'min', goalMax: 0, color: '#BF5AF2', icon: '⚗️' },
+    { key: 'selenium',   name: 'Selenium',   unit: 'mcg', goal: 55,   goalType: 'min', goalMax: 0, color: '#B9A3FF', icon: '⚗️' },
     { key: 'iodine',     name: 'Iodine',     unit: 'mcg', goal: 150,  goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '⚗️' },
-    { key: 'chromium',   name: 'Chromium',   unit: 'mcg', goal: 35,   goalType: 'min', goalMax: 0, color: '#30D158', icon: '⚗️' },
+    { key: 'chromium',   name: 'Chromium',   unit: 'mcg', goal: 35,   goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '⚗️' },
   ],
   other: [
-    { key: 'saturatedFat',  name: 'Saturated Fat', unit: 'g',  goal: 20,  goalType: 'max', goalMax: 0, color: '#FF453A', icon: '📊' },
-    { key: 'transFat',      name: 'Trans Fat',     unit: 'g',  goal: 2,   goalType: 'max', goalMax: 0, color: '#FF453A', icon: '📊' },
-    { key: 'cholesterol',   name: 'Cholesterol',   unit: 'mg', goal: 300, goalType: 'max', goalMax: 0, color: '#FF9F0A', icon: '📊' },
+    { key: 'saturatedFat',  name: 'Saturated Fat', unit: 'g',  goal: 20,  goalType: 'max', goalMax: 0, color: '#FF6B3D', icon: '📊' },
+    { key: 'transFat',      name: 'Trans Fat',     unit: 'g',  goal: 2,   goalType: 'max', goalMax: 0, color: '#FF6B3D', icon: '📊' },
+    { key: 'cholesterol',   name: 'Cholesterol',   unit: 'mg', goal: 300, goalType: 'max', goalMax: 0, color: '#F2C94C', icon: '📊' },
     { key: 'sugar',         name: 'Sugar',         unit: 'g',  goal: 50,  goalType: 'max', goalMax: 0, color: '#FFD60A', icon: '📊' },
-    { key: 'omega3',        name: 'Omega-3',        unit: 'g',  goal: 1.6, goalType: 'min', goalMax: 0, color: '#0A84FF', icon: '📊' },
+    { key: 'omega3',        name: 'Omega-3',        unit: 'g',  goal: 1.6, goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '📊' },
   ],
 }
 
@@ -4136,11 +4074,11 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                     style={{
                       flex: 1,
                       padding: '8px 6px',
-                      backgroundColor: (metric.goalType || 'min') === gt.id ? '#0A84FF' : '#1A1A1A',
+                      backgroundColor: (metric.goalType || 'min') === gt.id ? '#B8F06A' : '#15171A',
                       border: '1px solid',
-                      borderColor: (metric.goalType || 'min') === gt.id ? '#0A84FF' : '#2C2C2C',
+                      borderColor: (metric.goalType || 'min') === gt.id ? '#B8F06A' : '#25282D',
                       borderRadius: '6px',
-                      color: (metric.goalType || 'min') === gt.id ? '#fff' : '#888888',
+                      color: (metric.goalType || 'min') === gt.id ? '#0B0C0E' : '#8B9098',
                       fontSize: '12px',
                       fontWeight: '500',
                       cursor: 'pointer'
@@ -4246,8 +4184,8 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                   style={{
                     padding: '5px 12px', borderRadius: '20px', border: 'none',
                     fontSize: '12px', fontWeight: '500', cursor: 'pointer',
-                    backgroundColor: microTab === tab.id ? '#0A84FF' : T.card2,
-                    color: microTab === tab.id ? '#fff' : T.muted,
+                    backgroundColor: microTab === tab.id ? '#B8F06A' : T.card2,
+                    color: microTab === tab.id ? '#0B0C0E' : T.muted,
                   }}
                 >
                   {tab.label}
@@ -4345,10 +4283,10 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
               disabled={i === 0}
               style={{
                 padding: '2px 8px',
-                backgroundColor: i === 0 ? '#222222' : '#1A1A1A',
+                backgroundColor: i === 0 ? '#1D2024' : '#15171A',
                 border: `1px solid ${T.border}`,
                 borderRadius: '4px',
-                color: i === 0 ? '#ccc' : '#888888',
+                color: i === 0 ? '#ccc' : '#8B9098',
                 fontSize: '10px',
                 cursor: i === 0 ? 'default' : 'pointer',
                 lineHeight: '1'
@@ -4361,10 +4299,10 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
               disabled={i === buttons.length - 1}
               style={{
                 padding: '2px 8px',
-                backgroundColor: i === buttons.length - 1 ? '#222222' : '#1A1A1A',
+                backgroundColor: i === buttons.length - 1 ? '#1D2024' : '#15171A',
                 border: `1px solid ${T.border}`,
                 borderRadius: '4px',
-                color: i === buttons.length - 1 ? '#ccc' : '#888888',
+                color: i === buttons.length - 1 ? '#ccc' : '#8B9098',
                 fontSize: '10px',
                 cursor: i === buttons.length - 1 ? 'default' : 'pointer',
                 lineHeight: '1'
@@ -4420,7 +4358,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
           fontSize: '12px',
           fontWeight: '600',
           cursor: 'pointer',
-          letterSpacing: '1px'
+          letterSpacing: 0
         }}
       >
         + ADD SIZE

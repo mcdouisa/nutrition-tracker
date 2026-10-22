@@ -51,9 +51,9 @@ const WORKOUT_TYPES = [
 const S = {
   btn: (active) => ({
     padding: '12px',
-    backgroundColor: active ? '#0A84FF' : '#242424',
-    color: active ? '#fff' : '#AAAAAA',
-    border: `2px solid ${active ? '#0A84FF' : '#2C2C2C'}`,
+    backgroundColor: active ? '#B8F06A' : '#1D2024',
+    color: active ? '#fff' : '#B4B8BF',
+    border: `2px solid ${active ? '#B8F06A' : '#25282D'}`,
     borderRadius: '8px',
     fontSize: '14px',
     fontWeight: '600',
@@ -63,9 +63,9 @@ const S = {
   backBtn: {
     flex: 1,
     padding: '14px',
-    backgroundColor: '#242424',
+    backgroundColor: '#1D2024',
     color: '#FFFFFF',
-    border: '2px solid #2C2C2C',
+    border: '2px solid #25282D',
     borderRadius: '8px',
     fontSize: '15px',
     fontWeight: '600',
@@ -74,7 +74,7 @@ const S = {
   nextBtn: (disabled) => ({
     flex: 2,
     padding: '14px',
-    backgroundColor: disabled ? '#2C2C2C' : '#0A84FF',
+    backgroundColor: disabled ? '#25282D' : '#B8F06A',
     color: disabled ? '#666666' : '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -86,19 +86,19 @@ const S = {
     width: '100%',
     padding: '12px',
     fontSize: '14px',
-    border: '2px solid #2C2C2C',
+    border: '2px solid #25282D',
     borderRadius: '8px',
     fontFamily: 'inherit',
-    backgroundColor: '#242424',
+    backgroundColor: '#1D2024',
     color: '#FFFFFF',
     outline: 'none',
     boxSizing: 'border-box',
   },
   card: (accent) => ({
     padding: '16px',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#15171A',
     borderRadius: '10px',
-    borderLeft: `4px solid ${accent || '#0A84FF'}`,
+    borderLeft: `4px solid ${accent || '#B8F06A'}`,
   }),
   label: {
     display: 'block',
@@ -196,7 +196,7 @@ export default function Onboarding({ onComplete, onSkip }) {
       zIndex: 10000, padding: '20px',
     }}>
       <div style={{
-        backgroundColor: '#1A1A1A',
+        backgroundColor: '#15171A',
         borderRadius: '16px',
         maxWidth: '600px',
         width: '100%',
@@ -210,18 +210,18 @@ export default function Onboarding({ onComplete, onSkip }) {
           <button onClick={onSkip} style={{
             position: 'absolute', top: '12px', right: '12px',
             width: '32px', height: '32px', borderRadius: '50%',
-            border: 'none', backgroundColor: '#242424', color: '#888888',
+            border: 'none', backgroundColor: '#1D2024', color: '#8B9098',
             fontSize: '16px', cursor: 'pointer', display: 'flex',
             alignItems: 'center', justifyContent: 'center', zIndex: 1,
           }}>✕</button>
         )}
 
         {/* Progress bar */}
-        <div style={{ height: '4px', backgroundColor: '#242424', borderRadius: '16px 16px 0 0' }}>
+        <div style={{ height: '4px', backgroundColor: '#1D2024', borderRadius: '16px 16px 0 0' }}>
           <div style={{
             height: '100%',
             width: `${(step / totalSteps) * 100}%`,
-            backgroundColor: '#0A84FF',
+            backgroundColor: '#B8F06A',
             borderRadius: '16px 0 0 0',
             transition: 'width 0.3s',
           }} />
@@ -232,24 +232,23 @@ export default function Onboarding({ onComplete, onSkip }) {
           {/* ── Step 1: Welcome ───────────────────────────────────────── */}
           {step === 1 && (
             <div>
-              <div style={{ fontSize: '32px', marginBottom: '8px' }}>👋</div>
               <h2 style={{ margin: '0 0 12px', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Welcome to Lytz!
               </h2>
-              <p style={{ margin: '0 0 24px', fontSize: '15px', color: '#888888', lineHeight: '1.6' }}>
+              <p style={{ margin: '0 0 24px', fontSize: '15px', color: '#8B9098', lineHeight: '1.6' }}>
                 Your all-in-one daily health tracker. Track nutrition, workouts, water, habits, and more — all personalized to your goals.
               </p>
-              <div style={{ backgroundColor: '#242424', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+              <div style={{ backgroundColor: '#1D2024', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
                 <h3 style={{ margin: '0 0 12px', fontSize: '16px', fontWeight: '600', color: '#FFFFFF' }}>
                   Everything in one place:
                 </h3>
-                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#888888', lineHeight: '2' }}>
-                  <li>🤖 AI-powered food logging — just describe what you ate</li>
-                  <li>🏋️ Workout tracker — programs, logging & progressive overload</li>
-                  <li>💧 Daily water intake</li>
-                  <li>✅ Custom habit checklist</li>
-                  <li>📊 Custom nutrition metrics (calories, protein, carbs, etc.)</li>
-                  <li>📈 Weekly reports & PDF exports</li>
+                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#8B9098', lineHeight: '2' }}>
+                  <li>AI-powered food logging — just describe what you ate</li>
+                  <li>Workout tracker — programs, logging & progressive overload</li>
+                  <li>Daily water intake</li>
+                  <li>Custom habit checklist</li>
+                  <li>Custom nutrition metrics (calories, protein, carbs, etc.)</li>
+                  <li>Weekly reports & PDF exports</li>
                 </ul>
               </div>
               <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#666666' }}>
@@ -257,7 +256,7 @@ export default function Onboarding({ onComplete, onSkip }) {
               </p>
               <button onClick={handleNext} style={{
                 width: '100%', padding: '14px',
-                backgroundColor: '#0A84FF', color: '#fff',
+                backgroundColor: '#B8F06A', color: '#0B0C0E',
                 border: 'none', borderRadius: '8px',
                 fontSize: '15px', fontWeight: '600', cursor: 'pointer',
               }}>
@@ -272,7 +271,7 @@ export default function Onboarding({ onComplete, onSkip }) {
               <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Tell us about yourself
               </h2>
-              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#888888' }}>
+              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#8B9098' }}>
                 This helps us recommend personalized daily targets.
               </p>
 
@@ -330,7 +329,7 @@ export default function Onboarding({ onComplete, onSkip }) {
                     { key: 'improve-habits', label: 'Improve Habits', icon: '✨' },
                   ].map(g => (
                     <button key={g.key} onClick={() => setProfile({ ...profile, goal: g.key })} style={S.btn(profile.goal === g.key)}>
-                      <span style={{ marginRight: '6px' }}>{g.icon}</span>{g.label}
+                      {g.label}
                     </button>
                   ))}
                 </div>
@@ -370,65 +369,61 @@ export default function Onboarding({ onComplete, onSkip }) {
               <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Your Recommended Goals
               </h2>
-              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#888888' }}>
+              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#8B9098' }}>
                 Based on your profile. You can fine-tune these anytime in Settings.
               </p>
 
-              <div style={{ marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#888888' }}>Core Metrics</div>
+              <div style={{ marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#8B9098' }}>Core Metrics</div>
 
-              <div style={{ backgroundColor: 'rgba(48,209,88,0.1)', border: '1px solid rgba(48,209,88,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
+              <div style={{ backgroundColor: 'rgba(184,240,106,0.1)', border: '1px solid rgba(184,240,106,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '16px' }}>💧</span>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#30D158' }}>Water: {recommendations.water} oz/day</span>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#B8F06A' }}>Water: {recommendations.water} oz/day</span>
                 </div>
-                <div style={{ fontSize: '12px', color: '#30D158', opacity: 0.8 }}>Recommended for your activity level</div>
+                <div style={{ fontSize: '12px', color: '#B8F06A', opacity: 0.8 }}>Recommended for your activity level</div>
               </div>
 
-              <div style={{ backgroundColor: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
+              <div style={{ backgroundColor: 'rgba(184,240,106,0.1)', border: '1px solid rgba(184,240,106,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '16px' }}>🔥</span>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#0A84FF' }}>Calories: {recommendations.calories} Cal/day</span>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#B8F06A' }}>Calories: {recommendations.calories} Cal/day</span>
                 </div>
-                <div style={{ fontSize: '12px', color: '#0A84FF', opacity: 0.8 }}>Maintenance level for your profile</div>
+                <div style={{ fontSize: '12px', color: '#B8F06A', opacity: 0.8 }}>Maintenance level for your profile</div>
               </div>
 
               {recommendations.protein && (
-                <div style={{ backgroundColor: 'rgba(255,159,10,0.1)', border: '1px solid rgba(255,159,10,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                <div style={{ backgroundColor: 'rgba(242,201,76,0.1)', border: '1px solid rgba(242,201,76,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '16px' }}>🥩</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#FF9F0A' }}>Protein: {recommendations.protein}g/day</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#F2C94C' }}>Protein: {recommendations.protein}g/day</span>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#FF9F0A', opacity: 0.8 }}>
+                  <div style={{ fontSize: '12px', color: '#F2C94C', opacity: 0.8 }}>
                     Based on your {profile.goal.replace(/-/g, ' ')} goal
                   </div>
                 </div>
               )}
 
-              <div style={{ marginBottom: '8px', marginTop: '20px', fontSize: '13px', fontWeight: '600', color: '#888888' }}>
+              <div style={{ marginBottom: '8px', marginTop: '20px', fontSize: '13px', fontWeight: '600', color: '#8B9098' }}>
                 Optional Metrics (uncheck to skip)
               </div>
 
               {[
-                { key: 'fiber', label: 'Fiber',         value: recommendations.fiber, unit: 'g', icon: '🌾', color: '#30D158',  border: 'rgba(48,209,88,0.35)',   bg: 'rgba(48,209,88,0.1)'   },
-                { key: 'carbs', label: 'Carbohydrates', value: recommendations.carbs, unit: 'g', icon: '🍞', color: '#FF9F0A',  border: 'rgba(255,159,10,0.35)', bg: 'rgba(255,159,10,0.1)' },
-                { key: 'fat',   label: 'Fat',           value: recommendations.fat,   unit: 'g', icon: '🥑', color: '#BF5AF2',  border: 'rgba(191,90,242,0.35)', bg: 'rgba(191,90,242,0.1)' },
+                { key: 'fiber', label: 'Fiber',         value: recommendations.fiber, unit: 'g', icon: '🌾', color: '#B8F06A',  border: 'rgba(184,240,106,0.35)',   bg: 'rgba(184,240,106,0.1)'   },
+                { key: 'carbs', label: 'Carbohydrates', value: recommendations.carbs, unit: 'g', icon: '🍞', color: '#F2C94C',  border: 'rgba(242,201,76,0.35)', bg: 'rgba(242,201,76,0.1)' },
+                { key: 'fat',   label: 'Fat',           value: recommendations.fat,   unit: 'g', icon: '🥑', color: '#B9A3FF',  border: 'rgba(185,163,255,0.35)', bg: 'rgba(185,163,255,0.1)' },
               ].map(metric => (
                 <div key={metric.key} onClick={() => setSelectedOptionalMetrics({ ...selectedOptionalMetrics, [metric.key]: !selectedOptionalMetrics[metric.key] })}
                   style={{
-                    backgroundColor: selectedOptionalMetrics[metric.key] ? metric.bg : '#242424',
-                    border: `2px solid ${selectedOptionalMetrics[metric.key] ? metric.border : '#2C2C2C'}`,
+                    backgroundColor: selectedOptionalMetrics[metric.key] ? metric.bg : '#1D2024',
+                    border: `2px solid ${selectedOptionalMetrics[metric.key] ? metric.border : '#25282D'}`,
                     borderRadius: '12px', padding: '14px', marginBottom: '8px',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.2s',
                   }}>
                   <input type="checkbox" checked={selectedOptionalMetrics[metric.key]} onChange={() => {}} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-                  <span style={{ fontSize: '20px' }}>{metric.icon}</span>
-                  <div style={{ flex: 1, fontSize: '14px', fontWeight: '600', color: selectedOptionalMetrics[metric.key] ? metric.color : '#888888' }}>
+                  <div style={{ flex: 1, fontSize: '14px', fontWeight: '600', color: selectedOptionalMetrics[metric.key] ? metric.color : '#8B9098' }}>
                     {metric.label}: {metric.value}{metric.unit}/day
                   </div>
                 </div>
               ))}
 
-              <div style={{ backgroundColor: '#242424', borderRadius: '8px', padding: '12px', marginTop: '16px', marginBottom: '24px', fontSize: '12px', color: '#888888', lineHeight: '1.6' }}>
+              <div style={{ backgroundColor: '#1D2024', borderRadius: '8px', padding: '12px', marginTop: '16px', marginBottom: '24px', fontSize: '12px', color: '#8B9098', lineHeight: '1.6' }}>
                 ℹ️ These are starting points. You can customize any metric in Settings and add your own custom tracking fields.
               </div>
 
@@ -445,12 +440,12 @@ export default function Onboarding({ onComplete, onSkip }) {
               <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Choose Daily Habits to Track
               </h2>
-              <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#888888' }}>
+              <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#8B9098' }}>
                 Select habits you want to build. You can always edit these later.
               </p>
 
               {/* Wellness */}
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#888888', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Wellness</div>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#8B9098', letterSpacing: '0.08em', marginBottom: '8px' }}>Wellness</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                 {[
                   { key: 'sleep',       label: 'Get 8 hours of sleep',              icon: '😴' },
@@ -464,21 +459,20 @@ export default function Onboarding({ onComplete, onSkip }) {
                   return (
                     <button key={habit.key} onClick={() => toggleHabit(habit)} style={{
                       padding: '14px 16px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px',
-                      backgroundColor: selected ? 'rgba(48,209,88,0.1)' : '#242424',
-                      border: `2px solid ${selected ? '#30D158' : '#2C2C2C'}`,
+                      backgroundColor: selected ? 'rgba(184,240,106,0.1)' : '#1D2024',
+                      border: `2px solid ${selected ? '#B8F06A' : '#25282D'}`,
                       borderRadius: '10px', fontSize: '14px', fontWeight: '600', color: '#FFFFFF',
                       cursor: 'pointer', transition: 'all 0.2s',
                     }}>
-                      <span style={{ fontSize: '22px' }}>{habit.icon}</span>
                       <span style={{ flex: 1 }}>{habit.label}</span>
-                      {selected && <span style={{ color: '#30D158', fontSize: '18px' }}>✓</span>}
+                      {selected && <span style={{ color: '#B8F06A', fontSize: '18px' }}>✓</span>}
                     </button>
                   )
                 })}
               </div>
 
               {/* Fitness */}
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#888888', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Fitness</div>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#8B9098', letterSpacing: '0.08em', marginBottom: '8px' }}>Fitness</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                 {[
                   { key: 'workout',     label: 'Complete a workout',                 icon: '🏋️' },
@@ -491,21 +485,20 @@ export default function Onboarding({ onComplete, onSkip }) {
                   return (
                     <button key={habit.key} onClick={() => toggleHabit(habit)} style={{
                       padding: '14px 16px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px',
-                      backgroundColor: selected ? 'rgba(10,132,255,0.12)' : '#242424',
-                      border: `2px solid ${selected ? '#0A84FF' : '#2C2C2C'}`,
+                      backgroundColor: selected ? 'rgba(184,240,106,0.12)' : '#1D2024',
+                      border: `2px solid ${selected ? '#B8F06A' : '#25282D'}`,
                       borderRadius: '10px', fontSize: '14px', fontWeight: '600', color: '#FFFFFF',
                       cursor: 'pointer', transition: 'all 0.2s',
                     }}>
-                      <span style={{ fontSize: '22px' }}>{habit.icon}</span>
                       <span style={{ flex: 1 }}>{habit.label}</span>
-                      {selected && <span style={{ color: '#0A84FF', fontSize: '18px' }}>✓</span>}
+                      {selected && <span style={{ color: '#B8F06A', fontSize: '18px' }}>✓</span>}
                     </button>
                   )
                 })}
               </div>
 
               {/* Custom habit */}
-              <div style={{ backgroundColor: '#242424', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+              <div style={{ backgroundColor: '#1D2024', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
                 <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>Add Your Own Habit</div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
@@ -517,15 +510,15 @@ export default function Onboarding({ onComplete, onSkip }) {
                     style={{ ...S.input, flex: 1, width: 'auto' }}
                   />
                   <button onClick={addCustomHabit} disabled={!customHabit.trim()} style={{
-                    padding: '12px 20px', backgroundColor: customHabit.trim() ? '#0A84FF' : '#2C2C2C',
-                    color: customHabit.trim() ? '#fff' : '#666', border: 'none', borderRadius: '8px',
+                    padding: '12px 20px', backgroundColor: customHabit.trim() ? '#B8F06A' : '#25282D',
+                    color: customHabit.trim() ? '#0B0C0E' : '#666', border: 'none', borderRadius: '8px',
                     fontSize: '14px', fontWeight: '600', cursor: customHabit.trim() ? 'pointer' : 'not-allowed',
                     whiteSpace: 'nowrap',
                   }}>Add</button>
                 </div>
               </div>
 
-              <div style={{ backgroundColor: '#242424', borderRadius: '8px', padding: '12px', marginBottom: '24px', fontSize: '12px', color: '#888888' }}>
+              <div style={{ backgroundColor: '#1D2024', borderRadius: '8px', padding: '12px', marginBottom: '24px', fontSize: '12px', color: '#8B9098' }}>
                 {selectedHabits.length === 0 ? 'No habits selected — you can add them later in Settings.' : `${selectedHabits.length} habit${selectedHabits.length !== 1 ? 's' : ''} selected.`}
               </div>
 
@@ -542,7 +535,7 @@ export default function Onboarding({ onComplete, onSkip }) {
               <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
                 Set Up Your Workout Tracker
               </h2>
-              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#888888' }}>
+              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#8B9098' }}>
                 What type of training do you mainly do? We'll highlight the right programs for you on the Discover page.
               </p>
 
@@ -552,28 +545,27 @@ export default function Onboarding({ onComplete, onSkip }) {
                   return (
                     <button key={wt.key} onClick={() => setProfile({ ...profile, workoutType: active ? '' : wt.key })} style={{
                       padding: '18px 14px', textAlign: 'left',
-                      backgroundColor: active ? 'rgba(10,132,255,0.12)' : '#242424',
-                      border: `2px solid ${active ? '#0A84FF' : '#2C2C2C'}`,
+                      backgroundColor: active ? 'rgba(184,240,106,0.12)' : '#1D2024',
+                      border: `2px solid ${active ? '#B8F06A' : '#25282D'}`,
                       borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
                     }}>
-                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>{wt.icon}</div>
-                      <div style={{ fontSize: '14px', fontWeight: '700', color: active ? '#0A84FF' : '#FFFFFF', marginBottom: '4px' }}>{wt.label}</div>
-                      <div style={{ fontSize: '12px', color: '#888888' }}>{wt.desc}</div>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: active ? '#B8F06A' : '#FFFFFF', marginBottom: '4px' }}>{wt.label}</div>
+                      <div style={{ fontSize: '12px', color: '#8B9098' }}>{wt.desc}</div>
                       {active && (
-                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#0A84FF', fontWeight: '600' }}>✓ Selected</div>
+                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#B8F06A', fontWeight: '600' }}>Selected</div>
                       )}
                     </button>
                   )
                 })}
               </div>
 
-              <div style={{ backgroundColor: '#242424', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>🗂️ How the Workout Tracker works</div>
-                <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#888888', lineHeight: '1.9' }}>
-                  <li><strong style={{ color: '#AAAAAA' }}>Discover</strong> — Browse 15+ ready-made programs or find ones shared by others</li>
-                  <li><strong style={{ color: '#AAAAAA' }}>My Programs</strong> — Save programs to your library and set an active one</li>
-                  <li><strong style={{ color: '#AAAAAA' }}>Log Workouts</strong> — Track sets, reps, and weights with a guided logging screen</li>
-                  <li><strong style={{ color: '#AAAAAA' }}>Progressive Overload</strong> — Lytz auto-detects when you're ready to add weight</li>
+              <div style={{ backgroundColor: '#1D2024', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '8px' }}>How the Workout Tracker works</div>
+                <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#8B9098', lineHeight: '1.9' }}>
+                  <li><strong style={{ color: '#B4B8BF' }}>Discover</strong> — Browse 15+ ready-made programs or find ones shared by others</li>
+                  <li><strong style={{ color: '#B4B8BF' }}>My Programs</strong> — Save programs to your library and set an active one</li>
+                  <li><strong style={{ color: '#B4B8BF' }}>Log Workouts</strong> — Track sets, reps, and weights with a guided logging screen</li>
+                  <li><strong style={{ color: '#B4B8BF' }}>Progressive Overload</strong> — Lytz auto-detects when you're ready to add weight</li>
                 </ul>
               </div>
 
@@ -590,61 +582,55 @@ export default function Onboarding({ onComplete, onSkip }) {
           {step === 6 && (
             <div>
               <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#FFFFFF' }}>
-                You're all set! 🎉
+                You're all set!
               </h2>
-              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#888888' }}>
+              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#8B9098' }}>
                 Here's a quick overview of everything available to you:
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                <div style={S.card('#0A84FF')}>
-                  <div style={{ fontSize: '20px', marginBottom: '6px' }}>🤖</div>
+                <div style={S.card('#B8F06A')}>
                   <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>AI Food Logging</div>
-                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: '#8B9098', lineHeight: '1.5' }}>
                     Tap the mic or type what you ate — AI estimates all the nutrition numbers instantly. Works for meals, snacks, and drinks.
                   </div>
                 </div>
 
-                <div style={S.card('#30D158')}>
-                  <div style={{ fontSize: '20px', marginBottom: '6px' }}>🏋️</div>
+                <div style={S.card('#B8F06A')}>
                   <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>Workout Tracker</div>
-                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
-                    Find a program on <strong style={{ color: '#AAAAAA' }}>Discover</strong>, log sets & reps on the <strong style={{ color: '#AAAAAA' }}>Workout</strong> tab, and get automatic progressive overload nudges.
+                  <div style={{ fontSize: '13px', color: '#8B9098', lineHeight: '1.5' }}>
+                    Find a program on <strong style={{ color: '#B4B8BF' }}>Discover</strong>, log sets & reps on the <strong style={{ color: '#B4B8BF' }}>Workout</strong> tab, and get automatic progressive overload nudges.
                   </div>
                 </div>
 
-                <div style={S.card('#FF9F0A')}>
-                  <div style={{ fontSize: '20px', marginBottom: '6px' }}>📊</div>
+                <div style={S.card('#F2C94C')}>
                   <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>Reports & Insights</div>
-                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
-                    Weekly summaries, macro breakdowns, meal timing charts, and one-tap PDF export — all on the <strong style={{ color: '#AAAAAA' }}>Reports</strong> page.
+                  <div style={{ fontSize: '13px', color: '#8B9098', lineHeight: '1.5' }}>
+                    Weekly summaries, macro breakdowns, meal timing charts, and one-tap PDF export — all on the <strong style={{ color: '#B4B8BF' }}>Reports</strong> page.
                   </div>
                 </div>
 
-                <div style={S.card('#BF5AF2')}>
-                  <div style={{ fontSize: '20px', marginBottom: '6px' }}>⚙️</div>
+                <div style={S.card('#B9A3FF')}>
                   <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>Fully Customizable</div>
-                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: '#8B9098', lineHeight: '1.5' }}>
                     Add custom nutrition metrics, create your own habits, save quick-add meals, and build custom workout programs — all from Settings.
                   </div>
                 </div>
 
-                <div style={S.card('#FF453A')}>
-                  <div style={{ fontSize: '20px', marginBottom: '6px' }}>📅</div>
+                <div style={S.card('#FF6B3D')}>
                   <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', marginBottom: '4px' }}>Track Past Days</div>
-                  <div style={{ fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: '#8B9098', lineHeight: '1.5' }}>
                     Use the date arrows on the home screen to view and edit any previous day's log.
                   </div>
                 </div>
               </div>
 
-              <div style={{ backgroundColor: '#242424', border: '1px solid #2C2C2C', borderRadius: '8px', padding: '12px', marginBottom: '24px', fontSize: '13px', color: '#888888', lineHeight: '1.5' }}>
-                💡 <strong style={{ color: '#AAAAAA' }}>Tip:</strong> Start simple — track 1–2 things consistently first. You can always add more later.
+              <div style={{ backgroundColor: '#1D2024', border: '1px solid #25282D', borderRadius: '8px', padding: '12px', marginBottom: '24px', fontSize: '13px', color: '#8B9098', lineHeight: '1.5' }}> <strong style={{ color: '#B4B8BF' }}>Tip:</strong> Start simple — track 1–2 things consistently first. You can always add more later.
               </div>
 
               <button onClick={handleComplete} style={{
                 width: '100%', padding: '16px',
-                backgroundColor: '#0A84FF', color: '#fff',
+                backgroundColor: '#B8F06A', color: '#0B0C0E',
                 border: 'none', borderRadius: '8px',
                 fontSize: '16px', fontWeight: '600', cursor: 'pointer',
               }}>

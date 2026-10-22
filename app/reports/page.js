@@ -11,38 +11,25 @@ import {
   LeafIcon, TargetIcon, ActivityIcon, CheckSquareIcon, CheckCircleIcon,
   XCircleIcon, ChevronLeftIcon, ChevronRightIcon, SlidersIcon, DumbbellIcon
 } from '../../lib/icons'
+import { DARK, FONT } from '../../lib/theme'
+import { AppTabBar, PageHeader, TAB_BAR_SPACE } from '../components/AppChrome'
 
-const DARK = { bg: '#0D0D0D', card: '#1A1A1A', card2: '#222222', border: '#2C2C2C', text: '#FFFFFF', muted: '#888888', faint: '#3A3A3A' }
 const ThemeContext = createContext(DARK)
-const T_ACCENT = '#0A84FF'
-const T_SUCCESS = '#30D158'
-const T_WARNING = '#FF9F0A'
-const T_DANGER = '#FF453A'
-const T_PURPLE = '#BF5AF2'
-const FALLBACK_COLORS = ['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF453A']
+const T_ACCENT = '#B8F06A'
+const T_SUCCESS = '#B8F06A'
+const T_WARNING = '#F2C94C'
+const T_DANGER = '#FF6B3D'
+const T_PURPLE = '#B9A3FF'
+// Metric colors match the Today screen: by position, not the color saved on the metric
+const FALLBACK_COLORS = DARK.hues
 
 // ── SectionHeader ─────────────────────────────────────────────────────────────
-function SectionHeader({ icon, title, iconBg = 'rgba(10,132,255,0.12)', iconBorder = 'rgba(10,132,255,0.3)' }) {
+function SectionHeader({ title }) {
   const T = useContext(ThemeContext)
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-      {icon && (
-        <div style={{
-          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-          background: iconBg, border: `1px solid ${iconBorder}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          {icon}
-        </div>
-      )}
-      <h2 style={{
-        margin: 0, fontSize: 13, fontWeight: 700, color: T.muted,
-        textTransform: 'uppercase', letterSpacing: '2px',
-        fontFamily: "'Barlow Condensed', sans-serif"
-      }}>
-        {title}
-      </h2>
-    </div>
+    <h2 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 400, color: T.muted, fontFamily: FONT }}>
+      {title}
+    </h2>
   )
 }
 
@@ -51,8 +38,8 @@ function Card({ children, style }) {
   const T = useContext(ThemeContext)
   return (
     <div style={{
-      backgroundColor: T.card, borderRadius: 16, border: `1px solid ${T.border}`,
-      padding: '18px', marginBottom: 16, ...style
+      backgroundColor: T.card, borderRadius: 18, border: 'none',
+      padding: '18px', marginBottom: 12, ...style
     }}>
       {children}
     </div>
@@ -79,7 +66,7 @@ function MacroRing({ metrics, values }) {
     const val = values[m.key] || 0
     const pct = val / total
     const arcLen = pct * circ
-    const arc = { metric: m, val, pct, arcLen, offset, color: m.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length], idx: i }
+    const arc = { metric: m, val, pct, arcLen, offset, color: FALLBACK_COLORS[i % FALLBACK_COLORS.length], idx: i }
     offset += arcLen
     return arc
   })
@@ -120,10 +107,10 @@ function MacroRing({ metrics, values }) {
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', pointerEvents: 'none'
         }}>
-          <span style={{ fontSize: 20, fontWeight: 900, color: centerColor, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1, transition: 'color 0.15s' }}>
+          <span style={{ fontSize: 20, fontWeight: 600, color: centerColor, fontFamily: FONT, lineHeight: 1, transition: 'color 0.15s' }}>
             {centerVal}
           </span>
-          <span style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px' }}>{centerLabel}</span>
+          <span style={{ fontSize: 10, color: T.muted, letterSpacing: 0 }}>{centerLabel}</span>
           {hArc && <span style={{ fontSize: 10, color: hArc.color, marginTop: 2 }}>{Math.round(hArc.pct * 100)}%</span>}
         </div>
       </div>
@@ -180,7 +167,7 @@ function DayGoalGrid({ history, metrics, dateRange }) {
         {reorderedLetters.map((letter, i) => (
           <div key={i} style={{ textAlign: 'center', fontSize: 10, fontWeight: hoveredCol === i ? 700 : 600,
             color: hoveredCol === i ? T.text : T.muted,
-            fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px',
+            fontFamily: FONT, letterSpacing: 0,
             transition: 'color 0.12s' }}>
             {letter}
           </div>
@@ -191,10 +178,10 @@ function DayGoalGrid({ history, metrics, dateRange }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
               width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-              background: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.2)',
+              background: 'rgba(184,240,106,0.1)', border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <BarChartIcon size={13} color="#0A84FF" strokeWidth={2} />
+              <BarChartIcon size={13} color="#B8F06A" strokeWidth={2} />
             </div>
             <span style={{ fontSize: 11, color: T.muted, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {metric.name}
@@ -302,22 +289,22 @@ function BestWorstWeeks({ history, metrics, monthStart, monthEnd }) {
         return (
           <div key={week.weekNum} style={{
             padding: '14px', borderRadius: 12,
-            backgroundColor: isBest ? 'rgba(48,209,88,0.08)' : isWorst ? 'rgba(255,69,58,0.08)' : T.card2,
-            border: `1px solid ${isBest ? 'rgba(48,209,88,0.35)' : isWorst ? 'rgba(255,69,58,0.35)' : T.border}`
+            backgroundColor: isBest ? 'rgba(184,240,106,0.08)' : isWorst ? 'rgba(255,107,61,0.08)' : T.card2,
+            border: `1px solid ${isBest ? 'rgba(184,240,106,0.35)' : isWorst ? 'rgba(255,107,61,0.35)' : T.border}`
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.text, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.text, fontFamily: FONT, letterSpacing: 0 }}>
                   {week.label}
                 </div>
                 <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>{week.range}</div>
               </div>
-              {isBest && <span style={{ fontSize: 10, fontWeight: 700, color: T_SUCCESS, backgroundColor: 'rgba(48,209,88,0.15)', padding: '2px 7px', borderRadius: 20 }}>BEST</span>}
-              {isWorst && <span style={{ fontSize: 10, fontWeight: 700, color: T_DANGER, backgroundColor: 'rgba(255,69,58,0.15)', padding: '2px 7px', borderRadius: 20 }}>WORST</span>}
+              {isBest && <span style={{ fontSize: 10, fontWeight: 700, color: T_SUCCESS, backgroundColor: 'rgba(184,240,106,0.15)', padding: '2px 7px', borderRadius: 20 }}>Best</span>}
+              {isWorst && <span style={{ fontSize: 10, fontWeight: 700, color: T_DANGER, backgroundColor: 'rgba(255,107,61,0.15)', padding: '2px 7px', borderRadius: 20 }}>Worst</span>}
             </div>
             {week.daysLogged > 0 ? (
               <>
-                <div style={{ fontSize: 22, fontWeight: 900, color: isBest ? T_SUCCESS : isWorst ? T_DANGER : T.text, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                <div style={{ fontSize: 22, fontWeight: 600, color: isBest ? T_SUCCESS : isWorst ? T_DANGER : T.text, fontFamily: FONT, lineHeight: 1 }}>
                   {week.avg.toLocaleString()}
                   <span style={{ fontSize: 11, fontWeight: 400, color: T.muted, marginLeft: 4 }}>{primaryMetric.unit}/day avg</span>
                 </div>
@@ -344,18 +331,18 @@ function DayDetailPanel({ dateKey, history, metrics, waterGoal, onClose }) {
 
   return (
     <div style={{
-      background: 'linear-gradient(145deg, #0a0d14, #111622, #0d0d0d)',
-      borderRadius: 16, border: '1px solid rgba(10,132,255,0.3)',
+      background: '#15171A',
+      borderRadius: 16, border: 'none',
       padding: '16px', marginBottom: 16, position: 'relative',
       animation: 'fadeSlideIn 0.2s ease-out'
     }}>
       <style>{`@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 10, color: T_ACCENT, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 3 }}>
-            {isToday ? 'TODAY' : 'SELECTED DAY'}
+          <div style={{ fontSize: 10, color: T_ACCENT, fontWeight: 700, letterSpacing: 0, fontFamily: FONT, marginBottom: 3 }}>
+            {isToday ? 'Today' : 'Selected day'}
           </div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: T.text, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px' }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: T.text, fontFamily: FONT, letterSpacing: '0.5px' }}>
             {dateLabel}
           </div>
         </div>
@@ -379,17 +366,17 @@ function DayDetailPanel({ dateKey, history, metrics, waterGoal, onClose }) {
                 const val = entry?.value || 0
                 const goal = metric.goal || 0
                 const pct = goal > 0 ? Math.min(Math.round((val / goal) * 100), 100) : null
-                const color = metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]
+                const color = FALLBACK_COLORS[i % FALLBACK_COLORS.length]
                 const metGoal = goal > 0 && (metric.goalType === 'max' ? val <= goal : val >= goal)
                 return (
                   <div key={metric.key} style={{
                     padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)',
                     border: `1px solid ${metGoal ? color + '50' : 'rgba(255,255,255,0.06)'}`
                   }}>
-                    <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+                    <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, fontFamily: FONT }}>
                       {metric.name}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: val > 0 ? color : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: val > 0 ? color : T.muted, fontFamily: FONT, lineHeight: 1 }}>
                       {val > 0 ? val.toLocaleString() : '—'}
                       {val > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 3 }}>{metric.unit}</span>}
                     </div>
@@ -405,11 +392,11 @@ function DayDetailPanel({ dateKey, history, metrics, waterGoal, onClose }) {
           )}
           {/* Water row */}
           <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ flex: 1, padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(10,132,255,0.08)', border: '1px solid rgba(10,132,255,0.2)' }}>
-              <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ flex: 1, padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(184,240,106,0.08)', border: 'none' }}>
+              <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <DropletIcon size={10} color={T_ACCENT} strokeWidth={2} /> Water
               </div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: T_ACCENT, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+              <div style={{ fontSize: 20, fontWeight: 600, color: T_ACCENT, fontFamily: FONT, lineHeight: 1 }}>
                 {dayData.water || 0}<span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 3 }}>oz</span>
                 {waterGoal > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 4 }}>/ {waterGoal}</span>}
               </div>
@@ -419,11 +406,11 @@ function DayDetailPanel({ dateKey, history, metrics, waterGoal, onClose }) {
               const total = dayData.checklistItems.length
               const pct = Math.round((checked / total) * 100)
               return (
-                <div style={{ flex: 1, padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(48,209,88,0.08)', border: '1px solid rgba(48,209,88,0.2)' }}>
-                  <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ flex: 1, padding: '10px 12px', borderRadius: 10, backgroundColor: 'rgba(184,240,106,0.08)', border: 'none' }}>
+                  <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 3, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <CheckSquareIcon size={10} color={T_SUCCESS} strokeWidth={2} /> Habits
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: pct >= 80 ? T_SUCCESS : pct >= 50 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                  <div style={{ fontSize: 20, fontWeight: 600, color: pct >= 80 ? T_SUCCESS : pct >= 50 ? T_WARNING : T.muted, fontFamily: FONT, lineHeight: 1 }}>
                     {pct}%<span style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginLeft: 3 }}>{checked}/{total}</span>
                   </div>
                 </div>
@@ -448,7 +435,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
     { label: '8-11pm', start: 20, end: 23 },
   ]
 
-  const colors = [T_ACCENT, '#10b981', T_WARNING, T_DANGER, T_PURPLE, '#ec4899']
+  const colors = DARK.hues
   const blockData = {}
   let daysWithData = 0
 
@@ -486,7 +473,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
   if (!hasData) {
     return (
       <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-        <div style={{ marginBottom: '8px', opacity: 0.3, display: 'flex', justifyContent: 'center' }}><TrendingUpIcon size={28} color="#888" strokeWidth={1.5} /></div>
+        <div style={{ marginBottom: '8px', opacity: 0.3, display: 'flex', justifyContent: 'center' }}><TrendingUpIcon size={28} color="#8B9098" strokeWidth={1.5} /></div>
         <div style={{ fontSize: '13px', color: T.muted }}>
           No meal timing data yet — log meals with the AI to see patterns
         </div>
@@ -525,7 +512,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
           return (
             <g key={i}>
               <line x1={padL} y1={y} x2={svgW - padR} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-              <text x={padL - 6} y={y + 3} textAnchor="end" fontSize="7" fill="#888888">
+              <text x={padL - 6} y={y + 3} textAnchor="end" fontSize="7" fill="#8B9098">
                 {Math.round(maxVal * frac)}
               </text>
             </g>
@@ -533,7 +520,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
         })}
         {metrics.map((metric, mi) => {
           const points = getPoints(metric.key)
-          const color = metric.color || colors[mi % colors.length]
+          const color = colors[mi % colors.length]
           if (points.every(p => p.val === 0)) return null
           return (
             <g key={metric.key}>
@@ -543,7 +530,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
                 strokeLinecap="round" strokeLinejoin="round"
               />
               {points.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#1A1A1A" stroke={color} strokeWidth="2" />
+                <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#15171A" stroke={color} strokeWidth="2" />
               ))}
               {points.map((p, i) => (
                 p.val > 0 ? (
@@ -558,7 +545,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
         {timeBlocks.map((block, i) => {
           const x = padL + (i / (timeBlocks.length - 1)) * chartW
           return (
-            <text key={i} x={x} y={svgH - 8} textAnchor="middle" fontSize="7" fill="#888888">
+            <text key={i} x={x} y={svgH - 8} textAnchor="middle" fontSize="7" fill="#8B9098">
               {block.label}
             </text>
           )
@@ -572,7 +559,7 @@ function TimeOfDayChart({ filteredHistory, metrics }) {
             <div key={metric.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: T.muted }}>
               <span style={{
                 width: '10px', height: '3px',
-                backgroundColor: metric.color || colors[mi % colors.length],
+                backgroundColor: colors[mi % colors.length],
                 borderRadius: '2px', display: 'inline-block'
               }} />
               {metric.name}
@@ -612,7 +599,7 @@ function BarChart({ bars, goal, scrollable = false }) {
           return (
             <g key={i}>
               <line x1={padL} y1={y} x2={svgW - padR} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-              <text x={padL - 4} y={y + 3} textAnchor="end" fontSize="7" fill="#888888">
+              <text x={padL - 4} y={y + 3} textAnchor="end" fontSize="7" fill="#8B9098">
                 {Math.round(maxVal * frac) > 999
                   ? `${(Math.round(maxVal * frac) / 1000).toFixed(1)}k`
                   : Math.round(maxVal * frac)}
@@ -629,7 +616,7 @@ function BarChart({ bars, goal, scrollable = false }) {
           const barH = bar.value > 0 ? Math.max((bar.value / maxVal) * chartH, 3) : 0
           const y = padT + chartH - barH
           const metGoal = goal && bar.value > 0 ? bar.value >= goal : false
-          const barColor = bar.value === 0 ? '#3A3A3A' : metGoal ? T_SUCCESS : T_ACCENT
+          const barColor = bar.value === 0 ? '#5A5F66' : metGoal ? T_SUCCESS : T_ACCENT
           const isHovered = hoveredBar === i
           const displayH = isHovered && bar.value > 0 ? barH + 2 : barH
           const displayY = isHovered && bar.value > 0 ? y - 2 : y
@@ -654,7 +641,7 @@ function BarChart({ bars, goal, scrollable = false }) {
                   </text>
                 </>
               )}
-              <text x={x + barW / 2} y={svgH - 6} textAnchor="middle" fontSize="7" fill={isHovered ? '#fff' : '#888888'}>{bar.label}</text>
+              <text x={x + barW / 2} y={svgH - 6} textAnchor="middle" fontSize="7" fill={isHovered ? '#fff' : '#8B9098'}>{bar.label}</text>
             </g>
           )
         })}
@@ -677,12 +664,12 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: T.bg, overflowY: 'auto', padding: '32px 24px' }}>
-      <style>{`@media print { .no-print { display: none !important; } body { background: #0D0D0D !important; } }`}</style>
+      <style>{`@media print { .no-print { display: none !important; } body { background: #0B0C0E !important; } }`}</style>
       <div className="no-print" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginBottom: '28px' }}>
         <button onClick={() => window.print()} style={{
-          padding: '10px 20px', background: 'linear-gradient(90deg, #0A84FF, #5856D6)',
-          border: 'none', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '600',
-          cursor: 'pointer', boxShadow: '0 2px 12px rgba(10,132,255,0.35)'
+          padding: '10px 20px', background: '#B8F06A',
+          border: 'none', borderRadius: '10px', color: '#0B0C0E', fontSize: '14px', fontWeight: '600',
+          cursor: 'pointer', boxShadow: 'none'
         }}>
           Print / Save as PDF
         </button>
@@ -695,10 +682,10 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
       </div>
       <div style={{ maxWidth: '680px', margin: '0 auto' }}>
         <div style={{ borderBottom: `2px solid ${T_ACCENT}`, paddingBottom: '16px', marginBottom: '28px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '700', color: T_ACCENT, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '6px', fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: T_ACCENT, letterSpacing: 0, marginBottom: '6px', fontFamily: FONT }}>
             Lytz · Daily Health Report
           </div>
-          <div style={{ fontSize: '24px', fontWeight: '700', color: T.text, letterSpacing: '-0.5px', fontFamily: "'Barlow Condensed', sans-serif" }}>{dateLabel}</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: T.text, letterSpacing: '-0.5px', fontFamily: FONT }}>{dateLabel}</div>
         </div>
         {!todayEntry ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: T.muted, fontSize: '15px' }}>No data recorded for today yet.</div>
@@ -706,7 +693,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
           <>
             {metrics.length > 0 && todayEntry.nutritionMetrics && (
               <div style={{ marginBottom: '28px' }}>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px', fontFamily: "'Barlow Condensed', sans-serif" }}>Nutrition</div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: 0, marginBottom: '12px', fontFamily: FONT }}>Nutrition</div>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${T.border}` }}>
@@ -746,7 +733,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
               </div>
             )}
             <div style={{ marginBottom: '28px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px', fontFamily: "'Barlow Condensed', sans-serif" }}>Hydration</div>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: 0, marginBottom: '12px', fontFamily: FONT }}>Hydration</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: `1px solid ${T.faint}` }}>
                 <span style={{ fontSize: '14px', fontWeight: '500', color: T.text }}>Water Intake</span>
                 <span style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>
@@ -757,7 +744,7 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
             </div>
             {todayEntry.checklistItems?.length > 0 && (
               <div style={{ marginBottom: '28px' }}>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px', fontFamily: "'Barlow Condensed', sans-serif" }}>Daily Habits</div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: 0, marginBottom: '12px', fontFamily: FONT }}>Daily Habits</div>
                 {todayEntry.checklistItems.map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: `1px solid ${T.faint}` }}>
                     <span style={{ display: 'flex', color: item.checked ? T_SUCCESS : T_DANGER }}>
@@ -810,7 +797,7 @@ function WeeklyStrip({ history, metrics, selectedDay, onSelectDay }) {
 
   return (
     <Card>
-      <SectionHeader icon={<CalendarIcon size={17} color="#0A84FF" strokeWidth={2} />} title={`This Week — ${calMetric.name}`} />
+      <SectionHeader title={`This Week — ${calMetric.name}`} />
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
         {days.map(({ d, value, goal, dotColor, hasData, isToday, dateStr, isSelected }) => (
           <div key={d.toISOString()}
@@ -819,7 +806,7 @@ function WeeklyStrip({ history, metrics, selectedDay, onSelectDay }) {
             <div style={{
               fontSize: '10px', color: isSelected ? '#fff' : isToday ? T_ACCENT : T.muted,
               fontWeight: isToday || isSelected ? '700' : '500', marginBottom: '8px',
-              fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px'
+              fontFamily: FONT, letterSpacing: 0
             }}>
               {d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}
             </div>
@@ -829,7 +816,7 @@ function WeeklyStrip({ history, metrics, selectedDay, onSelectDay }) {
               margin: '0 auto 8px',
               border: isSelected ? `2.5px solid #fff` : isToday ? `2px solid ${T_ACCENT}` : '2px solid transparent',
               boxSizing: 'border-box',
-              boxShadow: isSelected ? `0 0 0 3px ${dotColor}60, 0 0 14px ${dotColor}50` : isToday ? `0 0 8px rgba(10,132,255,0.4)` : 'none',
+              boxShadow: isSelected ? `0 0 0 3px ${dotColor}60, 0 0 14px ${dotColor}50` : isToday ? `0 0 8px rgba(184,240,106,0.4)` : 'none',
               transition: 'all 0.15s',
               transform: isSelected ? 'scale(1.12)' : 'scale(1)'
             }} />
@@ -856,21 +843,21 @@ function DateNavCard({ label, onPrev, onNext }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      backgroundColor: T.card, borderRadius: 16, border: `1px solid rgba(10,132,255,0.25)`,
+      backgroundColor: T.card, borderRadius: 16, border: 'none',
       padding: '12px 16px', marginBottom: 16
     }}>
       <button onClick={onPrev} style={{
-        width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(10,132,255,0.1)',
-        border: '1px solid rgba(10,132,255,0.25)', color: T_ACCENT, fontSize: '16px',
+        width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(184,240,106,0.1)',
+        border: 'none', color: T_ACCENT, fontSize: '16px',
         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600'
       }}>←</button>
       <div style={{
         fontSize: '15px', fontWeight: '700', color: T.text,
-        fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px'
+        fontFamily: FONT, letterSpacing: 0
       }}>{label}</div>
       <button onClick={onNext} style={{
-        width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(10,132,255,0.1)',
-        border: '1px solid rgba(10,132,255,0.25)', color: T_ACCENT, fontSize: '16px',
+        width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(184,240,106,0.1)',
+        border: 'none', color: T_ACCENT, fontSize: '16px',
         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600'
       }}>→</button>
     </div>
@@ -1166,7 +1153,6 @@ export default function ReportsPage() {
 
   // Greeting
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'GOOD MORNING' : hour < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING'
 
   // Today's data
   const todayKey = toLocalDateStr(new Date())
@@ -1221,8 +1207,7 @@ export default function ReportsPage() {
       <ThemeContext.Provider value={T}>
         <div style={{ minHeight: '100vh', backgroundColor: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.3 }}>📊</div>
-            <div style={{ color: T.muted, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '2px', textTransform: 'uppercase', fontSize: 13 }}>Loading reports...</div>
+            <div style={{ color: T.muted, fontFamily: FONT, letterSpacing: 0, fontSize: 13 }}>Loading reports...</div>
           </div>
         </div>
       </ThemeContext.Provider>
@@ -1231,7 +1216,8 @@ export default function ReportsPage() {
 
   return (
     <ThemeContext.Provider value={T}>
-      <div style={{ minHeight: '100vh', backgroundColor: T.bg, padding: '0 0 80px 0' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: T.bg, padding: `0 0 ${TAB_BAR_SPACE} 0`, fontFamily: FONT, color: T.text }}>
+        <AppTabBar current="reports" T={T} />
 
         {showExport && (
           <ExportView
@@ -1249,18 +1235,18 @@ export default function ReportsPage() {
               <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 16px' }}>
                 <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: T.faint }} />
               </div>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900', color: T.text, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px' }}>Edit Entry</h3>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 600, color: T.text, fontFamily: FONT, letterSpacing: 0 }}>Edit Entry</h3>
               <div style={{ fontSize: '13px', color: T.muted, marginBottom: '20px' }}>
                 {parseLocalDate(editingDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               </div>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: T.muted, marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>💧 Water (oz)</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: T.muted, marginBottom: '6px', letterSpacing: 0, fontFamily: FONT }}>Water (oz)</label>
                 <input type="number" value={editValues.water || ''} onChange={e => setEditValues({ ...editValues, water: e.target.value })}
                   style={{ width: '100%', padding: '12px 14px', backgroundColor: T.bg, border: `1px solid ${T.border}`, borderRadius: '10px', fontSize: '16px', color: T.text, boxSizing: 'border-box', outline: 'none' }} />
               </div>
               {metrics.map(metric => (
                 <div key={metric.key} style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: T.muted, marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: T.muted, marginBottom: '6px', letterSpacing: 0, fontFamily: FONT }}>
                     {metric.name} ({metric.unit})
                   </label>
                   <input type="number" value={editValues[metric.key] || ''} onChange={e => setEditValues({ ...editValues, [metric.key]: e.target.value })}
@@ -1273,7 +1259,7 @@ export default function ReportsPage() {
                   Cancel
                 </button>
                 <button onClick={saveEditedDay}
-                  style={{ flex: 1, padding: '13px', background: 'linear-gradient(90deg, #0A84FF, #5856D6)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 12px rgba(10,132,255,0.35)' }}>
+                  style={{ flex: 1, padding: '13px', background: '#B8F06A', border: 'none', borderRadius: '12px', color: '#0B0C0E', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: 'none' }}>
                   Save Changes
                 </button>
               </div>
@@ -1282,62 +1268,39 @@ export default function ReportsPage() {
         )}
 
         {/* Sticky Header */}
-        <div style={{
-          position: 'sticky', top: 0, zIndex: 100,
-          backdropFilter: 'blur(16px)', backgroundColor: '#0D0D0Dee',
-          borderBottom: `1px solid ${T.border}`,
-          marginLeft: 0, marginRight: 0,
-          padding: '12px 20px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-        }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, letterSpacing: '2.5px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 2 }}>
-              {greeting}
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: T.text, letterSpacing: '4px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
-              REPORTS
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <PageHeader
+          title="Reports"
+          T={T}
+          right={
             <button onClick={() => setShowExport(true)} style={{
-              padding: '7px 12px', backgroundColor: 'transparent',
-              border: `1px solid ${T.border}`, borderRadius: '10px',
-              color: T.muted, fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-              fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px'
+              height: 36, padding: '0 14px', backgroundColor: T.card, border: 'none', borderRadius: 999,
+              color: T.soft, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: FONT
             }}>
-              Export Today
+              Export today
             </button>
-            <Link href="/" style={{
-              width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: T.card, border: `1px solid ${T.border}`, color: T.text,
-              fontSize: '16px', textDecoration: 'none', fontWeight: '600'
-            }}>
-              ←
-            </Link>
-          </div>
-        </div>
+          }
+        />
 
         {/* Content */}
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 16px' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px' }}>
 
           {/* Tab selector */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: 20, marginBottom: 20 }}>
+          <div role="tablist" aria-label="Report range" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 4, padding: 4, marginTop: 8, marginBottom: 16, backgroundColor: T.card, borderRadius: 14 }}>
             {[
-              { mode: 'daily', label: 'Daily', activeBg: 'rgba(10,132,255,0.12)', activeBorder: 'rgba(10,132,255,0.3)', activeColor: T_ACCENT },
-              { mode: 'weekly', label: 'Weekly', activeBg: 'rgba(191,90,242,0.12)', activeBorder: 'rgba(191,90,242,0.3)', activeColor: T_PURPLE },
-              { mode: 'monthly', label: 'Monthly', activeBg: 'rgba(255,159,10,0.12)', activeBorder: 'rgba(255,159,10,0.3)', activeColor: T_WARNING },
-              { mode: 'workout', label: 'Workout', activeBg: 'rgba(48,209,88,0.12)', activeBorder: 'rgba(48,209,88,0.3)', activeColor: T_SUCCESS },
-            ].map(({ mode, label, activeBg, activeBorder, activeColor }) => (
-              <button key={mode} onClick={() => setViewMode(mode)}
+              { mode: 'daily', label: 'Daily' },
+              { mode: 'weekly', label: 'Weekly' },
+              { mode: 'monthly', label: 'Monthly' },
+              { mode: 'workout', label: 'Workout' },
+            ].map(({ mode, label }) => (
+              <button key={mode} role="tab" aria-selected={viewMode === mode} onClick={() => setViewMode(mode)}
                 style={{
-                  padding: '11px 12px',
-                  backgroundColor: viewMode === mode ? activeBg : T.card,
-                  border: `1px solid ${viewMode === mode ? activeBorder : T.border}`,
-                  borderRadius: '12px',
-                  color: viewMode === mode ? activeColor : T.muted,
-                  fontSize: '13px', fontWeight: '700', cursor: 'pointer',
-                  fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '1px',
-                  textTransform: 'uppercase', transition: 'all 0.15s'
+                  height: 36,
+                  backgroundColor: viewMode === mode ? T.card2 : 'transparent',
+                  border: 'none',
+                  borderRadius: 10,
+                  color: viewMode === mode ? T.text : T.muted,
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                  fontFamily: FONT, transition: 'background-color 0.15s, color 0.15s'
                 }}>
                 {label}
               </button>
@@ -1350,24 +1313,24 @@ export default function ReportsPage() {
               {/* Today Hero Card */}
               {todayEntry && primaryMetric && (
                 <div style={{
-                  background: 'linear-gradient(145deg, #0a0f1e, #111827, #0d0d0d)',
-                  borderRadius: 20, border: `1px solid rgba(10,132,255,0.2)`,
+                  background: '#15171A',
+                  borderRadius: 20, border: 'none',
                   padding: '24px 20px', marginBottom: 16, position: 'relative', overflow: 'hidden'
                 }}>
                   {/* Glow orb */}
                   <div style={{
                     position: 'absolute', top: -40, right: -40,
                     width: 160, height: 160, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(10,132,255,0.18) 0%, transparent 70%)',
+                    background: 'none',
                     pointerEvents: 'none'
                   }} />
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, position: 'relative' }}>
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0, fontFamily: FONT, marginBottom: 4 }}>
                         Today · {primaryMetric.name}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                        <span style={{ fontSize: 48, fontWeight: 900, color: T.text, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                        <span style={{ fontSize: 48, fontWeight: 600, color: T.text, fontFamily: FONT, lineHeight: 1 }}>
                           {todayPrimaryVal.toLocaleString()}
                         </span>
                         {todayPrimaryGoal > 0 && (
@@ -1385,27 +1348,27 @@ export default function ReportsPage() {
                     {/* Status badge */}
                     <div style={{
                       padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700,
-                      letterSpacing: '1.5px', textTransform: 'uppercase',
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      backgroundColor: todayPrimaryPct >= 0.8 ? 'rgba(48,209,88,0.15)' : todayPrimaryPct >= 0.5 ? 'rgba(255,159,10,0.15)' : 'rgba(255,255,255,0.05)',
+                      letterSpacing: 0,
+                      fontFamily: FONT,
+                      backgroundColor: todayPrimaryPct >= 0.8 ? 'rgba(184,240,106,0.15)' : todayPrimaryPct >= 0.5 ? 'rgba(242,201,76,0.15)' : 'rgba(255,255,255,0.05)',
                       color: todayPrimaryPct >= 0.8 ? T_SUCCESS : todayPrimaryPct >= 0.5 ? T_WARNING : T.muted,
-                      border: `1px solid ${todayPrimaryPct >= 0.8 ? 'rgba(48,209,88,0.3)' : todayPrimaryPct >= 0.5 ? 'rgba(255,159,10,0.3)' : T.border}`
+                      border: `1px solid ${todayPrimaryPct >= 0.8 ? 'rgba(184,240,106,0.3)' : todayPrimaryPct >= 0.5 ? 'rgba(242,201,76,0.3)' : T.border}`
                     }}>
-                      {todayPrimaryPct >= 0.8 ? 'ON TRACK' : todayPrimaryPct >= 0.5 ? 'IN PROGRESS' : 'START LOGGING'}
+                      {todayPrimaryPct >= 0.8 ? 'On track' : todayPrimaryPct >= 0.5 ? 'In progress' : 'Start logging'}
                     </div>
                   </div>
                   {/* Secondary stats row */}
                   <div style={{ display: 'flex', gap: 12, position: 'relative' }}>
                     <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><DropletIcon size={10} color={T.muted} strokeWidth={2} /> Water</div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: T_ACCENT, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: 0, fontFamily: FONT, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><DropletIcon size={10} color={T.muted} strokeWidth={2} /> Water</div>
+                      <div style={{ fontSize: 18, fontWeight: 600, color: T_ACCENT, fontFamily: FONT }}>
                         {todayWater} <span style={{ fontSize: 11, fontWeight: 500, color: T.muted }}>oz{waterGoal > 0 ? ` / ${waterGoal}` : ''}</span>
                       </div>
                     </div>
                     {habitPct !== null && (
                       <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><CheckSquareIcon size={10} color={T.muted} strokeWidth={2} /> Habits</div>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: habitPct >= 80 ? T_SUCCESS : habitPct >= 50 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: 0, fontFamily: FONT, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><CheckSquareIcon size={10} color={T.muted} strokeWidth={2} /> Habits</div>
+                        <div style={{ fontSize: 18, fontWeight: 600, color: habitPct >= 80 ? T_SUCCESS : habitPct >= 50 ? T_WARNING : T.muted, fontFamily: FONT }}>
                           {habitPct}% <span style={{ fontSize: 11, fontWeight: 500, color: T.muted }}>{checkedHabits}/{totalHabits}</span>
                         </div>
                       </div>
@@ -1417,7 +1380,7 @@ export default function ReportsPage() {
               {/* Macro Breakdown */}
               {todayEntry && metrics.length >= 2 && Object.values(todayMacroValues).some(v => v > 0) && (
                 <Card>
-                  <SectionHeader icon={<LeafIcon size={17} color="#30D158" strokeWidth={2} />} title="Macro Breakdown" iconBg="rgba(48,209,88,0.12)" iconBorder="rgba(48,209,88,0.3)" />
+                  <SectionHeader title="Macro breakdown" />
                   <MacroRing metrics={metrics} values={todayMacroValues} />
                 </Card>
               )}
@@ -1425,19 +1388,19 @@ export default function ReportsPage() {
               {/* Meal Timing Today */}
               {todayEntry && (
                 <Card>
-                  <SectionHeader icon={<ClockIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Meal Windows Today" />
+                  <SectionHeader title="Meal windows today" />
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
                     {mealWindows.map((w, i) => (
                       <div key={w.label} style={{ flex: 1, textAlign: 'center' }}>
                         <div style={{
                           height: 40, borderRadius: 10, marginBottom: 8,
-                          backgroundColor: todayWindowsLogged[i] ? 'rgba(48,209,88,0.2)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${todayWindowsLogged[i] ? 'rgba(48,209,88,0.4)' : T.border}`,
+                          backgroundColor: todayWindowsLogged[i] ? 'rgba(184,240,106,0.2)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${todayWindowsLogged[i] ? 'rgba(184,240,106,0.4)' : T.border}`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          {todayWindowsLogged[i] ? <UtensilsIcon size={16} color="#30D158" strokeWidth={2} /> : <span style={{ color: T.faint, fontSize: 20, lineHeight: 1 }}>·</span>}
+                          {todayWindowsLogged[i] ? <UtensilsIcon size={16} color="#B8F06A" strokeWidth={2} /> : <span style={{ color: T.faint, fontSize: 20, lineHeight: 1 }}>·</span>}
                         </div>
-                        <div style={{ fontSize: 10, color: todayWindowsLogged[i] ? T_SUCCESS : T.muted, fontWeight: 600, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px' }}>
+                        <div style={{ fontSize: 10, color: todayWindowsLogged[i] ? T_SUCCESS : T.muted, fontWeight: 600, fontFamily: FONT, letterSpacing: '0.5px' }}>
                           {w.label}
                         </div>
                       </div>
@@ -1457,7 +1420,7 @@ export default function ReportsPage() {
               {/* Goal Achievement */}
               {metrics.some(m => m.goal) && stats.days > 0 && (
                 <Card>
-                  <SectionHeader icon={<TargetIcon size={17} color="#BF5AF2" strokeWidth={2} />} title="Goal Achievement — Last 7 Days" iconBg="rgba(191,90,242,0.12)" iconBorder="rgba(191,90,242,0.3)" />
+                  <SectionHeader title="Goal achievement — last 7 days" />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {metrics.filter(m => m.goal).map(m => {
                       const hits = stats.goalAchievement[m.key] || 0
@@ -1483,25 +1446,18 @@ export default function ReportsPage() {
               {/* Avg stats */}
               {metrics.length > 0 && stats.days > 0 && (
                 <Card>
-                  <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Daily Averages" />
+                  <SectionHeader title="Daily averages" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {metrics.map((metric, i) => (
                       <div key={metric.key} style={{
-                        padding: '14px', backgroundColor: T.card2, border: `1px solid ${T.border}`,
+                        padding: '14px', backgroundColor: T.card2, border: 'none',
                         borderRadius: '12px'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                            backgroundColor: `${metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]}20`,
-                            border: `1px solid ${metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]}40`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
-                          }}>
-                            <BarChartIcon size={14} color={metric.color || '#0A84FF'} strokeWidth={2} />
-                          </div>
+                          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, backgroundColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length] }} />
                           <span style={{ fontSize: '12px', color: T.muted, fontWeight: '600', letterSpacing: '0.5px' }}>{metric.name}</span>
                         </div>
-                        <div style={{ fontSize: '26px', fontWeight: '900', color: T.text, lineHeight: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        <div style={{ fontSize: '26px', fontWeight: 600, color: T.text, lineHeight: 1, fontFamily: FONT }}>
                           {(stats.averages[metric.key] || 0).toLocaleString()}
                           <span style={{ fontSize: '12px', color: T.muted, fontWeight: '500', marginLeft: 4 }}>{metric.unit}/day</span>
                         </div>
@@ -1518,25 +1474,25 @@ export default function ReportsPage() {
 
               {/* Tracking Streak */}
               <div style={{
-                background: 'linear-gradient(135deg, #28180a, #3a2810)',
-                border: '1px solid rgba(255,159,10,0.3)',
+                background: T.card,
+                border: 'none',
                 borderRadius: 16, padding: '18px', marginBottom: 16
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,159,10,0.7)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(242,201,76,0.7)', letterSpacing: 0, fontFamily: FONT, marginBottom: 6 }}>
                       Tracking Streak
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {streaks.trackingStreak > 0 && <FlameIcon size={36} color={T_WARNING} strokeWidth={1.5} />}
-                        <span style={{ fontSize: 48, fontWeight: 900, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                        <span style={{ fontSize: 48, fontWeight: 600, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: FONT, lineHeight: 1 }}>
                           {streaks.trackingStreak}
                         </span>
                       </div>
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,159,10,0.6)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginTop: 4 }}>
-                      DAY STREAK
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(242,201,76,0.6)', letterSpacing: 0, fontFamily: FONT, marginTop: 4 }}>
+                      Day streak
                     </div>
                   </div>
                   <div style={{ opacity: 0.08, display: 'flex' }}><FlameIcon size={80} color={T_WARNING} strokeWidth={1} /></div>
@@ -1546,14 +1502,14 @@ export default function ReportsPage() {
               {/* Eating Patterns */}
               {metrics.length > 0 && (
                 <Card>
-                  <SectionHeader icon={<TrendingUpIcon size={17} color="#30D158" strokeWidth={2} />} title="Eating Patterns — Last 7 Days" iconBg="rgba(48,209,88,0.12)" iconBorder="rgba(48,209,88,0.3)" />
+                  <SectionHeader title="Eating patterns — last 7 days" />
                   <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
                 </Card>
               )}
 
               {/* Add to Previous Day */}
               <Card>
-                <SectionHeader icon={<PencilIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Add to Previous Day" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
+                <SectionHeader title="Add to previous day" />
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {['Yesterday', '2 days ago', '3 days ago'].map((label, i) => (
                     <button key={i} onClick={() => addToPreviousDay(i + 1)}
@@ -1561,7 +1517,7 @@ export default function ReportsPage() {
                         padding: '8px 16px', backgroundColor: 'transparent',
                         border: `1px solid ${T.border}`, borderRadius: '20px',
                         color: T.text, fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                        fontFamily: "'DM Sans', sans-serif"
+                        fontFamily: FONT
                       }}>
                       {label}
                     </button>
@@ -1581,7 +1537,7 @@ export default function ReportsPage() {
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 16, WebkitOverflowScrolling: 'touch' }}>
                   {metrics.map(m => {
                     const isActive = chartMetricKey === m.key
-                    const color = m.color || '#0A84FF'
+                    const color = m.color || '#B8F06A'
                     return (
                       <button key={m.key} onClick={() => setChartMetricKey(m.key)}
                         style={{
@@ -1590,7 +1546,7 @@ export default function ReportsPage() {
                           border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.12)'}`,
                           color: isActive ? '#fff' : T.muted,
                           fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer',
-                          fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px',
+                          fontFamily: FONT, letterSpacing: '0.5px',
                           transition: 'all 0.15s',
                           boxShadow: isActive ? `0 2px 8px ${color}40` : 'none'
                         }}>
@@ -1604,40 +1560,40 @@ export default function ReportsPage() {
               {/* Summary Hero */}
               {stats.days > 0 && (
                 <div style={{
-                  background: 'linear-gradient(145deg, #0a0f1e, #111827, #0d0d0d)',
-                  borderRadius: 20, border: '1px solid rgba(191,90,242,0.2)',
+                  background: '#15171A',
+                  borderRadius: 20, border: 'none',
                   padding: '20px', marginBottom: 16, position: 'relative', overflow: 'hidden'
                 }}>
                   <div style={{
                     position: 'absolute', top: -30, right: -30, width: 130, height: 130, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(191,90,242,0.15) 0%, transparent 70%)',
+                    background: 'none',
                     pointerEvents: 'none'
                   }} />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T_PURPLE, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 14, opacity: 0.8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T_PURPLE, letterSpacing: 0, fontFamily: FONT, marginBottom: 14, opacity: 0.8 }}>
                     Week Summary
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, textAlign: 'center' }}>
                     <div>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: T.text, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>{stats.days}</div>
-                      <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginTop: 4, fontFamily: "'Barlow Condensed', sans-serif" }}>Days Logged</div>
+                      <div style={{ fontSize: 36, fontWeight: 600, color: T.text, fontFamily: FONT, lineHeight: 1 }}>{stats.days}</div>
+                      <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: 0, marginTop: 4, fontFamily: FONT }}>Days Logged</div>
                       <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>of 7</div>
                     </div>
                     {metrics.filter(m => m.goal).slice(0, 1).map(m => {
                       const hits = stats.goalAchievement[m.key] || 0
                       return (
                         <div key={m.key}>
-                          <div style={{ fontSize: 36, fontWeight: 900, color: hits >= 5 ? T_SUCCESS : hits >= 3 ? T_WARNING : T_DANGER, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>{hits}/7</div>
-                          <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginTop: 4, fontFamily: "'Barlow Condensed', sans-serif" }}>Goal Days</div>
+                          <div style={{ fontSize: 36, fontWeight: 600, color: hits >= 5 ? T_SUCCESS : hits >= 3 ? T_WARNING : T_DANGER, fontFamily: FONT, lineHeight: 1 }}>{hits}/7</div>
+                          <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: 0, marginTop: 4, fontFamily: FONT }}>Goal Days</div>
                           <div style={{ fontSize: 10, color: T.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
                         </div>
                       )
                     })}
                     {activeMetric && (
                       <div>
-                        <div style={{ fontSize: 36, fontWeight: 900, color: T_PURPLE, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                        <div style={{ fontSize: 36, fontWeight: 600, color: T_PURPLE, fontFamily: FONT, lineHeight: 1 }}>
                           {(stats.averages[activeMetric.key] || 0).toLocaleString()}
                         </div>
-                        <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginTop: 4, fontFamily: "'Barlow Condensed', sans-serif" }}>Daily Avg</div>
+                        <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: 0, marginTop: 4, fontFamily: FONT }}>Daily Avg</div>
                         <div style={{ fontSize: 10, color: T.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeMetric.unit}/day</div>
                       </div>
                     )}
@@ -1648,7 +1604,7 @@ export default function ReportsPage() {
               {/* Day Goal Grid */}
               {metrics.some(m => m.goal) && (
                 <Card>
-                  <SectionHeader icon={<GridIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Day-by-Day Goal Tracker" />
+                  <SectionHeader title="Day-by-Day goal tracker" />
                   <DayGoalGrid history={history} metrics={metrics} dateRange={weekStart} />
                 </Card>
               )}
@@ -1656,7 +1612,7 @@ export default function ReportsPage() {
               {/* Water week bars */}
               {filteredHistory.length > 0 && (
                 <Card>
-                  <SectionHeader icon={<DropletIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Hydration This Week" />
+                  <SectionHeader title="Hydration this week" />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {Array.from({ length: 7 }, (_, i) => {
                       const d = new Date(weekStart); d.setDate(d.getDate() + i)
@@ -1667,7 +1623,7 @@ export default function ReportsPage() {
                       const isToday = dateStr === toLocalDateStr(new Date())
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 28, fontSize: 10, color: isToday ? T_ACCENT : T.muted, fontWeight: isToday ? 700 : 500, fontFamily: "'Barlow Condensed', sans-serif", flexShrink: 0, textAlign: 'right' }}>
+                          <div style={{ width: 28, fontSize: 10, color: isToday ? T_ACCENT : T.muted, fontWeight: isToday ? 700 : 500, fontFamily: FONT, flexShrink: 0, textAlign: 'right' }}>
                             {d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2)}
                           </div>
                           <div style={{ flex: 1, height: 8, backgroundColor: T.faint, borderRadius: 4, overflow: 'hidden' }}>
@@ -1682,13 +1638,13 @@ export default function ReportsPage() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, textAlign: 'center', marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
                     <div>
-                      <div style={{ fontSize: '22px', fontWeight: '700', color: T.text, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      <div style={{ fontSize: '22px', fontWeight: '700', color: T.text, fontFamily: FONT }}>
                         {filteredHistory.reduce((s, d) => s + (d.water || 0), 0)}
                       </div>
                       <div style={{ fontSize: '11px', color: T.muted, marginTop: 2 }}>Total oz</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '22px', fontWeight: '700', color: T.text, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      <div style={{ fontSize: '22px', fontWeight: '700', color: T.text, fontFamily: FONT }}>
                         {filteredHistory.length > 0 ? Math.round(filteredHistory.reduce((s, d) => s + (d.water || 0), 0) / filteredHistory.length) : 0}
                       </div>
                       <div style={{ fontSize: '11px', color: T.muted, marginTop: 2 }}>Avg/day oz</div>
@@ -1701,7 +1657,7 @@ export default function ReportsPage() {
               {metrics.length > 0 && (
                 <Card>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Day by Day" />
+                    <SectionHeader title="Day by day" />
                     {metrics.length > 1 && (
                       <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
                         style={{ fontSize: '12px', padding: '6px 10px', border: `1px solid ${T.border}`, borderRadius: '8px', color: T.muted, backgroundColor: T.card2, outline: 'none' }}>
@@ -1713,7 +1669,7 @@ export default function ReportsPage() {
                   {(() => {
                     const insight = getWeeklyInsight()
                     return insight ? (
-                      <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.25)', borderRadius: '10px', fontSize: '12px', color: T_ACCENT, fontWeight: '500' }}>
+                      <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: 'rgba(184,240,106,0.1)', border: 'none', borderRadius: '10px', fontSize: '12px', color: T_ACCENT, fontWeight: '500' }}>
                         {insight}
                       </div>
                     ) : null
@@ -1724,7 +1680,7 @@ export default function ReportsPage() {
               {/* Meal Timing */}
               {metrics.length > 0 && (
                 <Card>
-                  <SectionHeader icon={<UtensilsIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Meal Timing Patterns" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
+                  <SectionHeader title="Meal timing patterns" />
                   <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
                 </Card>
               )}
@@ -1741,7 +1697,7 @@ export default function ReportsPage() {
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 16, WebkitOverflowScrolling: 'touch' }}>
                   {metrics.map(m => {
                     const isActive = chartMetricKey === m.key
-                    const color = m.color || '#0A84FF'
+                    const color = m.color || '#B8F06A'
                     return (
                       <button key={m.key} onClick={() => setChartMetricKey(m.key)}
                         style={{
@@ -1750,7 +1706,7 @@ export default function ReportsPage() {
                           border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.12)'}`,
                           color: isActive ? '#fff' : T.muted,
                           fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer',
-                          fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px',
+                          fontFamily: FONT, letterSpacing: '0.5px',
                           transition: 'all 0.15s',
                           boxShadow: isActive ? `0 2px 8px ${color}40` : 'none'
                         }}>
@@ -1767,19 +1723,19 @@ export default function ReportsPage() {
                 const consistency = totalDays > 0 ? Math.round((filteredHistory.length / totalDays) * 100) : 0
                 return (
                   <div style={{
-                    background: 'linear-gradient(145deg, #0f1a0a, #162010, #0d0d0d)',
-                    borderRadius: 20, border: '1px solid rgba(48,209,88,0.2)',
+                    background: '#15171A',
+                    borderRadius: 20, border: 'none',
                     padding: '24px 20px', marginBottom: 16, position: 'relative', overflow: 'hidden'
                   }}>
                     <div style={{
                       position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(48,209,88,0.15) 0%, transparent 70%)',
+                      background: 'none',
                       pointerEvents: 'none'
                     }} />
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(48,209,88,0.7)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(184,240,106,0.7)', letterSpacing: 0, fontFamily: FONT, marginBottom: 6 }}>
                       Consistency
                     </div>
-                    <div style={{ fontSize: 56, fontWeight: 900, color: consistency >= 80 ? T_SUCCESS : consistency >= 50 ? T_WARNING : T_DANGER, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1, marginBottom: 6 }}>
+                    <div style={{ fontSize: 56, fontWeight: 600, color: consistency >= 80 ? T_SUCCESS : consistency >= 50 ? T_WARNING : T_DANGER, fontFamily: FONT, lineHeight: 1, marginBottom: 6 }}>
                       {consistency}%
                     </div>
                     <div style={{ fontSize: 13, color: T.muted }}>
@@ -1788,7 +1744,7 @@ export default function ReportsPage() {
                     {(() => {
                       const insight = getMonthlyInsight()
                       return insight ? (
-                        <div style={{ marginTop: 14, padding: '10px 14px', backgroundColor: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.25)', borderRadius: '10px', fontSize: '12px', color: T_ACCENT, fontWeight: '500' }}>
+                        <div style={{ marginTop: 14, padding: '10px 14px', backgroundColor: 'rgba(184,240,106,0.1)', border: 'none', borderRadius: '10px', fontSize: '12px', color: T_ACCENT, fontWeight: '500' }}>
                           {insight}
                         </div>
                       ) : null
@@ -1800,7 +1756,7 @@ export default function ReportsPage() {
               {/* Best vs Worst Weeks */}
               {filteredHistory.length > 0 && metrics.length > 0 && (
                 <Card>
-                  <SectionHeader icon={<TrophyIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Best vs Worst Weeks" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
+                  <SectionHeader title="Best vs worst weeks" />
                   <BestWorstWeeks history={history} metrics={metrics} monthStart={monthStart} monthEnd={monthEnd} />
                 </Card>
               )}
@@ -1808,25 +1764,18 @@ export default function ReportsPage() {
               {/* Monthly averages grid */}
               {metrics.length > 0 && stats.days > 0 && (
                 <Card>
-                  <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title="Monthly Averages" />
+                  <SectionHeader title="Monthly averages" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {metrics.map((metric, i) => (
                       <div key={metric.key} style={{
-                        padding: '14px', backgroundColor: T.card2, border: `1px solid ${T.border}`,
+                        padding: '14px', backgroundColor: T.card2, border: 'none',
                         borderRadius: '12px'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                            backgroundColor: `${metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]}20`,
-                            border: `1px solid ${metric.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length]}40`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
-                          }}>
-                            <BarChartIcon size={14} color={metric.color || '#0A84FF'} strokeWidth={2} />
-                          </div>
+                          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, backgroundColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length] }} />
                           <span style={{ fontSize: '12px', color: T.muted, fontWeight: '600', letterSpacing: '0.5px' }}>{metric.name}</span>
                         </div>
-                        <div style={{ fontSize: '26px', fontWeight: '900', color: T.text, lineHeight: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        <div style={{ fontSize: '26px', fontWeight: 600, color: T.text, lineHeight: 1, fontFamily: FONT }}>
                           {(stats.averages[metric.key] || 0).toLocaleString()}
                           <span style={{ fontSize: '12px', color: T.muted, fontWeight: '500', marginLeft: 4 }}>{metric.unit}/day</span>
                         </div>
@@ -1845,7 +1794,7 @@ export default function ReportsPage() {
               {metrics.length > 0 && (
                 <Card>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                    <SectionHeader icon={<BarChartIcon size={17} color="#0A84FF" strokeWidth={2} />} title={activeMetric?.name || 'Metric'} />
+                    <SectionHeader title={activeMetric?.name || 'Metric'} />
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       {metrics.length > 1 && (
                         <select value={chartMetricKey || ''} onChange={e => setChartMetricKey(e.target.value)}
@@ -1860,8 +1809,8 @@ export default function ReportsPage() {
                               padding: '5px 10px', fontSize: '11px', fontWeight: monthlyGranularity === g ? '700' : '400',
                               backgroundColor: monthlyGranularity === g ? T_ACCENT : 'transparent',
                               border: 'none', borderRadius: '6px',
-                              color: monthlyGranularity === g ? '#fff' : T.muted, cursor: 'pointer',
-                              fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.5px'
+                              color: monthlyGranularity === g ? '#0B0C0E' : T.muted, cursor: 'pointer',
+                              fontFamily: FONT, letterSpacing: '0.5px'
                             }}>
                             {label}
                           </button>
@@ -1885,30 +1834,30 @@ export default function ReportsPage() {
               {/* Meal Timing for the month */}
               {metrics.length > 0 && filteredHistory.length > 0 && (
                 <Card>
-                  <SectionHeader icon={<UtensilsIcon size={17} color="#FF9F0A" strokeWidth={2} />} title="Meal Timing Patterns" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
+                  <SectionHeader title="Meal timing patterns" />
                   <TimeOfDayChart filteredHistory={filteredHistory} metrics={metrics} />
                 </Card>
               )}
 
               {/* Long-term streak */}
               <div style={{
-                background: 'linear-gradient(135deg, #28180a, #3a2810)',
-                border: '1px solid rgba(255,159,10,0.3)',
+                background: T.card,
+                border: 'none',
                 borderRadius: 16, padding: '18px', marginBottom: 16
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,159,10,0.7)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(242,201,76,0.7)', letterSpacing: 0, fontFamily: FONT, marginBottom: 6 }}>
                       Current Tracking Streak
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {streaks.trackingStreak > 0 && <FlameIcon size={36} color={T_WARNING} strokeWidth={1.5} />}
-                      <span style={{ fontSize: 48, fontWeight: 900, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
+                      <span style={{ fontSize: 48, fontWeight: 600, color: streaks.trackingStreak > 0 ? T_WARNING : T.muted, fontFamily: FONT, lineHeight: 1 }}>
                         {streaks.trackingStreak}
                       </span>
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,159,10,0.6)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", marginTop: 4 }}>
-                      DAY STREAK
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(242,201,76,0.6)', letterSpacing: 0, fontFamily: FONT, marginTop: 4 }}>
+                      Day streak
                     </div>
                   </div>
                   <div style={{ opacity: 0.08, display: 'flex' }}><FlameIcon size={80} color={T_WARNING} strokeWidth={1} /></div>
@@ -1957,7 +1906,7 @@ export default function ReportsPage() {
               <>
                 {/* Summary stats */}
                 <Card>
-                  <SectionHeader icon={<DumbbellIcon size={17} color={T_SUCCESS} strokeWidth={2} />} title="All Time" iconBg="rgba(48,209,88,0.12)" iconBorder="rgba(48,209,88,0.3)" />
+                  <SectionHeader title="All time" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                     {[
                       { label: 'Sessions', value: totalSessions },
@@ -1969,8 +1918,8 @@ export default function ReportsPage() {
                       }).length },
                     ].map(({ label, value }) => (
                       <div key={label} style={{ background: T.card2, borderRadius: 12, padding: '14px 10px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: T_SUCCESS, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>{value}</div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4 }}>{label}</div>
+                        <div style={{ fontSize: 28, fontWeight: 600, color: T_SUCCESS, fontFamily: FONT, lineHeight: 1 }}>{value}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0, marginTop: 4 }}>{label}</div>
                       </div>
                     ))}
                   </div>
@@ -1979,7 +1928,7 @@ export default function ReportsPage() {
                 {/* Sessions per week */}
                 {weeks.length > 0 && (
                   <Card>
-                    <SectionHeader icon={<BarChartIcon size={17} color={T_ACCENT} strokeWidth={2} />} title="Sessions per Week" />
+                    <SectionHeader title="Sessions per week" />
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
                       {weeks.map(([weekKey, count]) => {
                         const label = new Date(weekKey + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -1987,7 +1936,7 @@ export default function ReportsPage() {
                         return (
                           <div key={weekKey} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, color: T_ACCENT }}>{count}</span>
-                            <div style={{ width: '100%', height: h, background: `linear-gradient(180deg, ${T_ACCENT}, rgba(10,132,255,0.4))`, borderRadius: '4px 4px 0 0', minHeight: 4 }} />
+                            <div style={{ width: '100%', height: h, background: `linear-gradient(180deg, ${T_ACCENT}, rgba(184,240,106,0.4))`, borderRadius: '4px 4px 0 0', minHeight: 4 }} />
                             <span style={{ fontSize: 9, color: T.muted, whiteSpace: 'nowrap' }}>{label}</span>
                           </div>
                         )
@@ -1999,12 +1948,12 @@ export default function ReportsPage() {
                 {/* Personal records */}
                 {prs.length > 0 && (
                   <Card>
-                    <SectionHeader icon={<TrophyIcon size={17} color={T_WARNING} strokeWidth={2} />} title="Personal Records" iconBg="rgba(255,159,10,0.12)" iconBorder="rgba(255,159,10,0.3)" />
+                    <SectionHeader title="Personal records" />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {prs.map(([name, weight]) => (
                         <div key={name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: T.card2, borderRadius: 10 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{name}</span>
-                          <span style={{ fontSize: 16, fontWeight: 900, color: T_WARNING, fontFamily: "'Barlow Condensed', sans-serif" }}>{weight} lbs</span>
+                          <span style={{ fontSize: 16, fontWeight: 600, color: T_WARNING, fontFamily: FONT }}>{weight} lbs</span>
                         </div>
                       ))}
                     </div>
@@ -2014,10 +1963,10 @@ export default function ReportsPage() {
                 {/* Body weight trend */}
                 {bwEntries.length > 1 && (
                   <Card>
-                    <SectionHeader icon={<TrendingUpIcon size={17} color="#BF5AF2" strokeWidth={2} />} title="Body Weight Trend" iconBg="rgba(191,90,242,0.12)" iconBorder="rgba(191,90,242,0.3)" />
+                    <SectionHeader title="Body weight trend" />
                     <svg width="100%" height="100" viewBox={`0 0 ${bwEntries.length * 40} 100`} preserveAspectRatio="none" style={{ display: 'block', marginBottom: 8 }}>
                       <polyline
-                        fill="none" stroke="#BF5AF2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        fill="none" stroke="#B9A3FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                         points={bwEntries.map((e, i) => {
                           const x = i * 40 + 20
                           const y = 90 - ((e.weight - bwMin) / bwRange) * 80
@@ -2025,13 +1974,13 @@ export default function ReportsPage() {
                         }).join(' ')}
                       />
                       {bwEntries.map((e, i) => (
-                        <circle key={i} cx={i * 40 + 20} cy={90 - ((e.weight - bwMin) / bwRange) * 80} r="4" fill="#BF5AF2" />
+                        <circle key={i} cx={i * 40 + 20} cy={90 - ((e.weight - bwMin) / bwRange) * 80} r="4" fill="#B9A3FF" />
                       ))}
                     </svg>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       {bwEntries.map((e, i) => (
                         <div key={i} style={{ textAlign: 'center', flex: 1 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: '#BF5AF2' }}>{e.weight}</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#B9A3FF' }}>{e.weight}</div>
                           <div style={{ fontSize: 9, color: T.muted }}>{e.date.slice(5)}</div>
                         </div>
                       ))}
@@ -2040,7 +1989,7 @@ export default function ReportsPage() {
                       const diff = (bwEntries[bwEntries.length - 1].weight - bwEntries[0].weight).toFixed(1)
                       const up = parseFloat(diff) > 0
                       return (
-                        <div style={{ marginTop: 12, padding: '10px 14px', background: up ? 'rgba(255,69,58,0.08)' : 'rgba(48,209,88,0.08)', borderRadius: 10, border: `1px solid ${up ? 'rgba(255,69,58,0.2)' : 'rgba(48,209,88,0.2)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ marginTop: 12, padding: '10px 14px', background: up ? 'rgba(255,107,61,0.08)' : 'rgba(184,240,106,0.08)', borderRadius: 10, border: `1px solid ${up ? 'rgba(255,107,61,0.2)' : 'rgba(184,240,106,0.2)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 13, color: T.muted }}>Change over period</span>
                           <span style={{ fontSize: 15, fontWeight: 700, color: up ? T_DANGER : T_SUCCESS }}>{up ? '+' : ''}{diff} {bwEntries[0].unit || 'lbs'}</span>
                         </div>
@@ -2051,7 +2000,7 @@ export default function ReportsPage() {
 
                 {totalSessions === 0 && (
                   <div style={{ textAlign: 'center', padding: '60px 20px', color: T.muted }}>
-                    <DumbbellIcon size={48} color="rgba(48,209,88,0.3)" strokeWidth={1.25} />
+                    <DumbbellIcon size={48} color="rgba(184,240,106,0.3)" strokeWidth={1.25} />
                     <p style={{ marginTop: 16, fontSize: 15 }}>No workouts logged yet.</p>
                   </div>
                 )}

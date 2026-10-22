@@ -7,28 +7,23 @@ import {
   incrementProgramCopies, getFreshPrograms,
 } from '../../../lib/workoutSync';
 import { useAuth } from '../../../lib/AuthContext';
+import { C, font } from '../../../lib/theme'
+import { AppTabBar, PageHeader, TAB_BAR_SPACE } from '../../components/AppChrome';
 
-const C = {
-  bg:'#0D0D0D', card:'#1A1A1A', card2:'#222222', border:'#2C2C2C',
-  accent:'#0A84FF', accentBg:'rgba(10,132,255,0.12)',
-  white:'#FFFFFF', muted:'#888888', faint:'#3A3A3A',
-  success:'#30D158', successBg:'rgba(48,209,88,0.1)',
-};
-const font = { heading:"'Barlow Condensed', sans-serif", body:"'DM Sans', sans-serif" };
 
 const TYPE_COLORS = {
-  strength:   '#0A84FF',
-  bodyweight: '#30D158',
-  running:    '#FF9F0A',
-  stretching: '#BF5AF2',
+  strength:   '#7CC8FF',
+  bodyweight: '#B8F06A',
+  running:    '#E58A5C',
+  stretching: '#B9A3FF',
 };
 
 const GRAD_OPTIONS = [
-  { grad: 'linear-gradient(135deg,#0a1628,#1a2744)', accent: '#0A84FF' },
-  { grad: 'linear-gradient(135deg,#0a2818,#183a22)', accent: '#30D158' },
-  { grad: 'linear-gradient(135deg,#280a0a,#3a1010)', accent: '#FF453A' },
-  { grad: 'linear-gradient(135deg,#1a0a28,#2a1440)', accent: '#BF5AF2' },
-  { grad: 'linear-gradient(135deg,#28180a,#3a2810)', accent: '#FF9F0A' },
+  { grad: '#15171A', accent: '#7CC8FF' },
+  { grad: '#15171A', accent: '#B8F06A' },
+  { grad: '#15171A', accent: '#E58A5C' },
+  { grad: '#15171A', accent: '#B9A3FF' },
+  { grad: '#15171A', accent: '#F2C94C' },
 ];
 
 // Demo programs shown when Firebase is not configured
@@ -584,51 +579,35 @@ export default function DiscoverPage() {
   return (
     <div style={{ fontFamily:font.body, background:C.bg, minHeight:'100dvh', color:C.white }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+        
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{display:none}
         button{cursor:pointer;font-family:inherit}
       `}</style>
 
       {/* HEADER */}
-      <header style={{
-        position:'sticky', top:0, zIndex:50,
-        background:`${C.bg}ee`, backdropFilter:'blur(16px)',
-        borderBottom:`1px solid ${C.border}`,
-        padding:'12px 20px', display:'flex', alignItems:'center', gap:14,
-      }}>
-        <button onClick={() => router.push('/workout')} style={{
-          background:C.card, border:`1px solid ${C.border}`, borderRadius:10,
-          padding:'8px 12px', lineHeight:0, color:C.white,
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div style={{ flex:1 }}>
-          <p style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:2, marginBottom:1 }}>COMMUNITY</p>
-          <h1 style={{ fontFamily:font.heading, fontWeight:900, fontSize:24, letterSpacing:2 }}>DISCOVER</h1>
-        </div>
-      </header>
+      <PageHeader title="Discover" subtitle="Community programs" back="/workout" />
 
       {/* TYPE FILTER TABS */}
       <div style={{ padding:'14px 16px 0', display:'flex', gap:8, overflowX:'auto' }}>
-        {[{ id:'all', label:'All', emoji:'💥' }, ...Object.entries(PROGRAM_TYPES).map(([id, t]) => ({ id, label:t.label, emoji:t.emoji }))].map(t => (
-          <button key={t.id} onClick={() => setFilter(t.id)} style={{
-            flexShrink:0,
-            background: filter === t.id ? C.accentBg : C.card,
-            border:`1px solid ${filter === t.id ? 'rgba(10,132,255,0.4)' : C.border}`,
-            borderRadius:20, padding:'7px 14px',
-            fontSize:12, fontWeight:700,
-            color: filter === t.id ? C.accent : C.muted,
+        {[{ id:'all', label:'All' }, ...Object.entries(PROGRAM_TYPES).map(([id, t]) => ({ id, label:t.label }))].map(t => (
+          <button key={t.id} onClick={() => setFilter(t.id)} aria-pressed={filter === t.id} style={{
+            flexShrink:0, height:36,
+            background: filter === t.id ? C.accent : C.card,
+            border:'none',
+            borderRadius:999, padding:'0 14px',
+            fontSize:14, fontWeight:500,
+            color: filter === t.id ? C.accentInk : C.soft,
           }}>
-            {t.emoji} {t.label}
+            {t.label}
           </button>
         ))}
       </div>
 
       {/* STATUS BANNER */}
       {firestoreStatus === 'unavailable' && (
-        <div style={{ margin:'12px 16px 0', background:'rgba(255,159,10,0.1)', border:'1px solid rgba(255,159,10,0.3)', borderRadius:12, padding:'10px 14px', fontSize:12, color:'#FF9F0A', lineHeight:1.5 }}>
-          ⚠️ Could not load community programs — showing demo programs only. Make sure you're signed in and Firestore rules allow reads on <code>publicWorkouts</code>.
+        <div style={{ margin:'12px 16px 0', background:'rgba(242,201,76,0.1)', border:'1px solid rgba(242,201,76,0.3)', borderRadius:12, padding:'10px 14px', fontSize:12, color:'#F2C94C', lineHeight:1.5 }}>
+          Could not load community programs — showing demo programs only. Make sure you're signed in and Firestore rules allow reads on <code>publicWorkouts</code>.
         </div>
       )}
 
@@ -641,7 +620,6 @@ export default function DiscoverPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:'60px 20px', color:C.muted }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>🔍</div>
             <p style={{ fontSize:15 }}>No public programs yet.</p>
             <p style={{ fontSize:13, marginTop:6 }}>Be the first to publish one!</p>
           </div>
@@ -662,7 +640,7 @@ export default function DiscoverPage() {
                 }}>
                   {/* Card header with gradient */}
                   <div style={{
-                    background:`linear-gradient(135deg, ${typeColor}18, ${typeColor}08)`,
+                    background:C.card,
                     borderBottom:`1px solid ${C.border}`,
                     padding:'18px 18px 14px',
                   }}>
@@ -673,13 +651,13 @@ export default function DiscoverPage() {
                           background:`${typeColor}22`, border:`1px solid ${typeColor}44`,
                           borderRadius:6, padding:'2px 8px', marginBottom:8,
                         }}>
-                          <span style={{ fontSize:12 }}>{pt?.emoji}</span>
-                          <span style={{ fontSize:10, fontWeight:700, color:typeColor, letterSpacing:1.5 }}>
-                            {pt?.label?.toUpperCase()}
+                          
+                          <span style={{ fontSize:10, fontWeight:700, color:typeColor, letterSpacing: 0 }}>
+                            {pt?.label}
                           </span>
                         </div>
-                        <h3 style={{ fontFamily:font.heading, fontWeight:900, fontSize:24, letterSpacing:0.5, color:C.white, lineHeight:1.1, marginBottom:4 }}>
-                          {prog.name.toUpperCase()}
+                        <h3 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:24, letterSpacing:0.5, color:C.white, lineHeight:1.1, marginBottom:4 }}>
+                          {prog.name}
                         </h3>
                         {prog.description && (
                           <p style={{ fontSize:12, color:C.muted, lineHeight:1.4 }}>{prog.description}</p>
@@ -690,14 +668,14 @@ export default function DiscoverPage() {
                     {/* Stats */}
                     <div style={{ display:'flex', gap:16, marginTop:14 }}>
                       {[
-                        { v: prog.days.length, l: 'DAYS' },
-                        { v: totalExercises, l: 'EXERCISES' },
-                        { v: prog.copies || 0, l: 'PEOPLE ADDED', highlight: true },
+                        { v: prog.days.length, l: 'Days' },
+                        { v: totalExercises, l: 'Exercises' },
+                        { v: prog.copies || 0, l: 'Added', highlight: true },
                       ].map((stat, i, arr) => (
                         <div key={stat.l} style={{ display:'flex', alignItems:'stretch', gap:16 }}>
                           <div>
-                            <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, color: stat.highlight ? C.success : typeColor, lineHeight:1 }}>{stat.v}</div>
-                            <div style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1.5 }}>{stat.l}</div>
+                            <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:22, color: stat.highlight ? C.success : typeColor, lineHeight:1 }}>{stat.v}</div>
+                            <div style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{stat.l}</div>
                           </div>
                           {i < arr.length-1 && <div style={{ width:1, background:C.border }}/>}
                         </div>
@@ -713,7 +691,7 @@ export default function DiscoverPage() {
                         background:C.card2, border:`1px solid ${C.border}`,
                         borderRadius:8, padding:'6px 10px',
                       }}>
-                        <div style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>DAY {d.dayNumber}</div>
+                        <div style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing: 0 }}>DAY {d.dayNumber}</div>
                         <div style={{ fontSize:12, fontWeight:600, color:C.white, whiteSpace:'nowrap' }}>{d.name}</div>
                         <div style={{ fontSize:10, color:C.muted }}>{d.exercises?.length || 0} exercises</div>
                       </div>
@@ -726,16 +704,16 @@ export default function DiscoverPage() {
                       <>
                         <div style={{
                           flex:1, height:48, background:C.successBg,
-                          border:`1px solid rgba(48,209,88,0.3)`,
+                          border:`1px solid rgba(184,240,106,0.3)`,
                           borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
                         }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          <span style={{ fontFamily:font.heading, fontSize:16, fontWeight:700, letterSpacing:1, color:C.success }}>IN LIBRARY</span>
+                          <span style={{ fontFamily:font.heading, fontSize:16, fontWeight:700, letterSpacing: 0, color:C.success }}>In library</span>
                         </div>
                         <button onClick={() => removeProgram(prog)} style={{
                           width:48, height:48, borderRadius:12, flexShrink:0,
-                          background:'rgba(255,69,58,0.1)', border:'1px solid rgba(255,69,58,0.3)',
-                          color:'#FF453A', fontSize:20, lineHeight:1,
+                          background:'rgba(255,107,61,0.1)', border:'1px solid rgba(255,107,61,0.3)',
+                          color:'#FF6B3D', fontSize:20, lineHeight:1,
                           display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
                         }} title="Remove from my library">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
@@ -745,15 +723,15 @@ export default function DiscoverPage() {
                       <button onClick={() => copyProgram(prog)} style={{
                         flex:1, height:48,
                         background: justCopied
-                          ? `linear-gradient(90deg, ${C.success}, #20b857)`
-                          : `linear-gradient(90deg, ${typeColor}, ${typeColor}cc)`,
+                          ? `${C.success}`
+                          : C.accent,
                         border:'none', borderRadius:12,
-                        fontFamily:font.heading, fontSize:17, fontWeight:700, letterSpacing:1.5,
-                        color:C.white, cursor:'pointer',
+                        fontFamily:font.heading, fontSize:15, fontWeight:600, letterSpacing: 0,
+                        color:C.accentInk, cursor:'pointer',
                         display:'flex', alignItems:'center', justifyContent:'center', gap:8,
                         transition:'all 0.3s ease',
                       }}>
-                        {justCopied ? '✓ ADDED!' : '+ ADD TO MY PROGRAMS'}
+                        {justCopied ? 'Added' : 'Add to my programs'}
                       </button>
                     )}
                   </div>
@@ -765,30 +743,7 @@ export default function DiscoverPage() {
       </main>
 
       {/* BOTTOM NAV */}
-      <nav style={{
-        position:'fixed', bottom:0, left:0, right:0, zIndex:50,
-        background:`${C.bg}f5`, backdropFilter:'blur(20px)',
-        borderTop:`1px solid ${C.border}`,
-        display:'flex', justifyContent:'space-around',
-        padding:'10px 0 max(10px, env(safe-area-inset-bottom))',
-      }}>
-        <button onClick={() => router.push('/')} style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill={C.faint}><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span style={{ fontSize:10, fontWeight:600, color:C.muted }}>Home</span>
-        </button>
-        <button onClick={() => router.push('/workout')} style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="10" width="4" height="4" rx="1"/><rect x="18" y="10" width="4" height="4" rx="1"/>
-            <rect x="5" y="8" width="3" height="8" rx="1"/><rect x="16" y="8" width="3" height="8" rx="1"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-          </svg>
-          <span style={{ fontSize:10, fontWeight:600, color:C.muted }}>Workout</span>
-        </button>
-        <button style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span style={{ fontSize:10, fontWeight:600, color:C.accent }}>Discover</span>
-        </button>
-      </nav>
+      <AppTabBar current="train" />
     </div>
   );
 }

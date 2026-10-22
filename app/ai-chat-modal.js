@@ -250,9 +250,9 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
           50% { opacity: 0.4; transform: scale(0.75); }
         }
         @keyframes recRing {
-          0% { box-shadow: 0 0 0 0 rgba(255,69,58,0.5); }
-          70% { box-shadow: 0 0 0 8px rgba(255,69,58,0); }
-          100% { box-shadow: 0 0 0 0 rgba(255,69,58,0); }
+          0% { box-shadow: 0 0 0 0 rgba(255,107,61,0.5); }
+          70% { box-shadow: 0 0 0 8px rgba(255,107,61,0); }
+          100% { box-shadow: 0 0 0 0 rgba(255,107,61,0); }
         }
       `}</style>
 
@@ -278,23 +278,23 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
       {status === 'scanning' && (
         <div style={{
           position: 'absolute', top: '20%', left: '10%', right: '10%', height: '55%',
-          border: '2px solid rgba(10,132,255,0.85)', borderRadius: 12,
+          border: '2px solid rgba(184,240,106,0.85)', borderRadius: 12,
           boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
         }}>
           {/* Corner accents */}
           {[
-            { top: -2, left: -2, borderTop: '3px solid #0A84FF', borderLeft: '3px solid #0A84FF' },
-            { top: -2, right: -2, borderTop: '3px solid #0A84FF', borderRight: '3px solid #0A84FF' },
-            { bottom: -2, left: -2, borderBottom: '3px solid #0A84FF', borderLeft: '3px solid #0A84FF' },
-            { bottom: -2, right: -2, borderBottom: '3px solid #0A84FF', borderRight: '3px solid #0A84FF' },
+            { top: -2, left: -2, borderTop: '3px solid #B8F06A', borderLeft: '3px solid #B8F06A' },
+            { top: -2, right: -2, borderTop: '3px solid #B8F06A', borderRight: '3px solid #B8F06A' },
+            { bottom: -2, left: -2, borderBottom: '3px solid #B8F06A', borderLeft: '3px solid #B8F06A' },
+            { bottom: -2, right: -2, borderBottom: '3px solid #B8F06A', borderRight: '3px solid #B8F06A' },
           ].map((s, i) => (
             <div key={i} style={{ position: 'absolute', width: 20, height: 20, borderRadius: 3, ...s }} />
           ))}
           {/* Scan line */}
           <div style={{
             position: 'absolute', left: 4, right: 4, height: 2,
-            background: 'linear-gradient(90deg, transparent, #0A84FF, transparent)',
-            boxShadow: '0 0 8px #0A84FF',
+            background: 'linear-gradient(90deg, transparent, #B8F06A, transparent)',
+            boxShadow: 'none',
             animation: 'scanPulse 2s ease-in-out infinite',
           }} />
         </div>
@@ -318,7 +318,7 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
         animation: 'fadeIn 0.3s ease',
       }}>
         {status === 'starting' && (
-          <p style={{ color: '#888', textAlign: 'center', fontSize: 14, margin: 0 }}>Starting camera...</p>
+          <p style={{ color: '#8B9098', textAlign: 'center', fontSize: 14, margin: 0 }}>Starting camera...</p>
         )}
 
         {status === 'scanning' && (
@@ -328,17 +328,17 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
         )}
 
         {(status === 'found' || status === 'reading-photo') && (
-          <p style={{ color: '#30D158', textAlign: 'center', fontSize: 14, margin: 0, fontWeight: 600 }}>
+          <p style={{ color: '#B8F06A', textAlign: 'center', fontSize: 14, margin: 0, fontWeight: 600 }}>
             {status === 'reading-photo' ? 'Reading barcode from photo...' : 'Barcode detected — looking up product...'}
           </p>
         )}
 
         {status === 'error' && (
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#FF453A', fontSize: 13, marginBottom: 12 }}>{errorMsg}</p>
+            <p style={{ color: '#FF6B3D', fontSize: 13, marginBottom: 12 }}>{errorMsg}</p>
             <button onClick={() => setStatus('scanning')} style={{
-              padding: '9px 20px', backgroundColor: '#0A84FF', border: 'none',
-              borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              padding: '9px 20px', backgroundColor: '#B8F06A', border: 'none',
+              borderRadius: 8, color: '#0B0C0E', fontSize: 13, fontWeight: 600, cursor: 'pointer',
             }}>Try Again</button>
           </div>
         )}
@@ -347,10 +347,10 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
           <div style={{ animation: 'fadeIn 0.25s ease' }}>
             {/* Error/context message */}
             {(status === 'photo-error' || status === 'notfound') && (
-              <p style={{ color: '#FF453A', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>{errorMsg}</p>
+              <p style={{ color: '#FF6B3D', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>{errorMsg}</p>
             )}
             {status === 'unsupported' && (
-              <p style={{ color: '#888', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>
+              <p style={{ color: '#8B9098', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>
                 Live scanning isn't supported on this browser — snap a photo instead.
               </p>
             )}
@@ -360,8 +360,8 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
               onClick={() => photoInputRef.current?.click()}
               style={{
                 width: '100%', padding: '13px', marginBottom: 10,
-                backgroundColor: '#0A84FF', border: 'none',
-                borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600,
+                backgroundColor: '#B8F06A', border: 'none',
+                borderRadius: 10, color: '#0B0C0E', fontSize: 14, fontWeight: 600,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
@@ -390,13 +390,13 @@ function BarcodeScanner({ metrics, onResult, onClose }) {
                   inputMode="numeric"
                   autoFocus
                   style={{
-                    flex: 1, padding: '10px 12px', backgroundColor: '#1A1A1A',
-                    border: '1px solid #2C2C2C', borderRadius: 8, color: '#fff', fontSize: 15,
+                    flex: 1, padding: '10px 12px', backgroundColor: '#15171A',
+                    border: '1px solid #25282D', borderRadius: 8, color: '#fff', fontSize: 15,
                   }}
                 />
                 <button type="submit" disabled={submittingManual || !manualCode.trim()} style={{
-                  padding: '10px 16px', backgroundColor: '#0A84FF', border: 'none',
-                  borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600,
+                  padding: '10px 16px', backgroundColor: '#B8F06A', border: 'none',
+                  borderRadius: 8, color: '#0B0C0E', fontSize: 13, fontWeight: 600,
                   cursor: submittingManual ? 'not-allowed' : 'pointer',
                   opacity: submittingManual ? 0.6 : 1,
                 }}>
@@ -545,7 +545,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
   // Generate button text based on viewing date
   const getAddButtonText = () => {
     if (viewDate === null) {
-      return '✓ Add to Today'
+      return 'Add to Today'
     }
 
     // Parse viewDate (YYYY-MM-DD format)
@@ -557,11 +557,11 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
     yesterday.setDate(yesterday.getDate() - 1)
 
     if (d.toDateString() === yesterday.toDateString()) {
-      return '✓ Add to Yesterday'
+      return 'Add to Yesterday'
     }
 
     // Format as "Add to Dec 15"
-    return `✓ Add to ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    return `Add to ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
   }
 
   return (
@@ -579,7 +579,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
       zIndex: 1000
     }}>
       <div style={{
-        backgroundColor: '#1A1A1A',
+        backgroundColor: '#15171A',
         borderRadius: '16px 16px 0 0',
         width: '100%',
         maxWidth: '600px',
@@ -597,9 +597,9 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
             50% { opacity: 0.4; transform: scale(0.75); }
           }
           @keyframes recRing {
-            0% { box-shadow: 0 0 0 0 rgba(255,69,58,0.5); }
-            70% { box-shadow: 0 0 0 8px rgba(255,69,58,0); }
-            100% { box-shadow: 0 0 0 0 rgba(255,69,58,0); }
+            0% { box-shadow: 0 0 0 0 rgba(255,107,61,0.5); }
+            70% { box-shadow: 0 0 0 8px rgba(255,107,61,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,107,61,0); }
           }
         `}</style>
 
@@ -618,11 +618,11 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
         {/* Header */}
         <div style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #2C2C2C',
+          borderBottom: '1px solid #25282D',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: '#0D0D0D'
+          backgroundColor: '#0B0C0E'
         }}>
           <div>
             <h2 style={{
@@ -658,10 +658,10 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
             onClick={onClose}
             style={{
               padding: '6px 14px',
-              backgroundColor: '#1A1A1A',
-              border: '1px solid #2C2C2C',
+              backgroundColor: '#15171A',
+              border: '1px solid #25282D',
               borderRadius: '6px',
-              color: '#888888',
+              color: '#8B9098',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer'
@@ -676,7 +676,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
           flex: 1,
           overflow: 'auto',
           padding: '16px',
-          backgroundColor: '#0D0D0D'
+          backgroundColor: '#0B0C0E'
         }}>
           {messages.length === 0 && (
             <div style={{
@@ -685,9 +685,9 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               color: '#666666'
             }}>
               <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
-                <CameraIcon size={40} color="rgba(10,132,255,0.5)" strokeWidth={1.25} />
+                <CameraIcon size={40} color="rgba(184,240,106,0.5)" strokeWidth={1.25} />
               </div>
-              <div style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '500', color: '#888888' }}>
+              <div style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '500', color: '#8B9098' }}>
                 Ask me about your meals!
               </div>
               <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
@@ -711,8 +711,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               <div style={{
                 maxWidth: '85%',
                 padding: '10px 14px',
-                backgroundColor: msg.role === 'user' ? '#0A84FF' : '#1A1A1A',
-                color: msg.role === 'user' ? '#fff' : '#FFFFFF',
+                backgroundColor: msg.role === 'user' ? '#B8F06A' : '#15171A',
+                color: msg.role === 'user' ? '#0B0C0E' : '#FFFFFF',
                 borderRadius: '12px',
                 fontSize: '13px',
                 lineHeight: '1.5',
@@ -739,7 +739,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               {msg.estimates && (
                 <div style={{
                   marginTop: '6px',
-                  backgroundColor: msg.added ? '#222222' : 'rgba(48,209,88,0.1)',
+                  backgroundColor: msg.added ? '#1D2024' : 'rgba(184,240,106,0.1)',
                   border: msg.added ? '1px solid #d1d5db' : '1px solid #bbf7d0',
                   borderRadius: '8px',
                   padding: '10px 12px',
@@ -748,7 +748,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   {/* Food quality score badge */}
                   {msg.score && !msg.added && (() => {
                     const g = msg.score.grade?.charAt(0)
-                    const c = g === 'A' ? '#30D158' : g === 'B' ? '#0A84FF' : g === 'C' ? '#FF9F0A' : '#FF453A'
+                    const c = g === 'A' ? '#B8F06A' : g === 'B' ? '#B8F06A' : g === 'C' ? '#F2C94C' : '#FF6B3D'
                     return (
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 10,
@@ -765,7 +765,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                           alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
                         }}>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: c, lineHeight: 1 }}>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: c, lineHeight: 1 }}>
                             {msg.score.grade}
                           </span>
                           <span style={{ fontSize: 9, color: c, opacity: 0.75, lineHeight: 1, marginTop: 2 }}>
@@ -787,9 +787,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   <div style={{
                     fontSize: '11px',
                     fontWeight: '600',
-                    color: msg.added ? '#6b7280' : '#30D158',
+                    color: msg.added ? '#6b7280' : '#B8F06A',
                     marginBottom: '6px',
-                    textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                   }}>
                     {msg.added ? 'Added:' : 'Will add:'}
@@ -809,7 +808,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                           color: msg.added ? '#6b7280' : '#FFFFFF',
                           fontWeight: '500'
                         }}>
-                          <span style={{ color: msg.added ? '#9ca3af' : (m.color || '#888888') }}>{m.name}:</span>{' '}
+                          <span style={{ color: msg.added ? '#9ca3af' : (m.color || '#8B9098') }}>{m.name}:</span>{' '}
                           {val}{m.unit ? ` ${m.unit}` : ''}
                         </div>
                       )
@@ -824,14 +823,14 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                       backgroundColor: msg.added ? '#e5e7eb' : '#10b981',
                       border: 'none',
                       borderRadius: '6px',
-                      color: msg.added ? '#9ca3af' : '#1A1A1A',
+                      color: msg.added ? '#9ca3af' : '#15171A',
                       fontSize: '12px',
                       fontWeight: '500',
                       cursor: msg.added ? 'not-allowed' : 'pointer',
                       opacity: msg.added ? 0.7 : 1
                     }}
                   >
-                    {msg.added ? '✓ Added' : getAddButtonText()}
+                    {msg.added ? 'Added' : getAddButtonText()}
                   </button>
                 </div>
               )}
@@ -844,7 +843,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               alignItems: 'center',
               gap: '8px',
               padding: '10px 14px',
-              backgroundColor: '#1A1A1A',
+              backgroundColor: '#15171A',
               borderRadius: '12px',
               maxWidth: '85%',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
@@ -864,8 +863,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
         <div style={{
           padding: '12px 16px',
           paddingBottom: '24px',
-          borderTop: '1px solid #2C2C2C',
-          backgroundColor: '#1A1A1A'
+          borderTop: '1px solid #25282D',
+          backgroundColor: '#15171A'
         }}>
           {/* Voice recording / transcribing indicator */}
           {(isRecording || isTranscribing) && (
@@ -875,7 +874,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
             }}>
               <div style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                backgroundColor: isTranscribing ? '#FF9F0A' : '#FF453A',
+                backgroundColor: isTranscribing ? '#F2C94C' : '#FF6B3D',
                 animation: isRecording ? 'recPulse 1s ease-in-out infinite' : 'none',
               }} />
               <span style={{ color: '#aaa', fontSize: 13 }}>
@@ -889,7 +888,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
 
           {/* Voice error */}
           {voiceError && !isRecording && !isTranscribing && (
-            <div style={{ color: '#FF453A', fontSize: 12, padding: '4px 4px 8px' }}>{voiceError}</div>
+            <div style={{ color: '#FF6B3D', fontSize: 12, padding: '4px 4px 8px' }}>{voiceError}</div>
           )}
 
           {/* Image preview */}
@@ -907,7 +906,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   width: '72px',
                   objectFit: 'cover',
                   borderRadius: '8px',
-                  border: '2px solid #0A84FF',
+                  border: '2px solid #B8F06A',
                   display: 'block'
                 }}
               />
@@ -920,9 +919,9 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                   width: '20px',
                   height: '20px',
                   borderRadius: '50%',
-                  backgroundColor: '#ef4444',
+                  backgroundColor: '#FF6B3D',
                   border: 'none',
-                  color: '#1A1A1A',
+                  color: '#15171A',
                   fontSize: '12px',
                   fontWeight: '700',
                   cursor: 'pointer',
@@ -955,8 +954,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               title="Take a photo or choose from library"
               style={{
                 padding: '10px 12px',
-                backgroundColor: pendingImage ? '#0A84FF' : 'transparent',
-                border: `1px solid ${pendingImage ? '#0A84FF' : '#2C2C2C'}`,
+                backgroundColor: pendingImage ? '#B8F06A' : 'transparent',
+                border: `1px solid ${pendingImage ? '#B8F06A' : '#25282D'}`,
                 borderRadius: '8px',
                 cursor: isThinking ? 'not-allowed' : 'pointer',
                 lineHeight: 1,
@@ -967,7 +966,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                 justifyContent: 'center'
               }}
             >
-              <CameraIcon size={20} color={pendingImage ? '#fff' : '#888888'} strokeWidth={1.75} />
+              <CameraIcon size={20} color={pendingImage ? '#fff' : '#8B9098'} strokeWidth={1.75} />
             </button>
 
             {/* Barcode scan button */}
@@ -978,7 +977,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               style={{
                 padding: '10px 12px',
                 backgroundColor: 'transparent',
-                border: '1px solid #2C2C2C',
+                border: '1px solid #25282D',
                 borderRadius: '8px',
                 cursor: isThinking ? 'not-allowed' : 'pointer',
                 lineHeight: 1,
@@ -989,7 +988,7 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                 justifyContent: 'center'
               }}
             >
-              <BarcodeIcon size={20} color="#888888" strokeWidth={1.75} />
+              <BarcodeIcon size={20} color="#8B9098" strokeWidth={1.75} />
             </button>
 
             {/* Voice record button */}
@@ -999,8 +998,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               title={isRecording ? 'Stop recording' : 'Record what you ate'}
               style={{
                 padding: '10px 12px',
-                backgroundColor: isRecording ? '#FF453A' : 'transparent',
-                border: `1px solid ${isRecording ? '#FF453A' : '#2C2C2C'}`,
+                backgroundColor: isRecording ? '#FF6B3D' : 'transparent',
+                border: `1px solid ${isRecording ? '#FF6B3D' : '#25282D'}`,
                 borderRadius: '8px',
                 cursor: (isThinking || isTranscribing) ? 'not-allowed' : 'pointer',
                 lineHeight: 1,
@@ -1010,10 +1009,10 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                 alignItems: 'center',
                 justifyContent: 'center',
                 animation: isRecording ? 'recRing 1.2s ease-in-out infinite' : 'none',
-                boxShadow: isRecording ? '0 0 0 0 rgba(255,69,58,0.4)' : 'none',
+                boxShadow: isRecording ? '0 0 0 0 rgba(255,107,61,0.4)' : 'none',
               }}
             >
-              <MicIcon size={20} color={isRecording ? '#fff' : '#888888'} strokeWidth={1.75} />
+              <MicIcon size={20} color={isRecording ? '#fff' : '#8B9098'} strokeWidth={1.75} />
             </button>
 
             <textarea
@@ -1025,8 +1024,8 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               style={{
                 flex: 1,
                 padding: '10px 14px',
-                backgroundColor: '#0D0D0D',
-                border: '1px solid #2C2C2C',
+                backgroundColor: '#0B0C0E',
+                border: '1px solid #25282D',
                 borderRadius: '8px',
                 color: '#FFFFFF',
                 fontSize: '16px',
@@ -1042,10 +1041,10 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
               disabled={(!input.trim() && !pendingImage) || isThinking}
               style={{
                 padding: '10px 18px',
-                backgroundColor: (input.trim() || pendingImage) && !isThinking ? '#0A84FF' : '#2C2C2C',
+                backgroundColor: (input.trim() || pendingImage) && !isThinking ? '#B8F06A' : '#25282D',
                 border: 'none',
                 borderRadius: '8px',
-                color: (input.trim() || pendingImage) && !isThinking ? '#fff' : '#666666',
+                color: (input.trim() || pendingImage) && !isThinking ? '#0B0C0E' : '#666666',
                 fontSize: '13px',
                 fontWeight: '500',
                 cursor: (input.trim() || pendingImage) && !isThinking ? 'pointer' : 'not-allowed'

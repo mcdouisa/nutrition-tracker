@@ -6,15 +6,9 @@ import {
   syncProgramsToFirestore, getFreshPrograms, PROGRAM_TYPES,
 } from '../../../lib/workoutSync';
 import { useAuth } from '../../../lib/AuthContext';
+import { C, font } from '../../../lib/theme'
 
-const C = {
-  bg:'#0D0D0D', card:'#1A1A1A', card2:'#222222', border:'#2C2C2C',
-  accent:'#0A84FF', accentBg:'rgba(10,132,255,0.12)', accentGlow:'rgba(10,132,255,0.35)',
-  white:'#FFFFFF', muted:'#888888', faint:'#3A3A3A', success:'#30D158',
-  danger:'#FF453A', dangerBg:'rgba(255,69,58,0.12)',
-};
-const font = { heading:"'Barlow Condensed', sans-serif", body:"'DM Sans', sans-serif" };
-const SET_COLORS = { working:'#0A84FF', drop:'#FF9F0A', amrap:'#BF5AF2' };
+const SET_COLORS = { working:'#7CC8FF', drop:'#E58A5C', amrap:'#B9A3FF' };
 const SET_LABELS = { working:'W', drop:'D', amrap:'A' };
 
 // ─── EXERCISE MODAL (add + edit, type-aware) ─────────────────────────────────
@@ -56,12 +50,12 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
         <>
           <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, padding:'0 2px' }}>
             {['#', 'DISTANCE (mi)', 'PACE (min/mi)', ''].map(h => (
-              <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+              <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{h}</span>
             ))}
           </div>
           {sets.map((s, i) => (
             <div key={i} style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, alignItems:'center' }}>
-              <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
+              <span style={{ fontFamily:font.heading, fontWeight: 600, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
               <input value={s.distance || ''} onChange={e => updateSet(i, 'distance', e.target.value)}
                 placeholder="1.0" inputMode="decimal"
                 style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 8px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
@@ -69,14 +63,14 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
                 placeholder="8:30"
                 style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 8px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
               <button onClick={() => removeSet(i)} disabled={sets.length === 1} style={{
-                background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,69,58,0.4)'}`,
+                background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,107,61,0.4)'}`,
                 borderRadius:8, width:36, height:36, color: sets.length === 1 ? C.faint : C.danger, fontSize:18,
                 display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
               }}>×</button>
             </div>
           ))}
           <div style={{ marginTop:4, marginBottom:12 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>REST BETWEEN INTERVALS (seconds)</label>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>REST BETWEEN INTERVALS (seconds)</label>
             <input value={sets[0]?.rest || '60'} onChange={e => setSets(prev => prev.map(s => ({ ...s, rest: e.target.value })))}
               placeholder="60" inputMode="numeric"
               style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
@@ -90,12 +84,12 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
         <>
           <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, padding:'0 2px' }}>
             {['#', 'HOLD (sec)', 'SIDES', ''].map(h => (
-              <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+              <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{h}</span>
             ))}
           </div>
           {sets.map((s, i) => (
             <div key={i} style={{ display:'grid', gridTemplateColumns:'32px 1fr 1fr 36px', gap:6, marginBottom:8, alignItems:'center' }}>
-              <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
+              <span style={{ fontFamily:font.heading, fontWeight: 600, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
               <input value={s.duration || ''} onChange={e => updateSet(i, 'duration', e.target.value)}
                 placeholder="30" inputMode="numeric"
                 style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 8px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
@@ -105,14 +99,14 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
                 <option value="each">Each Side</option>
               </select>
               <button onClick={() => removeSet(i)} disabled={sets.length === 1} style={{
-                background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,69,58,0.4)'}`,
+                background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,107,61,0.4)'}`,
                 borderRadius:8, width:36, height:36, color: sets.length === 1 ? C.faint : C.danger, fontSize:18,
                 display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
               }}>×</button>
             </div>
           ))}
           <div style={{ marginTop:4, marginBottom:12 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>REST BETWEEN SETS (seconds)</label>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>REST BETWEEN SETS (seconds)</label>
             <input value={sets[0]?.rest || '10'} onChange={e => setSets(prev => prev.map(s => ({ ...s, rest: e.target.value })))}
               placeholder="10" inputMode="numeric"
               style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
@@ -128,11 +122,11 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
     return (
       <>
         <div style={{ display:'grid', gridTemplateColumns:cols, gap:6, marginBottom:8, padding:'0 2px' }}>
-          {headers.map(h => <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>)}
+          {headers.map(h => <span key={h} style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{h}</span>)}
         </div>
         {sets.map((s, i) => (
           <div key={i} style={{ display:'grid', gridTemplateColumns:cols, gap:6, marginBottom:8, alignItems:'center' }}>
-            <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
+            <span style={{ fontFamily:font.heading, fontWeight: 600, fontSize:14, color:C.muted, textAlign:'center' }}>{i+1}</span>
             <select value={s.type} onChange={e => updateSet(i, 'type', e.target.value)} style={{
               background:C.card2, border:`1px solid ${SET_COLORS[s.type]}55`,
               borderRadius:8, padding:'9px 6px', fontSize:12, fontWeight:700,
@@ -151,21 +145,21 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
                 style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 6px', fontSize:13, color:C.white, textAlign:'center', outline:'none' }}/>
             )}
             <button onClick={() => removeSet(i)} disabled={sets.length === 1} style={{
-              background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,69,58,0.4)'}`,
+              background:'none', border:`1px solid ${sets.length === 1 ? C.faint : 'rgba(255,107,61,0.4)'}`,
               borderRadius:8, width:36, height:36, color: sets.length === 1 ? C.faint : C.danger, fontSize:18,
               display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
             }}>×</button>
           </div>
         ))}
         <div style={{ marginTop:4, marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>REST (seconds, applies to all sets)</label>
+          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>REST (seconds, applies to all sets)</label>
           <input value={sets[0]?.rest || '90'} onChange={e => setSets(prev => prev.map(s => ({ ...s, rest: e.target.value })))}
             placeholder="90"
             style={{ width:'100px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:14, color:C.white, textAlign:'center', outline:'none' }}/>
         </div>
         <div style={{ display:'flex', gap:16, marginBottom:12 }}>
           <div style={{ flex:1 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>SESSIONS AT MAX REPS TO PROGRESS</label>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>Sessions at max reps to progress</label>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <input value={overloadSessions} onChange={e => setOverloadSessions(e.target.value)}
                 inputMode="numeric" placeholder="2"
@@ -174,7 +168,7 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
             </div>
           </div>
           <div style={{ flex:1 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>WEIGHT INCREMENT</label>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>Weight increment</label>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <input value={overloadIncrement} onChange={e => setOverloadIncrement(e.target.value)}
                 inputMode="decimal" placeholder="5"
@@ -209,13 +203,13 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
       <div style={{ background:C.card, borderRadius:'22px 22px 0 0', width:'100%', maxWidth:600, padding:'24px 20px 40px', maxHeight:'92vh', overflowY:'auto' }}
         onClick={e => e.stopPropagation()}>
         <div style={{ width:36, height:4, background:C.border, borderRadius:2, margin:'0 auto 20px' }}/>
-        <h3 style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, letterSpacing:1, marginBottom:18, color:C.white }}>
-          {initial ? 'EDIT EXERCISE' : 'ADD EXERCISE'}
+        <h3 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:22, letterSpacing: 0, marginBottom:18, color:C.white }}>
+          {initial ? 'Edit exercise' : 'Add exercise'}
         </h3>
 
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>
-            {type === 'running' ? 'SEGMENT NAME' : type === 'stretching' ? 'STRETCH NAME' : 'EXERCISE NAME'}
+          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>
+            {type === 'running' ? 'Segment name' : type === 'stretching' ? 'Stretch name' : 'EXERCISE NAME'}
           </label>
           <input value={name} onChange={e => setName(e.target.value)}
             placeholder={placeholder} autoFocus
@@ -223,8 +217,8 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
         </div>
 
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:10 }}>
-            {type === 'running' ? 'INTERVALS' : type === 'stretching' ? 'SETS / HOLDS' : 'SETS'}
+          <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:10 }}>
+            {type === 'running' ? 'Intervals' : type === 'stretching' ? 'Sets / holds' : 'SETS'}
           </label>
           {renderSetRows()}
           <button onClick={addSet} style={{
@@ -246,10 +240,10 @@ function ExerciseModal({ initial, programType = 'strength', onSave, onClose }) {
           }}>Cancel</button>
           <button onClick={handleSave} disabled={!name.trim()} style={{
             flex:2,
-            background: name.trim() ? `linear-gradient(90deg,${C.accent},#5856D6)` : C.faint,
+            background: name.trim() ? C.accent : C.card2,
             border:'none', borderRadius:12, padding:'13px',
-            fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer',
-          }}>SAVE</button>
+            fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing: 0, color:name.trim() ? C.accentInk : C.muted, cursor:'pointer',
+          }}>Save</button>
         </div>
       </div>
     </div>
@@ -346,7 +340,7 @@ export default function WorkoutDetail() {
     <div style={{ fontFamily:font.body, background:C.bg, minHeight:'100dvh', color:C.white, overflowX:'hidden' }}
       onClick={() => exMenu !== null && setExMenu(null)}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+        
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{display:none}
         button{cursor:pointer;font-family:inherit}
@@ -356,15 +350,12 @@ export default function WorkoutDetail() {
       {/* CINEMATIC HERO */}
       <div style={{
         height:220, position:'relative', overflow:'hidden',
-        background: day.grad || 'linear-gradient(160deg,#060d1a 0%,#0e1a30 35%,#111827 65%,#0a0a0a 100%)',
+        background: C.bg,
       }}>
-        <div style={{ position:'absolute', top:-70, left:-50, width:260, height:260, borderRadius:'50%', background:`radial-gradient(circle,${day.accent || C.accent}22 0%,transparent 65%)`, pointerEvents:'none' }}/>
-        <div style={{ position:'absolute', bottom:0, right:-30, width:220, height:200, background:'radial-gradient(ellipse at 100% 100%,rgba(88,86,214,0.1) 0%,transparent 60%)', pointerEvents:'none' }}/>
-        <div style={{ position:'absolute', inset:0, opacity:0.04, backgroundImage:'linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)', backgroundSize:'32px 32px', pointerEvents:'none' }}/>
 
         {/* Top bar */}
-        <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(to bottom,rgba(0,0,0,0.55),transparent)' }}>
-          <button onClick={() => router.push('/workout')} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.14)', borderRadius:10, padding:'6px 12px', display:'flex', alignItems:'center', gap:5, color:C.white, backdropFilter:'blur(8px)' }}>
+        <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'transparent' }}>
+          <button onClick={() => router.push('/workout')} style={{ background:C.card, border:'none', borderRadius:999, padding:'8px 14px', display:'flex', alignItems:'center', gap:5, color:C.white, backdropFilter:'blur(8px)' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
             <span style={{ fontSize:13, fontWeight:600 }}>Back</span>
           </button>
@@ -378,11 +369,11 @@ export default function WorkoutDetail() {
         </div>
 
         {/* Title */}
-        <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:10, padding:'0 18px 18px', background:'linear-gradient(to top,rgba(13,13,13,0.95) 0%,rgba(13,13,13,0.4) 60%,transparent 100%)' }}>
-          <span style={{ background:`${day.accent || C.accent}22`, border:`1px solid ${day.accent || C.accent}55`, borderRadius:6, padding:'2px 9px', fontSize:10, fontWeight:700, color:day.accent || C.accent, letterSpacing:2, display:'inline-block', marginBottom:6 }}>
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:10, padding:'0 18px 18px', background:'transparent' }}>
+          <span style={{ background:`${C.accent}22`, border:`1px solid ${C.accent}55`, borderRadius:6, padding:'2px 9px', fontSize:10, fontWeight:700, color:C.accent, letterSpacing: 0, display:'inline-block', marginBottom:6 }}>
             DAY {day.dayNumber}
           </span>
-          <h1 style={{ fontFamily:font.heading, fontWeight:900, fontSize:38, letterSpacing:1, lineHeight:1, color:C.white, textTransform:'uppercase' }}>
+          <h1 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:38, letterSpacing: 0, lineHeight:1, color:C.white }}>
             {day.name}
           </h1>
         </div>
@@ -393,14 +384,14 @@ export default function WorkoutDetail() {
 
         {/* STATS BAR */}
         {day.exercises.length > 0 && (
-          <div style={{ background:`linear-gradient(90deg,${day.accent || C.accent}2a,rgba(88,86,214,0.12))`, border:`1px solid ${day.accent || C.accent}44`, borderRadius:14, padding:'14px 24px', display:'flex', alignItems:'stretch', margin:'16px 0 20px' }}>
-            <div style={{ flex:1, textAlign:'center', borderRight:`1px solid ${day.accent || C.accent}33`, paddingRight:24 }}>
-              <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:34, color:day.accent || C.accent, lineHeight:1 }}>{totalSets}</div>
-              <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:2, marginTop:3 }}>SETS</div>
+          <div style={{ background:C.card, border:'none', borderRadius:18, padding:'14px 24px', display:'flex', alignItems:'stretch', margin:'16px 0 20px' }}>
+            <div style={{ flex:1, textAlign:'center', borderRight:`1px solid ${C.accent}33`, paddingRight:24 }}>
+              <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:34, color:C.accent, lineHeight:1 }}>{totalSets}</div>
+              <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, marginTop:3 }}>Sets</div>
             </div>
             <div style={{ flex:1, textAlign:'center', paddingLeft:24 }}>
-              <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:34, color:day.accent || C.accent, lineHeight:1 }}>{day.exercises.length}</div>
-              <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:2, marginTop:3 }}>EXERCISES</div>
+              <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:34, color:C.accent, lineHeight:1 }}>{day.exercises.length}</div>
+              <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, marginTop:3 }}>Exercises</div>
             </div>
           </div>
         )}
@@ -408,22 +399,22 @@ export default function WorkoutDetail() {
         {/* START WORKOUT */}
         {day.exercises.length > 0 && (
           <button onClick={() => router.push('/workout/log')} style={{
-            width:'100%', background:`linear-gradient(90deg,${day.accent || C.accent},#5856D6)`,
+            width:'100%', background:`${C.accent}`,
             border:'none', borderRadius:15, padding:'16px',
-            fontFamily:font.heading, fontSize:21, fontWeight:700, letterSpacing:2,
-            color:C.white, marginBottom:24, boxShadow:`0 4px 28px ${day.accent || C.accentGlow}55`,
+            fontFamily:font.heading, fontSize:21, fontWeight:700, letterSpacing: 0,
+            color:'#0B0C0E', marginBottom:24, boxShadow: 'none',
             display:'flex', alignItems:'center', justifyContent:'center', gap:10,
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill={C.white}><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            START WORKOUT
+            Start workout
           </button>
         )}
 
         {/* EXERCISE LIST HEADER */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-          <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing:2.5, color:C.muted }}>EXERCISES</h4>
+          <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing: 0, color:C.muted }}>Exercises</h4>
           <button onClick={() => { setEditingEx(null); setShowAddEx(true); }} style={{
-            background:C.accentBg, border:`1px solid rgba(10,132,255,0.35)`,
+            background:C.accentBg, border:`1px solid rgba(184,240,106,0.35)`,
             borderRadius:8, padding:'6px 14px', fontSize:12, fontWeight:700, color:C.accent,
             display:'flex', alignItems:'center', gap:5,
           }}>
@@ -435,7 +426,6 @@ export default function WorkoutDetail() {
         {/* EXERCISE CARDS */}
         {day.exercises.length === 0 ? (
           <div style={{ textAlign:'center', padding:'40px 20px', border:`1px dashed ${C.border}`, borderRadius:16 }}>
-            <div style={{ fontSize:36, marginBottom:12 }}>💪</div>
             <p style={{ color:C.muted, fontSize:14 }}>No exercises yet. Add some to get started.</p>
           </div>
         ) : (
@@ -452,7 +442,7 @@ export default function WorkoutDetail() {
                     }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
                     </button>
-                    <div style={{ width:34, height:34, borderRadius:9, background:C.card2, border:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:font.heading, fontWeight:900, fontSize:16, color:C.muted }}>
+                    <div style={{ width:34, height:34, borderRadius:9, background:C.card2, border:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:font.heading, fontWeight: 600, fontSize:16, color:C.muted }}>
                       {i + 1}
                     </div>
                     <button onClick={() => moveExercise(i, 1)} disabled={i === day.exercises.length - 1} style={{
@@ -477,7 +467,7 @@ export default function WorkoutDetail() {
                   {/* ··· menu button */}
                   <button onClick={e => { e.stopPropagation(); setExMenu(exMenu === i ? null : i); }} style={{
                     background: exMenu === i ? C.accentBg : 'none',
-                    border:`1px solid ${exMenu === i ? 'rgba(10,132,255,0.3)' : 'transparent'}`,
+                    border:`1px solid ${exMenu === i ? 'rgba(184,240,106,0.3)' : 'transparent'}`,
                     borderRadius:8, padding:'6px 8px', lineHeight:0, color:C.muted,
                   }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -517,12 +507,12 @@ export default function WorkoutDetail() {
                     <>
                       <div style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6 }}>
                         {['', 'DIST (mi)', 'PACE', 'REST'].map(h => (
-                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{h}</span>
                         ))}
                       </div>
                       {ex.sets.map((set, si) => (
                         <div key={si} style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6, alignItems:'center' }}>
-                          <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
+                          <span style={{ fontFamily:font.heading, fontWeight: 600, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
                           <span style={{ fontSize:13, fontWeight:600, color:C.white, textAlign:'center' }}>{set.distance || '—'}</span>
                           <span style={{ fontSize:13, fontWeight:600, color:C.muted, textAlign:'center' }}>{set.pace || '—'}</span>
                           <span style={{ fontSize:11, fontWeight:600, color:C.faint, textAlign:'center' }}>{set.rest || '60'}s</span>
@@ -533,12 +523,12 @@ export default function WorkoutDetail() {
                     <>
                       <div style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6 }}>
                         {['', 'HOLD (s)', 'SIDES', 'REST'].map(h => (
-                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{h}</span>
                         ))}
                       </div>
                       {ex.sets.map((set, si) => (
                         <div key={si} style={{ display:'grid', gridTemplateColumns:'24px 1fr 1fr 60px', gap:6, marginBottom:6, alignItems:'center' }}>
-                          <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
+                          <span style={{ fontFamily:font.heading, fontWeight: 600, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
                           <span style={{ fontSize:13, fontWeight:600, color:C.white, textAlign:'center' }}>{set.duration || '30'}s</span>
                           <span style={{ fontSize:12, fontWeight:600, color:C.muted, textAlign:'center', textTransform:'capitalize' }}>{set.sides || 'both'}</span>
                           <span style={{ fontSize:11, fontWeight:600, color:C.faint, textAlign:'center' }}>{set.rest || '10'}s</span>
@@ -552,7 +542,7 @@ export default function WorkoutDetail() {
                           ? ['', 'TYPE', 'REPS', 'REST']
                           : ['', 'TYPE', 'REPS', 'WEIGHT', 'REST']
                         ).map(h => (
-                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing:1 }}>{h}</span>
+                          <span key={h} style={{ fontSize:9, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{h}</span>
                         ))}
                       </div>
                       {ex.sets.map((set, si) => {
@@ -562,7 +552,7 @@ export default function WorkoutDetail() {
                           : '24px 1fr 1fr 1fr 60px';
                         return (
                           <div key={si} style={{ display:'grid', gridTemplateColumns:cols, gap:6, marginBottom:6, alignItems:'center' }}>
-                            <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
+                            <span style={{ fontFamily:font.heading, fontWeight: 600, fontSize:12, color:C.muted, textAlign:'center' }}>{si+1}</span>
                             <span style={{ background:`${col}22`, border:`1px solid ${col}44`, borderRadius:6, padding:'4px 0', textAlign:'center', fontSize:11, fontWeight:700, color:col }}>
                               {SET_LABELS[set.type] || 'W'} · {set.type}
                             </span>
@@ -587,14 +577,14 @@ export default function WorkoutDetail() {
         {day.exercises.length === 0 && (
           <button onClick={() => { setEditingEx(null); setShowAddEx(true); }} style={{
             width:'100%', marginTop:16,
-            background:`linear-gradient(90deg,${C.accent},#5856D6)`,
+            background:`${C.accent}`,
             border:'none', borderRadius:15, padding:'16px',
-            fontFamily:font.heading, fontSize:20, fontWeight:700, letterSpacing:2,
-            color:C.white, boxShadow:`0 4px 28px ${C.accentGlow}`,
+            fontFamily:font.heading, fontSize:20, fontWeight:700, letterSpacing: 0,
+            color:'#0B0C0E', boxShadow: 'none',
             display:'flex', alignItems:'center', justifyContent:'center', gap:10,
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            ADD FIRST EXERCISE
+            Add first exercise
           </button>
         )}
       </div>
@@ -615,7 +605,7 @@ export default function WorkoutDetail() {
           onClick={() => setEditingDayName(false)}>
           <div style={{ background:C.card, borderRadius:20, width:'100%', maxWidth:420, padding:'28px 24px' }}
             onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, letterSpacing:1, marginBottom:16, color:C.white }}>RENAME DAY</h3>
+            <h3 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:22, letterSpacing: 0, marginBottom:16, color:C.white }}>Rename day</h3>
             <input
               value={tempDayName} onChange={e => setTempDayName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && saveDayName()}
@@ -624,7 +614,7 @@ export default function WorkoutDetail() {
             />
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={() => setEditingDayName(false)} style={{ flex:1, background:'none', border:`1px solid ${C.border}`, borderRadius:12, padding:'13px', color:C.muted, fontSize:14, fontWeight:600, cursor:'pointer' }}>Cancel</button>
-              <button onClick={saveDayName} style={{ flex:2, background:`linear-gradient(90deg,${C.accent},#5856D6)`, border:'none', borderRadius:12, padding:'13px', fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer' }}>SAVE</button>
+              <button onClick={saveDayName} style={{ flex:2, background:`${C.accent}`, border:'none', borderRadius:12, padding:'13px', fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing: 0, color:'#0B0C0E', cursor:'pointer' }}>Save</button>
             </div>
           </div>
         </div>

@@ -4,19 +4,12 @@ import { useRouter } from 'next/navigation';
 import { getPrograms, savePrograms, getCurrentWorkout, saveSession, syncSessionToFirestore, checkProgressiveOverload, applyProgressiveOverload, syncProgramsToFirestore, getFreshPrograms } from '../../../lib/workoutSync';
 // Note: getPrograms is used post-applyProgressiveOverload to re-read updated weights for Firestore sync
 import { useAuth } from '../../../lib/AuthContext';
+import { C, font } from '../../../lib/theme'
 
-const C = {
-  bg:'#0D0D0D', card:'#1A1A1A', card2:'#242424', border:'#2C2C2C',
-  accent:'#0A84FF', accentBg:'rgba(10,132,255,0.12)', accentGlow:'rgba(10,132,255,0.4)',
-  white:'#FFFFFF', muted:'#888888', faint:'#3A3A3A',
-  success:'#30D158', successBg:'rgba(48,209,88,0.12)',
-  danger:'#FF453A', dangerBg:'rgba(255,69,58,0.12)',
-};
-const font = { heading:"'Barlow Condensed', sans-serif", body:"'DM Sans', sans-serif", mono:"'Courier New', monospace" };
 const SET_TYPES = {
-  working:{ label:'W', color:'#0A84FF', bg:'rgba(10,132,255,0.15)', name:'Working' },
-  drop:   { label:'D', color:'#FF9F0A', bg:'rgba(255,159,10,0.15)', name:'Drop'   },
-  amrap:  { label:'A', color:'#BF5AF2', bg:'rgba(191,90,242,0.15)', name:'AMRAP' },
+  working:{ label:'W', color:'#7CC8FF', bg:'rgba(124,200,255,0.15)', name:'Working' },
+  drop:   { label:'D', color:'#E58A5C', bg:'rgba(229,138,92,0.15)', name:'Drop'   },
+  amrap:  { label:'A', color:'#B9A3FF', bg:'rgba(185,163,255,0.15)', name:'AMRAP' },
 };
 
 function fmtTime(s) {
@@ -78,7 +71,7 @@ function RestTimer({ total, deadline, onDone, audioCtx }) {
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.88)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center' }}>
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:24, padding:'32px 40px', textAlign:'center', minWidth:260 }}>
-        <p style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:2.5, marginBottom:22 }}>REST TIME</p>
+        <p style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:22 }}>Rest time</p>
         <div style={{ position:'relative', width:size, height:size, margin:'0 auto 24px' }}>
           <svg width={size} height={size} style={{ transform:'rotate(-90deg)' }}>
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.border} strokeWidth={sw}/>
@@ -87,12 +80,12 @@ function RestTimer({ total, deadline, onDone, audioCtx }) {
               style={{ transition:'stroke-dashoffset 1s linear' }}/>
           </svg>
           <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2 }}>
-            <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:32, color:C.white, lineHeight:1 }}>{rem}</span>
-            <span style={{ fontSize:10, fontWeight:600, color:C.muted, letterSpacing:1 }}>SECS</span>
+            <span style={{ fontFamily:font.heading, fontWeight: 600, fontSize:32, color:C.white, lineHeight:1 }}>{rem}</span>
+            <span style={{ fontSize:10, fontWeight:600, color:C.muted, letterSpacing: 0 }}>Secs</span>
           </div>
         </div>
         <button onClick={() => onDoneRef.current()} style={{
-          background:C.accentBg, border:`1px solid rgba(10,132,255,0.3)`,
+          background:C.accentBg, border:`1px solid rgba(184,240,106,0.3)`,
           borderRadius:11, padding:'12px 40px', fontSize:15, fontWeight:700, color:C.accent, cursor:'pointer',
         }}>Skip Rest</button>
       </div>
@@ -322,7 +315,7 @@ export default function WorkoutLog() {
   return (
     <div style={{ fontFamily:font.body, background:C.bg, minHeight:'100dvh', color:C.white, overflowX:'hidden' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+        
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{display:none}
         button{cursor:pointer;font-family:inherit}
@@ -348,23 +341,23 @@ export default function WorkoutLog() {
             <div style={{ width:72, height:72, borderRadius:'50%', background:C.successBg, border:`2px solid ${C.success}`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <h2 style={{ fontFamily:font.heading, fontWeight:900, fontSize:32, letterSpacing:1, marginBottom:8, color:C.white }}>WORKOUT DONE!</h2>
+            <h2 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:32, letterSpacing: 0, marginBottom:8, color:C.white }}>Workout done!</h2>
             <p style={{ color:C.muted, fontSize:14, marginBottom:6 }}>{day.name}</p>
             <p style={{ color:C.success, fontSize:16, fontWeight:700, marginBottom: weightBumps.length > 0 ? 20 : 28 }}>{fmtTime(elapsed)} · {loggedSets} sets completed</p>
 
             {/* Progressive overload notification */}
             {weightBumps.length > 0 && (
               <div style={{
-                background: 'linear-gradient(135deg, rgba(255,159,10,0.12), rgba(255,159,10,0.06))',
-                border: '1px solid rgba(255,159,10,0.35)',
+                background: 'linear-gradient(135deg, rgba(242,201,76,0.12), rgba(242,201,76,0.06))',
+                border: '1px solid rgba(242,201,76,0.35)',
                 borderRadius: 16, padding: '16px', marginBottom: 24, textAlign: 'left'
               }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                  <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,159,10,0.15)', border:'1px solid rgba(255,159,10,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                  <div style={{ width:28, height:28, borderRadius:8, background:'rgba(242,201,76,0.15)', border:'1px solid rgba(242,201,76,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F2C94C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
                   </div>
                   <div>
-                    <div style={{ fontFamily:font.heading, fontSize:13, fontWeight:700, color:'#FF9F0A', letterSpacing:'1.5px', textTransform:'uppercase' }}>PROGRESSIVE OVERLOAD</div>
+                    <div style={{ fontFamily:font.heading, fontSize:13, fontWeight:700, color:'#F2C94C', letterSpacing: 0 }}>Progressive overload</div>
                     <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>Hit max reps 2 sessions in a row</div>
                   </div>
                 </div>
@@ -378,8 +371,8 @@ export default function WorkoutLog() {
                     <div style={{ fontSize:13, fontWeight:600, color:C.white }}>{bump.name}</div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <span style={{ fontSize:13, color:C.muted, fontFamily:font.heading }}>{bump.oldWeight} lbs</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                      <span style={{ fontSize:14, fontWeight:900, color:'#FF9F0A', fontFamily:font.heading }}>{bump.newWeight} lbs</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F2C94C" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      <span style={{ fontSize:14, fontWeight: 600, color:'#F2C94C', fontFamily:font.heading }}>{bump.newWeight} lbs</span>
                       <span style={{ fontSize:10, color:C.muted }}>+{bump.increment}</span>
                     </div>
                   </div>
@@ -391,10 +384,10 @@ export default function WorkoutLog() {
             )}
 
             <button onClick={() => router.push('/workout')} style={{
-              width:'100%', background:`linear-gradient(90deg, ${C.success}, #20b857)`,
+              width:'100%', background:`${C.success}`,
               border:'none', borderRadius:14, padding:'16px',
-              fontFamily:font.heading, fontSize:20, fontWeight:700, letterSpacing:1.5, color:C.white, cursor:'pointer',
-            }}>BACK TO PROGRAMS</button>
+              fontFamily:font.heading, fontSize:20, fontWeight:700, letterSpacing: 0, color:'#0B0C0E', cursor:'pointer',
+            }}>Back to programs</button>
           </div>
         </div>
       )}
@@ -413,14 +406,14 @@ export default function WorkoutLog() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:2 }}>NOW LOGGING</div>
-          <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, letterSpacing:0.5, lineHeight:1.1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+          <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0 }}>Now logging</div>
+          <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:22, letterSpacing:0.5, lineHeight:1.1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
             {currentEx?.name || day.name.toUpperCase()}
           </div>
         </div>
         <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:11, padding:'8px 14px', display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0 }}>
           <span style={{ fontFamily:font.mono, fontSize:19, fontWeight:700, color:C.accent, lineHeight:1 }}>{fmtTime(elapsed)}</span>
-          <span style={{ fontSize:9, color:C.muted, fontWeight:700, letterSpacing:1 }}>TOTAL</span>
+          <span style={{ fontSize:9, color:C.muted, fontWeight:700, letterSpacing: 0 }}>Total</span>
         </div>
         <button onClick={() => router.push('/')} title="Go home — workout is saved" style={{
           background:C.card2, border:`1px solid ${C.border}`,
@@ -444,7 +437,7 @@ export default function WorkoutLog() {
           <div style={{
             height:'100%', borderRadius:2,
             width:`${totalSets > 0 ? (loggedSets/totalSets)*100 : 0}%`,
-            background: allDone ? `linear-gradient(90deg,${C.success},#20b857)` : `linear-gradient(90deg,${C.accent},#5856D6)`,
+            background: allDone ? `${C.success}` : `${C.accent}`,
             transition:'width 0.45s ease',
           }}/>
         </div>
@@ -458,13 +451,13 @@ export default function WorkoutLog() {
             <button key={ex.id} onClick={() => setActiveEx(i)} style={{
               flexShrink:0,
               background: activeEx===i ? C.accentBg : C.card,
-              border:`1px solid ${activeEx===i ? 'rgba(10,132,255,0.4)' : done ? 'rgba(48,209,88,0.35)' : C.border}`,
+              border:`1px solid ${activeEx===i ? 'rgba(184,240,106,0.4)' : done ? 'rgba(184,240,106,0.35)' : C.border}`,
               borderRadius:10, padding:'8px 16px',
               fontSize:12, fontWeight:600,
               color: activeEx===i ? C.accent : done ? C.success : C.muted,
               whiteSpace:'nowrap',
             }}>
-              {done ? '✓ ' : ''}{ex.name}
+              {done ? '' : ''}{ex.name}
             </button>
           );
         })}
@@ -490,12 +483,12 @@ export default function WorkoutLog() {
             else summary = `${set.actualReps || set.targetReps} reps · ${set.actualWeight || set.targetWeight || '—'} ${progType === 'bodyweight' ? '(BW)' : useKg ? 'kg' : 'lbs'}`;
             return (
               <div key={set.id} style={{
-                background:C.successBg, border:`1px solid rgba(48,209,88,0.25)`,
+                background:C.successBg, border:`1px solid rgba(184,240,106,0.25)`,
                 borderRadius:14, padding:'12px 16px',
                 display:'flex', alignItems:'center', gap:12,
                 opacity:0.8,
               }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:'rgba(48,209,88,0.2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:'rgba(184,240,106,0.2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
                 <div style={{ flex:1 }}>
@@ -521,7 +514,7 @@ export default function WorkoutLog() {
                     width:48, height:48, borderRadius:14, flexShrink:0,
                     background:C.card2, border:`1px solid ${C.border}`,
                     display:'flex', alignItems:'center', justifyContent:'center',
-                    fontFamily:font.heading, fontWeight:900, fontSize:22, color:C.muted,
+                    fontFamily:font.heading, fontWeight: 600, fontSize:22, color:C.muted,
                   }}>{idx+1}</div>
                   <div style={{
                     background:type.bg, border:`1.5px solid ${type.color}55`,
@@ -531,7 +524,7 @@ export default function WorkoutLog() {
                 </div>
                 <button onClick={() => deleteSet(activeEx, set.id)} style={{
                   width:44, height:44, borderRadius:12,
-                  background:C.dangerBg, border:`1px solid rgba(255,69,58,0.3)`,
+                  background:C.dangerBg, border:`1px solid rgba(255,107,61,0.3)`,
                   color:C.danger, fontSize:20, lineHeight:1,
                   display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
                 }}>×</button>
@@ -541,7 +534,7 @@ export default function WorkoutLog() {
               {progType === 'running' ? (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>DISTANCE (mi)</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>DISTANCE (mi)</div>
                     <input type="text" inputMode="decimal"
                       value={set.actualDistance}
                       onChange={e => updateSet(activeEx, set.id, 'actualDistance', e.target.value)}
@@ -549,7 +542,7 @@ export default function WorkoutLog() {
                       style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
                   </div>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>TIME (mm:ss)</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>TIME (mm:ss)</div>
                     <input type="text"
                       value={set.actualTime}
                       onChange={e => updateSet(activeEx, set.id, 'actualTime', e.target.value)}
@@ -560,7 +553,7 @@ export default function WorkoutLog() {
               ) : progType === 'stretching' ? (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>DURATION (sec)</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>DURATION (sec)</div>
                     <input type="text" inputMode="numeric"
                       value={set.actualDuration}
                       onChange={e => updateSet(activeEx, set.id, 'actualDuration', e.target.value)}
@@ -568,14 +561,14 @@ export default function WorkoutLog() {
                       style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
                   </div>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>SIDES</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>Sides</div>
                     <div style={{ fontSize:14, fontWeight:700, color:C.white, textTransform:'capitalize' }}>{set.sides || 'both'}</div>
                   </div>
                 </div>
               ) : progType === 'bodyweight' ? (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>REPS</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>Reps</div>
                     <input type="text" inputMode="numeric"
                       value={set.actualReps}
                       onChange={e => updateSet(activeEx, set.id, 'actualReps', e.target.value)}
@@ -583,14 +576,14 @@ export default function WorkoutLog() {
                       style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
                   </div>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>WEIGHT</div>
-                    <div style={{ fontSize:22, fontWeight:900, color:C.accent }}>BW</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>Weight</div>
+                    <div style={{ fontSize:22, fontWeight: 600, color:C.accent }}>BW</div>
                   </div>
                 </div>
               ) : (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 14px' }}>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>REPS</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>Reps</div>
                     <input type="text" inputMode="numeric"
                       value={set.actualReps}
                       onChange={e => updateSet(activeEx, set.id, 'actualReps', e.target.value)}
@@ -598,7 +591,7 @@ export default function WorkoutLog() {
                       style={{ fontSize:30, fontWeight:700, textAlign:'center', color:C.white }}/>
                   </div>
                   <div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 8px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5, textAlign:'center', marginBottom:6 }}>{useKg ? 'KG' : 'LBS'}</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0, textAlign:'center', marginBottom:6 }}>{useKg ? 'KG' : 'LBS'}</div>
                     <input type="text" inputMode="decimal"
                       value={set.actualWeight}
                       onChange={e => updateSet(activeEx, set.id, 'actualWeight', e.target.value)}
@@ -612,15 +605,15 @@ export default function WorkoutLog() {
               <div style={{ padding:'0 16px 16px' }}>
                 <button onClick={() => logSet(activeEx, set.id)} style={{
                   width:'100%', height:56,
-                  background:`linear-gradient(90deg, ${C.accent}, #5856D6)`,
+                  background:C.card2,
                   border:'none', borderRadius:14,
-                  fontFamily:font.heading, fontSize:22, fontWeight:700, letterSpacing:2,
-                  color:C.white, cursor:'pointer',
+                  fontFamily:font.heading, fontSize:22, fontWeight:700, letterSpacing: 0,
+                  color:C.accent, cursor:'pointer',
                   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                  boxShadow:`0 4px 20px rgba(10,132,255,0.3)`,
+                  boxShadow:'none',
                 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  LOG SET
+                  Log set
                 </button>
               </div>
 
@@ -655,14 +648,14 @@ export default function WorkoutLog() {
       }}>
         <button onClick={finishWorkout} style={{
           width:'100%', height:58,
-          background: allDone ? `linear-gradient(90deg,${C.success},#20b857)` : `linear-gradient(90deg,${C.accent},#5856D6)`,
+          background: C.accent,
           border:'none', borderRadius:16,
-          fontFamily:font.heading, fontSize:22, fontWeight:700, letterSpacing:2,
-          color:C.white, cursor:'pointer',
-          boxShadow:`0 4px 28px ${allDone ? 'rgba(48,209,88,0.4)' : C.accentGlow}`,
+          fontFamily:font.heading, fontSize:17, fontWeight:600, letterSpacing: 0,
+          color:C.accentInk, cursor:'pointer',
+          boxShadow: 'none',
           transition:'all 0.3s ease',
         }}>
-          {allDone ? '✓ FINISH WORKOUT' : `FINISH (${loggedSets}/${totalSets})`}
+          {allDone ? 'Finish workout' : `Finish (${loggedSets}/${totalSets})`}
         </button>
       </div>
     </div>

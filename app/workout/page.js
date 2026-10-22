@@ -8,7 +8,9 @@ import {
   PROGRAM_TYPES, publishProgram, unpublishProgram,
 } from '../../lib/workoutSync';
 import { useAuth } from '../../lib/AuthContext';
-import { DumbbellIcon, RunIcon, YogaIcon, PersonIcon } from '../../lib/icons';
+import { DumbbellIcon, RunIcon, YogaIcon, PersonIcon, GlobeIcon, SparklesIcon } from '../../lib/icons';
+import { AppTabBar, PageHeader, TAB_BAR_SPACE } from '../components/AppChrome';
+import { C, font } from '../../lib/theme'
 
 // Maps workout type keys → SVG icon component
 function ProgramTypeIcon({ type, size = 22, color = 'currentColor' }) {
@@ -19,36 +21,14 @@ function ProgramTypeIcon({ type, size = 22, color = 'currentColor' }) {
 }
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
-const C = {
-  bg:         '#0D0D0D',
-  card:       '#1A1A1A',
-  card2:      '#222222',
-  border:     '#2C2C2C',
-  accent:     '#0A84FF',
-  accentBg:   'rgba(10,132,255,0.12)',
-  accentGlow: 'rgba(10,132,255,0.35)',
-  white:      '#FFFFFF',
-  muted:      '#888888',
-  faint:      '#3A3A3A',
-  success:    '#30D158',
-  successBg:  'rgba(48,209,88,0.1)',
-};
-const font = { heading: "'Barlow Condensed', sans-serif", body: "'DM Sans', sans-serif" };
 
 const GRAD_OPTIONS = [
-  { grad: 'linear-gradient(135deg,#0a1628,#1a2744)', accent: '#0A84FF' },
-  { grad: 'linear-gradient(135deg,#0a2818,#183a22)', accent: '#30D158' },
-  { grad: 'linear-gradient(135deg,#280a0a,#3a1010)', accent: '#FF453A' },
-  { grad: 'linear-gradient(135deg,#1a0a28,#2a1440)', accent: '#BF5AF2' },
-  { grad: 'linear-gradient(135deg,#28180a,#3a2810)', accent: '#FF9F0A' },
+  { grad: '#15171A', accent: '#7CC8FF' },
+  { grad: '#15171A', accent: '#B8F06A' },
+  { grad: '#15171A', accent: '#E58A5C' },
+  { grad: '#15171A', accent: '#B9A3FF' },
+  { grad: '#15171A', accent: '#F2C94C' },
 ];
-
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'GOOD MORNING';
-  if (h < 17) return 'GOOD AFTERNOON';
-  return 'GOOD EVENING';
-}
 
 function ProgressRing({ pct = 0, size = 76, sw = 5 }) {
   const r = (size - sw) / 2, circ = 2 * Math.PI * r;
@@ -59,11 +39,11 @@ function ProgressRing({ pct = 0, size = 76, sw = 5 }) {
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.border} strokeWidth={sw}/>
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.accent} strokeWidth={sw}
           strokeDasharray={circ} strokeDashoffset={dash} strokeLinecap="round"
-          style={{ filter:`drop-shadow(0 0 5px ${C.accent}99)`, transition:'stroke-dashoffset 0.6s ease' }}/>
+          style={{ filter: 'none', transition:'stroke-dashoffset 0.6s ease' }}/>
       </svg>
       <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1 }}>
         <span style={{ fontFamily:font.body, fontWeight:700, fontSize:15, color:C.white, lineHeight:1 }}>{pct}%</span>
-        <span style={{ fontFamily:font.body, fontWeight:500, fontSize:9, color:C.muted, lineHeight:1, letterSpacing:1 }}>DONE</span>
+        <span style={{ fontFamily:font.body, fontWeight:500, fontSize:9, color:C.muted, lineHeight:1, letterSpacing: 0 }}>Done</span>
       </div>
     </div>
   );
@@ -243,7 +223,7 @@ export default function WorkoutHome() {
   return (
     <div style={{ fontFamily:font.body, background:C.bg, minHeight:'100dvh', color:C.white, overflowX:'hidden' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+        
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{display:none}
         button{cursor:pointer;font-family:inherit}
@@ -251,73 +231,45 @@ export default function WorkoutHome() {
       `}</style>
 
       {/* HEADER */}
-      <header style={{
-        position:'sticky', top:0, zIndex:50,
-        background:`${C.bg}ee`, backdropFilter:'blur(16px)',
-        borderBottom:`1px solid ${C.border}`,
-        padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between',
-      }}>
-        <button onClick={() => router.push('/')} style={{ background:'none', border:'none', padding:4, lineHeight:0 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.white} strokeWidth="2" strokeLinecap="round">
-            <line x1="3" y1="6"  x2="21" y2="6"/>
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="15" y2="18"/>
-          </svg>
-        </button>
-        <span style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, letterSpacing:4, color:C.white }}>LYTZ</span>
-        <div style={{ display:'flex', gap:8 }}>
-          <button onClick={() => router.push('/workout/discover')} style={{
-            background:'rgba(48,209,88,0.1)', border:'1px solid rgba(48,209,88,0.3)',
-            borderRadius:10, padding:'6px 12px',
-            fontSize:12, fontWeight:700, color:C.success,
-            display:'flex', alignItems:'center', gap:5,
-          }}>
-            🌐 Discover
+      <PageHeader
+        title="Train"
+        right={<>
+          <button onClick={() => router.push('/workout/discover')} aria-label="Discover programs" style={{ width:44, height:44, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', background:C.card, border:'none', color:C.white }}>
+            <GlobeIcon size={18} strokeWidth={1.75} />
           </button>
-          <button onClick={() => setShowAiBuilder(true)} style={{
-            background:'rgba(191,90,242,0.12)', border:'1px solid rgba(191,90,242,0.3)',
-            borderRadius:10, padding:'6px 12px',
-            fontSize:12, fontWeight:700, color:'#BF5AF2',
-            display:'flex', alignItems:'center', gap:5,
-          }}>
-            ✨ AI
+          <button onClick={() => setShowAiBuilder(true)} aria-label="Build a program with AI" style={{ width:44, height:44, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', background:C.card, border:'none', color:C.white }}>
+            <SparklesIcon size={18} strokeWidth={1.75} />
           </button>
           <button onClick={() => setShowProgramMenu(true)} style={{
-            background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'6px 12px',
-            fontSize:12, fontWeight:600, color:C.muted, display:'flex', alignItems:'center', gap:5,
+            height:36, background:C.card, border:'none', borderRadius:999, padding:'0 12px',
+            fontSize:13, fontWeight:500, color:C.soft, display:'flex', alignItems:'center', gap:4,
           }}>
             Programs
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-        </div>
-      </header>
+        </>}
+      />
 
-      <main style={{ padding:'20px 16px 120px' }}>
-        <div style={{ marginBottom:22 }}>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:2, marginBottom:4 }}>{greeting()}</p>
-          <h1 style={{ fontFamily:font.heading, fontWeight:900, fontSize:36, letterSpacing:1, lineHeight:1 }}>
-            READY TO<br/>TRAIN?
-          </h1>
-        </div>
+      <main style={{ padding:`8px 16px ${TAB_BAR_SPACE}`, maxWidth:600, margin:'0 auto' }}>
 
         {/* RESUME BANNER — shown when user navigated away mid-workout */}
         {inProgressWorkout && (
           <div style={{
-            background:'linear-gradient(90deg,rgba(48,209,88,0.15),rgba(48,209,88,0.08))',
-            border:'1px solid rgba(48,209,88,0.35)', borderRadius:16,
+            background:C.accentBg,
+            border:'1px solid rgba(184,240,106,0.35)', borderRadius:16,
             padding:'14px 16px', marginBottom:16,
             display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
           }}>
             <div>
-              <div style={{ fontSize:11, fontWeight:700, color:C.success, letterSpacing:2, marginBottom:3 }}>WORKOUT IN PROGRESS</div>
+              <div style={{ fontSize:11, fontWeight:700, color:C.success, letterSpacing: 0, marginBottom:3 }}>Workout in progress</div>
               <div style={{ fontSize:14, fontWeight:600, color:C.white }}>You left mid-workout — pick up where you left off</div>
             </div>
             <div style={{ display:'flex', gap:8, flexShrink:0 }}>
               <button onClick={() => router.push('/workout/log')} style={{
-                background:`linear-gradient(90deg,${C.success},#20b857)`, border:'none',
+                background:`${C.success}`, border:'none',
                 borderRadius:10, padding:'10px 18px',
-                fontFamily:font.heading, fontSize:15, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer',
-              }}>RESUME</button>
+                fontFamily:font.heading, fontSize:15, fontWeight:700, letterSpacing: 0, color:'#0B0C0E', cursor:'pointer',
+              }}>Resume</button>
               <button onClick={() => { localStorage.removeItem('lytz-workout-inprogress'); setInProgressWorkout(null); }} style={{
                 background:'none', border:`1px solid ${C.border}`,
                 borderRadius:10, padding:'10px 12px', fontSize:13, color:C.muted, cursor:'pointer',
@@ -330,25 +282,25 @@ export default function WorkoutHome() {
           <>
             {/* ACTIVE PROGRAM HERO */}
             <div style={{
-              background:'linear-gradient(145deg,#0a0f1e 0%,#111827 55%,#0d0d0d 100%)',
+              background:'#15171A',
               border:`1px solid ${C.border}`, borderRadius:22, padding:'20px 20px 16px',
               marginBottom:28, position:'relative', overflow:'hidden',
             }}>
-              <div style={{ position:'absolute', top:-50, right:-50, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(10,132,255,0.09) 0%,transparent 70%)', pointerEvents:'none' }}/>
-              <div style={{ position:'absolute', bottom:-30, left:10, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle,rgba(88,86,214,0.07) 0%,transparent 70%)', pointerEvents:'none' }}/>
+              <div style={{ position:'absolute', top:-50, right:-50, width:200, height:200, borderRadius:'50%', background: 'none', pointerEvents:'none' }}/>
+              <div style={{ position:'absolute', bottom:-30, left:10, width:140, height:140, borderRadius:'50%', background: 'none', pointerEvents:'none' }}/>
 
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18 }}>
                 <div style={{ flex:1 }}>
                   <div style={{
                     display:'inline-flex', alignItems:'center', gap:6,
-                    background:C.accentBg, border:`1px solid rgba(10,132,255,0.3)`,
+                    background:C.accentBg, border:`1px solid rgba(184,240,106,0.3)`,
                     borderRadius:6, padding:'3px 10px', marginBottom:10,
                   }}>
-                    <div style={{ width:6, height:6, borderRadius:'50%', background:C.accent, boxShadow:`0 0 6px ${C.accent}` }}/>
-                    <span style={{ fontFamily:font.body, fontSize:10, fontWeight:700, color:C.accent, letterSpacing:2 }}>ACTIVE PROGRAM</span>
+                    <div style={{ width:6, height:6, borderRadius:'50%', background:C.accent }}/>
+                    <span style={{ fontFamily:font.body, fontSize:10, fontWeight:700, color:C.accent, letterSpacing: 0 }}>Active program</span>
                   </div>
-                  <h2 style={{ fontFamily:font.heading, fontWeight:900, fontSize:28, letterSpacing:0.5, lineHeight:1.1, marginBottom:4, color:C.white }}>
-                    {activeProgram.name.toUpperCase()}
+                  <h2 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:24, letterSpacing:0, lineHeight:1.15, marginBottom:4, color:C.white }}>
+                    {activeProgram.name}
                   </h2>
                   <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                     {activeProgram.description && (
@@ -357,7 +309,7 @@ export default function WorkoutHome() {
                     {(() => { const pt = PROGRAM_TYPES[activeProgram.type || 'strength']; return (
                       <span style={{ fontSize:11, color:C.muted, fontWeight:600, display:'flex', alignItems:'center', gap:4 }}><ProgramTypeIcon type={activeProgram.type || 'strength'} size={11} color={C.muted} /> {pt?.label}</span>
                     ); })()}
-                    {activeProgram.isPublic && <span style={{ fontSize:11, color:C.success, fontWeight:700 }}>🌐 Public</span>}
+                    {activeProgram.isPublic && <span style={{ fontSize:11, color:C.success, fontWeight:700 }}>Public</span>}
                   </div>
                 </div>
                 <ProgressRing pct={pct}/>
@@ -365,14 +317,14 @@ export default function WorkoutHome() {
 
               <div style={{ display:'flex', gap:16 }}>
                 {[
-                  { value: totalDays, label: 'DAYS', color: C.accent },
-                  { value: doneDays,  label: 'THIS WEEK', color: C.success },
-                  { value: sessions.filter(s => s.programId === activeProgram.id).length, label: 'TOTAL', color: C.white },
+                  { value: totalDays, label: 'Days', color: C.accent },
+                  { value: doneDays,  label: 'This week', color: C.success },
+                  { value: sessions.filter(s => s.programId === activeProgram.id).length, label: 'Total', color: C.white },
                 ].map((stat, i, arr) => (
                   <div key={stat.label} style={{ display:'flex', alignItems:'stretch', gap:16 }}>
                     <div>
-                      <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:26, color:stat.color, lineHeight:1 }}>{stat.value}</div>
-                      <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1.5 }}>{stat.label}</div>
+                      <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:26, color:stat.color, lineHeight:1 }}>{stat.value}</div>
+                      <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing: 0 }}>{stat.label}</div>
                     </div>
                     {i < arr.length - 1 && <div style={{ width:1, background:C.border }}/>}
                   </div>
@@ -381,37 +333,39 @@ export default function WorkoutHome() {
             </div>
 
             {/* WORKOUT DAYS */}
-            <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing:2.5, color:C.muted, marginBottom:12 }}>
-              WORKOUT DAYS
+            <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing: 0, color:C.muted, marginBottom:12 }}>
+              Workout days
             </h4>
             <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:32 }}>
-              {activeProgram.days.map((day) => {
+              {activeProgram.days.map((day, dayIdx) => {
                 const done = completedThisWeek.has(day.id);
+                // Colors come from position, not the saved program, so older programs match the current palette
+                const dayAccent = GRAD_OPTIONS[dayIdx % GRAD_OPTIONS.length].accent;
                 return (
                   <button key={day.id} onClick={() => openDay(day)} style={{
-                    background: done ? C.successBg : day.grad,
-                    border:`1px solid ${done ? 'rgba(48,209,88,0.3)' : C.border}`,
+                    background: done ? C.successBg : C.card,
+                    border:`1px solid ${done ? 'rgba(184,240,106,0.3)' : C.border}`,
                     borderRadius:16, overflow:'hidden', textAlign:'left', cursor:'pointer',
                   }}>
                     <div style={{ padding:'16px 18px', display:'flex', alignItems:'center', gap:14 }}>
                       <div style={{
                         width:44, height:44, borderRadius:12, flexShrink:0,
-                        background: done ? 'rgba(48,209,88,0.2)' : `${day.accent}22`,
-                        border:`1.5px solid ${done ? 'rgba(48,209,88,0.5)' : `${day.accent}55`}`,
+                        background: done ? 'rgba(184,240,106,0.2)' : `${dayAccent}22`,
+                        border:`1.5px solid ${done ? 'rgba(184,240,106,0.5)' : `${dayAccent}55`}`,
                         display:'flex', alignItems:'center', justifyContent:'center',
-                        fontFamily:font.heading, fontWeight:900, fontSize:18,
-                        color: done ? C.success : day.accent,
+                        fontFamily:font.heading, fontWeight: 600, fontSize:18,
+                        color: done ? C.success : dayAccent,
                       }}>
                         {done
                           ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                           : day.dayNumber}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:10, fontWeight:700, color: done ? C.success : day.accent, letterSpacing:1.5, marginBottom:3 }}>
+                        <div style={{ fontSize:10, fontWeight:700, color: done ? C.success : dayAccent, letterSpacing: 0, marginBottom:3 }}>
                           DAY {day.dayNumber}{done ? ' · COMPLETE' : ''}
                         </div>
-                        <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, letterSpacing:0.5, lineHeight:1, color:C.white }}>
-                          {day.name.toUpperCase()}
+                        <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:22, letterSpacing:0.5, lineHeight:1, color:C.white }}>
+                          {day.name}
                         </div>
                         <div style={{ fontSize:12, color:C.muted, marginTop:4, fontWeight:500 }}>
                           {day.exercises.length === 0
@@ -432,8 +386,8 @@ export default function WorkoutHome() {
             {sessions.length > 0 && (
               <>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                  <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing:2.5, color:C.muted, margin:0 }}>
-                    WORKOUT HISTORY
+                  <h4 style={{ fontFamily:font.heading, fontWeight:700, fontSize:13, letterSpacing: 0, color:C.muted, margin:0 }}>
+                    Workout history
                   </h4>
                   {sessions.length > 3 && (
                     <button onClick={() => setShowAllHistory(h => !h)} style={{
@@ -446,12 +400,12 @@ export default function WorkoutHome() {
                   {(showAllHistory ? sessions : sessions.slice(0, 3)).map((s) => {
                     const isExpanded = expandedSession === s.id;
                     return (
-                      <div key={s.id} style={{ background:C.card, border:`1px solid ${isExpanded ? 'rgba(10,132,255,0.4)' : C.border}`, borderRadius:13, overflow:'hidden' }}>
+                      <div key={s.id} style={{ background:C.card, border:`1px solid ${isExpanded ? 'rgba(184,240,106,0.4)' : C.border}`, borderRadius:13, overflow:'hidden' }}>
                         <button onClick={() => setExpandedSession(isExpanded ? null : s.id)} style={{
                           width:'100%', background:'none', border:'none', cursor:'pointer',
                           padding:'12px 14px', display:'flex', alignItems:'center', gap:12, textAlign:'left',
                         }}>
-                          <div style={{ width:38, height:38, borderRadius:10, flexShrink:0, background:C.accentBg, border:`1px solid rgba(10,132,255,0.25)`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          <div style={{ width:38, height:38, borderRadius:10, flexShrink:0, background:C.accentBg, border:`1px solid rgba(184,240,106,0.25)`, display:'flex', alignItems:'center', justifyContent:'center' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                           </div>
                           <div style={{ flex:1, minWidth:0 }}>
@@ -499,40 +453,21 @@ export default function WorkoutHome() {
           </>
         ) : (
           <div style={{ textAlign:'center', padding:'60px 20px' }}>
-            <div style={{ marginBottom:16, display:'flex', justifyContent:'center' }}><DumbbellIcon size={52} color="rgba(255,159,10,0.4)" strokeWidth={1.25} /></div>
+            <div style={{ marginBottom:16, display:'flex', justifyContent:'center' }}><DumbbellIcon size={52} color="rgba(242,201,76,0.4)" strokeWidth={1.25} /></div>
             <h3 style={{ fontFamily:font.heading, fontSize:24, fontWeight:700, marginBottom:8 }}>No Programs Yet</h3>
             <p style={{ color:C.muted, fontSize:14, marginBottom:24 }}>Create your first workout program to get started.</p>
             <button onClick={() => setShowCreateModal(true)} style={{
-              background:`linear-gradient(90deg, ${C.accent}, #5856D6)`,
+              background:`${C.accent}`,
               border:'none', borderRadius:14, padding:'14px 32px',
-              fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1.5,
-              color:C.white, boxShadow:`0 4px 24px ${C.accentGlow}`,
-            }}>CREATE PROGRAM</button>
+              fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing: 0,
+              color:'#0B0C0E', boxShadow: 'none',
+            }}>Create program</button>
           </div>
         )}
       </main>
 
       {/* BOTTOM NAV */}
-      <nav style={{
-        position:'fixed', bottom:0, left:0, right:0, zIndex:50,
-        background:`${C.bg}f5`, backdropFilter:'blur(20px)',
-        borderTop:`1px solid ${C.border}`,
-        display:'flex', justifyContent:'space-around',
-        padding:'10px 0 max(10px, env(safe-area-inset-bottom))',
-      }}>
-        <button onClick={() => router.push('/')} style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill={C.faint}><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span style={{ fontSize:10, fontWeight:600, color:C.muted, letterSpacing:0.5 }}>Home</span>
-        </button>
-        <button style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="10" width="4" height="4" rx="1"/><rect x="18" y="10" width="4" height="4" rx="1"/>
-            <rect x="5" y="8" width="3" height="8" rx="1"/><rect x="16" y="8" width="3" height="8" rx="1"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-          </svg>
-          <span style={{ fontSize:10, fontWeight:600, color:C.accent, letterSpacing:0.5 }}>Workout</span>
-        </button>
-      </nav>
+      <AppTabBar current="train" />
 
       {/* PROGRAM MENU SHEET */}
       {showProgramMenu && (
@@ -541,7 +476,7 @@ export default function WorkoutHome() {
           <div style={{ background:C.card, borderRadius:'20px 20px 0 0', width:'100%', maxWidth:600, padding:'20px 20px 40px' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width:36, height:4, background:C.border, borderRadius:2, margin:'0 auto 20px' }}/>
-            <h3 style={{ fontFamily:font.heading, fontWeight:700, fontSize:18, letterSpacing:1, marginBottom:16, color:C.white }}>PROGRAMS</h3>
+            <h3 style={{ fontFamily:font.heading, fontWeight:700, fontSize:18, letterSpacing: 0, marginBottom:16, color:C.white }}>Programs</h3>
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:16 }}>
               {programs.map((p) => {
                 const pt = PROGRAM_TYPES[p.type || 'strength'];
@@ -549,7 +484,7 @@ export default function WorkoutHome() {
                   <div key={p.id} style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <button onClick={() => switchProgram(p.id)} style={{
                       flex:1, background: p.id === activeProgramId ? C.accentBg : C.card2,
-                      border:`1px solid ${p.id === activeProgramId ? 'rgba(10,132,255,0.4)' : C.border}`,
+                      border:`1px solid ${p.id === activeProgramId ? 'rgba(184,240,106,0.4)' : C.border}`,
                       borderRadius:12, padding:'12px 14px',
                       display:'flex', alignItems:'center', justifyContent:'space-between',
                       color: p.id === activeProgramId ? C.accent : C.white,
@@ -560,10 +495,10 @@ export default function WorkoutHome() {
                     </button>
                     <button onClick={() => togglePublic(p.id)} title={p.isPublic ? 'Make private' : 'Make public'} style={{
                       width:40, height:40, borderRadius:10, flexShrink:0, cursor:'pointer',
-                      background: p.isPublic ? 'rgba(48,209,88,0.12)' : C.card2,
-                      border:`1px solid ${p.isPublic ? 'rgba(48,209,88,0.4)' : C.border}`,
+                      background: p.isPublic ? 'rgba(184,240,106,0.12)' : C.card2,
+                      border:`1px solid ${p.isPublic ? 'rgba(184,240,106,0.4)' : C.border}`,
                       fontSize:15, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center',
-                    }}>{p.isPublic ? '🌐' : '🔒'}</button>
+                    }}>{p.isPublic ? 'Public' : 'Private'}</button>
                   </div>
                 );
               })}
@@ -588,31 +523,31 @@ export default function WorkoutHome() {
           onClick={() => setShowCreateModal(false)}>
           <div style={{ background:C.card, borderRadius:22, width:'100%', maxWidth:480, padding:'28px 24px', maxHeight:'85vh', overflowY:'auto' }}
             onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontFamily:font.heading, fontWeight:900, fontSize:24, letterSpacing:1, marginBottom:20, color:C.white }}>NEW PROGRAM</h3>
+            <h3 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:24, letterSpacing: 0, marginBottom:20, color:C.white }}>New program</h3>
 
             <div style={{ marginBottom:14 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>PROGRAM NAME</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>Program name</label>
               <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Push / Pull / Legs"
                 style={{ width:'100%', background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:'11px 14px', fontSize:15, color:C.white }}/>
             </div>
 
             <div style={{ marginBottom:20 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:6 }}>DESCRIPTION (optional)</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:6 }}>DESCRIPTION (optional)</label>
               <input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="e.g. 5-day strength split"
                 style={{ width:'100%', background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:'11px 14px', fontSize:14, color:C.white }}/>
             </div>
 
             {/* TYPE SELECTOR */}
             <div style={{ marginBottom:20 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:10 }}>WORKOUT TYPE</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:10 }}>Workout type</label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                 {Object.entries(PROGRAM_TYPES).map(([id, t]) => (
                   <button key={id} onClick={() => setNewType(id)} style={{
-                    background: newType === id ? `rgba(10,132,255,0.12)` : C.card2,
+                    background: newType === id ? `rgba(184,240,106,0.12)` : C.card2,
                     border:`1.5px solid ${newType === id ? C.accent : C.border}`,
                     borderRadius:12, padding:'12px 10px', textAlign:'left', cursor:'pointer',
                   }}>
-                    <div style={{ marginBottom:6, display:'flex' }}><ProgramTypeIcon type={id} size={22} color={newType === id ? '#0A84FF' : C.muted} /></div>
+                    <div style={{ marginBottom:6, display:'flex' }}><ProgramTypeIcon type={id} size={22} color={newType === id ? '#B8F06A' : C.muted} /></div>
                     <div style={{ fontSize:13, fontWeight:700, color: newType === id ? C.accent : C.white, marginBottom:2 }}>{t.label}</div>
                     <div style={{ fontSize:10, color:C.muted, lineHeight:1.3 }}>{t.desc}</div>
                   </button>
@@ -621,7 +556,7 @@ export default function WorkoutHome() {
             </div>
 
             <div style={{ marginBottom:24 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:10 }}>WORKOUT DAYS</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:10 }}>Workout days</label>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {newDays.map((d, i) => (
                   <div key={i} style={{
@@ -630,12 +565,12 @@ export default function WorkoutHome() {
                     display:'flex', alignItems:'center', justifyContent:'space-between',
                   }}>
                     <span style={{ fontSize:14, fontWeight:600, color:C.white }}>
-                      <span style={{ color:GRAD_OPTIONS[i%5].accent, marginRight:8, fontFamily:font.heading, fontWeight:900 }}>{i+1}</span>
+                      <span style={{ color:GRAD_OPTIONS[i%5].accent, marginRight:8, fontFamily:font.heading, fontWeight: 600 }}>{i+1}</span>
                       {d.name}
                     </span>
                     <button onClick={() => setNewDays(prev => prev.filter((_,idx) => idx !== i))} style={{
-                      background:'rgba(255,69,58,0.15)', border:'none', borderRadius:6,
-                      width:26, height:26, color:'#FF453A', fontSize:18, lineHeight:1,
+                      background:'rgba(255,107,61,0.15)', border:'none', borderRadius:6,
+                      width:26, height:26, color:'#FF6B3D', fontSize:18, lineHeight:1,
                       display:'flex', alignItems:'center', justifyContent:'center',
                     }}>×</button>
                   </div>
@@ -649,7 +584,7 @@ export default function WorkoutHome() {
                     placeholder="e.g. Chest & Triceps" autoFocus
                     style={{ flex:1, background:C.card2, border:`1px solid ${C.accent}55`, borderRadius:10, padding:'9px 12px', fontSize:14, color:C.white }}/>
                   <button onClick={addDayToForm} style={{
-                    background:C.accentBg, border:`1px solid rgba(10,132,255,0.4)`,
+                    background:C.accentBg, border:`1px solid rgba(184,240,106,0.4)`,
                     borderRadius:10, padding:'9px 16px', color:C.accent, fontWeight:700, fontSize:14,
                   }}>Add</button>
                 </div>
@@ -674,11 +609,11 @@ export default function WorkoutHome() {
               }}>Cancel</button>
               <button onClick={createProgram} disabled={!newName.trim() || newDays.length === 0} style={{
                 flex:2,
-                background: newName.trim() && newDays.length > 0 ? `linear-gradient(90deg, ${C.accent}, #5856D6)` : C.faint,
+                background: newName.trim() && newDays.length > 0 ? C.accent : C.card2,
                 border:'none', borderRadius:12, padding:'13px',
-                fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1, color:C.white,
+                fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing: 0, color:newName.trim() && newDays.length > 0 ? C.accentInk : C.muted,
                 boxShadow: newName.trim() ? `0 4px 20px ${C.accentGlow}` : 'none',
-              }}>CREATE</button>
+              }}>Create</button>
             </div>
           </div>
         </div>
@@ -693,9 +628,8 @@ export default function WorkoutHome() {
 
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
-              <div style={{ width:42, height:42, borderRadius:12, background:'rgba(191,90,242,0.15)', border:'1px solid rgba(191,90,242,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>✨</div>
               <div>
-                <h3 style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, color:C.white, letterSpacing:1 }}>AI PROGRAM BUILDER</h3>
+                <h3 style={{ fontFamily:font.heading, fontWeight: 600, fontSize:22, color:C.white, letterSpacing: 0 }}>AI program builder</h3>
                 <p style={{ fontSize:12, color:C.muted, marginTop:2 }}>Describe your workout and AI will build it</p>
               </div>
             </div>
@@ -703,7 +637,7 @@ export default function WorkoutHome() {
             {!aiPreview ? (
               <>
                 <div style={{ marginBottom:16 }}>
-                  <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:1.5, marginBottom:8 }}>DESCRIBE YOUR PROGRAM</label>
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, color:C.muted, letterSpacing: 0, marginBottom:8 }}>Describe your program</label>
                   <textarea
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
@@ -718,7 +652,7 @@ export default function WorkoutHome() {
                 </div>
 
                 {aiError && (
-                  <div style={{ background:'rgba(255,69,58,0.1)', border:'1px solid rgba(255,69,58,0.3)', borderRadius:10, padding:'10px 14px', marginBottom:14, fontSize:13, color:'#FF453A' }}>
+                  <div style={{ background:'rgba(255,107,61,0.1)', border:'1px solid rgba(255,107,61,0.3)', borderRadius:10, padding:'10px 14px', marginBottom:14, fontSize:13, color:'#FF6B3D' }}>
                     {aiError}
                   </div>
                 )}
@@ -730,9 +664,9 @@ export default function WorkoutHome() {
                   }}>Cancel</button>
                   <button onClick={buildWithAI} disabled={!aiPrompt.trim() || aiLoading} style={{
                     flex:2,
-                    background: aiPrompt.trim() && !aiLoading ? 'linear-gradient(90deg,#BF5AF2,#5856D6)' : C.faint,
+                    background: aiPrompt.trim() && !aiLoading ? '#B9A3FF' : C.faint,
                     border:'none', borderRadius:12, padding:'13px',
-                    fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer',
+                    fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing: 0, color:C.white, cursor:'pointer',
                     display:'flex', alignItems:'center', justifyContent:'center', gap:8,
                   }}>
                     {aiLoading ? (
@@ -740,7 +674,7 @@ export default function WorkoutHome() {
                         <div style={{ width:16, height:16, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.3)', borderTopColor:C.white, animation:'spin 0.7s linear infinite' }}/>
                         Building...
                       </>
-                    ) : '✨ BUILD PROGRAM'}
+                    ) : 'Build program'}
                   </button>
                 </div>
                 <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -748,9 +682,9 @@ export default function WorkoutHome() {
             ) : (
               <>
                 {/* Preview */}
-                <div style={{ background:'rgba(48,209,88,0.08)', border:'1px solid rgba(48,209,88,0.25)', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:C.success, letterSpacing:1.5, marginBottom:4 }}>✓ PROGRAM READY</div>
-                  <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:22, color:C.white }}>{aiPreview.name}</div>
+                <div style={{ background:'rgba(184,240,106,0.08)', border:'1px solid rgba(184,240,106,0.25)', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.success, letterSpacing: 0, marginBottom:4 }}>PROGRAM READY</div>
+                  <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:22, color:C.white }}>{aiPreview.name}</div>
                   {aiPreview.description && <div style={{ fontSize:13, color:C.muted, marginTop:3 }}>{aiPreview.description}</div>}
                 </div>
 
@@ -760,8 +694,8 @@ export default function WorkoutHome() {
                       background:GRAD_OPTIONS[i%5].grad, border:`1px solid ${C.border}`,
                       borderRadius:12, padding:'12px 14px',
                     }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:GRAD_OPTIONS[i%5].accent, letterSpacing:1, marginBottom:2 }}>DAY {i+1}</div>
-                      <div style={{ fontFamily:font.heading, fontWeight:900, fontSize:18, color:C.white }}>{d.name}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:GRAD_OPTIONS[i%5].accent, letterSpacing: 0, marginBottom:2 }}>DAY {i+1}</div>
+                      <div style={{ fontFamily:font.heading, fontWeight: 600, fontSize:18, color:C.white }}>{d.name}</div>
                       <div style={{ fontSize:12, color:C.muted, marginTop:3 }}>
                         {(d.exercises||[]).length} exercises · {(d.exercises||[]).reduce((s,e) => s+(e.sets||[]).length, 0)} sets
                       </div>
@@ -775,10 +709,10 @@ export default function WorkoutHome() {
                     borderRadius:12, padding:'13px', color:C.muted, fontSize:14, fontWeight:600, cursor:'pointer',
                   }}>Regenerate</button>
                   <button onClick={saveAiProgram} style={{
-                    flex:2, background:`linear-gradient(90deg,${C.success},#20b857)`,
+                    flex:2, background:`${C.success}`,
                     border:'none', borderRadius:12, padding:'13px',
-                    fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing:1, color:C.white, cursor:'pointer',
-                  }}>SAVE PROGRAM</button>
+                    fontFamily:font.heading, fontSize:18, fontWeight:700, letterSpacing: 0, color:'#0B0C0E', cursor:'pointer',
+                  }}>Save program</button>
                 </div>
               </>
             )}
