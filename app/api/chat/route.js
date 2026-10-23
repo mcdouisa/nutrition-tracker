@@ -25,8 +25,9 @@ export async function POST(request) {
       const hasImage = messages.some(m =>
         Array.isArray(m.content) && m.content.some(c => c.type === 'image_url')
       )
+      // gpt-oss is text-only, so photos go to Groq's vision model
       const model = hasImage
-        ? 'openai/gpt-oss-120b'
+        ? 'qwen/qwen3.8-27b'
         : 'openai/gpt-oss-120b'
 
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -39,7 +40,7 @@ export async function POST(request) {
           model,
           messages: messages,
           temperature: 0.1,
-          max_tokens: 500
+          max_tokens: 1200
         }),
         signal: controller.signal
       })
@@ -56,7 +57,8 @@ export async function POST(request) {
         )
       }
 
-      const content = data.choices?.[0]?.message?.content || ''
+      // Strip any visible reasoning some models prepend
+      const content = String(data.choices?.[0]?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim()
 
       return NextResponse.json({ content })
 

@@ -37,7 +37,7 @@ import {
 } from '../lib/icons'
 import { DARK, LIGHT, DONE, OVER } from '../lib/theme'
 import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
-import FoodLogSheet, { SearchIcon } from './components/FoodLogSheet'
+import FoodLogSheet, { SearchIcon, compressPhoto } from './components/FoodLogSheet'
 
 // ─── THEME TOKENS (shared across screens) ─────────────────────────────────────
 
@@ -68,6 +68,7 @@ export default function NutritionTracker() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('goals') === '1') {
+      setSettingsTab('home')
       setShowSettings(true)
       window.history.replaceState(null, '', '/')
     }
@@ -95,7 +96,9 @@ export default function NutritionTracker() {
   const [showCustomEntry, setShowCustomEntry] = useState(false)
 
   // One-step food logging
-  const [foodSheet, setFoodSheet] = useState(null) // null | 'search' | 'scan'
+  const [foodSheet, setFoodSheet] = useState(null) // null | 'search' | 'scan' | 'photo'
+  const [foodPhoto, setFoodPhoto] = useState(null) // compressed data URL for the photo flow
+  const foodPhotoInput = useRef(null)
   const [loggedToast, setLoggedToast] = useState(null) // name of the food just logged
   const [recentFoods, setRecentFoods] = useState([]) // [{ name, serving, values }] newest first, this device only
   useEffect(() => {
@@ -113,7 +116,7 @@ export default function NutritionTracker() {
 
   // Settings modal
   const [showSettings, setShowSettings] = useState(false)
-  const [settingsTab, setSettingsTab] = useState('checklist') // checklist, nutrition, water, meals
+  const [settingsTab, setSettingsTab] = useState('home') // home, checklist, nutrition, water, meals, feedback, appSettings
   const [showNutritionLog, setShowNutritionLog] = useState(false)
   const [editingMetric, setEditingMetric] = useState(null) // index of metric being edited
   const [editMetricValue, setEditMetricValue] = useState('')
@@ -1445,7 +1448,7 @@ export default function NutritionTracker() {
 
   // Reset day
   const resetDay = () => {
-    if (!confirm('Reset all tracking for today?')) return
+    if (!confirm("Clear today's food, water and habit checks? Your goals stay.")) return false
 
     const resetChecklist = checklistItems.map(item => ({ ...item, checked: false }))
     const resetMetrics = nutritionMetrics.map(metric => ({ ...metric, value: 0 }))
@@ -1455,6 +1458,7 @@ export default function NutritionTracker() {
     setWater(0)
     setWaterHistory([])
     setNutritionHistory([])
+    return true
   }
 
   // Settings functions - save to localStorage and sync to cloud
@@ -1726,15 +1730,31 @@ Reason: 5-7 words max — the single most important factor.`
   }
 
   // Log a whole food in one step: every metric updates together, and it joins "Eaten before"
-  const logFood = ({ name, estimates, base }) => {
+  const logFood = ({ name, estimates, foods = [] }) => {
     addEstimatedNutrition(estimates, undefined, name)
-    if (base) {
-      const next = [{ name: base.name, serving: base.serving, values: base.values }, ...recentFoods.filter(f => f.name !== base.name)].slice(0, 8)
+    if (foods.length) {
+      const names = new Set(foods.map(f => f.name))
+      const next = [...foods.map(({ name, serving, values }) => ({ name, serving, values })), ...recentFoods.filter(f => !names.has(f.name))].slice(0, 10)
       setRecentFoods(next)
       try { localStorage.setItem('lytz-recent-foods', JSON.stringify(next)) } catch {}
     }
     setFoodSheet(null)
+    setFoodPhoto(null)
     setLoggedToast(name)
+  }
+
+  // Camera button: take or pick a photo, then read it straight into the food sheet
+  const onFoodPhotoChosen = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      setFoodPhoto(await compressPhoto(file))
+      setFoodSheet('photo')
+    } catch {
+      setLoggedToast(null)
+      alert("Couldn't open that photo. Try another one.")
+    }
   }
 
   // Show loading state (with minimum 1s splash)
@@ -2720,7 +2740,7 @@ Reason: 5-7 words max — the single most important factor.`
                 .map(food => (
                   <button
                     key={`recent-${food.name}`}
-                    onClick={() => logFood({ name: food.name, estimates: food.values, base: food })}
+                    onClick={() => logFood({ name: food.name, estimates: food.values, foods: [food] })}
                     title={`${food.serving} · ` + nutritionMetrics.map(metric =>
                       food.values[metric.key] ? `${food.values[metric.key]}${metric.unit || ''} ${metric.name}` : ''
                     ).filter(Boolean).join(' · ')}
@@ -2782,7 +2802,7 @@ Reason: 5-7 words max — the single most important factor.`
             <div style={{ fontSize: '15px', color: T.muted, marginBottom: '20px', lineHeight: 1.5 }}>
               Pick the habits, water and nutrition goals you want on this screen.
             </div>
-            <button onClick={() => setShowSettings(true)} style={primaryButton}>
+            <button onClick={() => { setSettingsTab('home'); setShowSettings(true) }} style={primaryButton}>
               Set up goals
             </button>
           </div>
@@ -2809,9 +2829,10 @@ Reason: 5-7 words max — the single most important factor.`
               <button onClick={() => setFoodSheet('scan')} aria-label="Scan a barcode" style={{ ...iconButton, width: '56px', height: '56px', borderRadius: '18px', backgroundColor: T.card, color: T.text, boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
                 <BarcodeIcon size={20} strokeWidth={1.8} />
               </button>
-              <button onClick={() => setShowChat(true)} aria-label="Photo or describe a meal with AI" style={{ ...iconButton, width: '56px', height: '56px', borderRadius: '18px', backgroundColor: T.card, color: T.text, boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
+              <button onClick={() => foodPhotoInput.current?.click()} aria-label="Take a photo of your food or its label" style={{ ...iconButton, width: '56px', height: '56px', borderRadius: '18px', backgroundColor: T.card, color: T.text, boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
                 <CameraIcon size={20} strokeWidth={1.8} />
               </button>
+              <input ref={foodPhotoInput} type="file" accept="image/*" capture="environment" onChange={onFoodPhotoChosen} style={{ display: 'none' }} />
             </div>
           </div>
         </div>
@@ -2822,9 +2843,10 @@ Reason: 5-7 words max — the single most important factor.`
           T={T}
           metrics={viewDate !== null && pastDayData ? pastDayData.nutritionMetrics : nutritionMetrics}
           startWith={foodSheet}
+          photo={foodPhoto}
           onLog={logFood}
           onDescribe={(text) => { setFoodSheet(null); setChatInput(text); setShowChat(true) }}
-          onClose={() => setFoodSheet(null)}
+          onClose={() => { setFoodSheet(null); setFoodPhoto(null) }}
         />
       )}
 
@@ -2836,7 +2858,7 @@ Reason: 5-7 words max — the single most important factor.`
           if (viewDate !== null) { setViewDate(null); setPastDayData(null) }
           else window.scrollTo({ top: 0, behavior: 'smooth' })
         }}
-        onGoals={() => setShowSettings(true)}
+        onGoals={() => { setSettingsTab('home'); setShowSettings(true) }}
       />
 
       {/* Settings Modal */}
@@ -2856,6 +2878,7 @@ Reason: 5-7 words max — the single most important factor.`
           onSaveEveningCutoff={saveEveningCutoff}
           onSaveMeals={saveMeals}
           onResetDay={resetDay}
+          onRedoSetup={() => { setShowSettings(false); setShowOnboarding(true) }}
           onClose={() => setShowSettings(false)}
           settingsTab={settingsTab}
           setSettingsTab={setSettingsTab}
@@ -3136,6 +3159,127 @@ function WaterCard({ water, goal, buttons, canUndo, onAdd, onUndo }) {
   )
 }
 
+const SETTINGS_TITLES = {
+  home: 'Goals',
+  checklist: 'Habits',
+  nutrition: 'Nutrients',
+  water: 'Water',
+  meals: 'Saved meals',
+  feedback: 'Send feedback',
+  appSettings: 'App settings'
+}
+
+const GOAL_TYPES = [
+  { id: 'min', label: 'At least' },
+  { id: 'max', label: 'At most' },
+  { id: 'range', label: 'Between' }
+]
+
+// Goals overview: every daily target editable in place, then sections, then clear ways to start fresh
+function GoalsOverview({ metrics, onUpdateMetric, waterGoal, onWaterGoal, counts, onOpen, onClearToday, onRedoSetup }) {
+  const T = useContext(ThemeContext)
+  const label = { fontSize: '13px', color: T.muted, margin: '0 0 8px 4px' }
+  const card = { backgroundColor: T.card, borderRadius: '18px', overflow: 'hidden' }
+  const numberInput = (value, onChange, aria) => (
+    <input
+      value={value || ''}
+      onChange={(e) => onChange(parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0)}
+      onFocus={(e) => e.target.select()}
+      inputMode="decimal"
+      aria-label={aria}
+      placeholder="0"
+      style={{ width: '76px', height: '40px', boxSizing: 'border-box', padding: '0 10px', borderRadius: '10px', textAlign: 'right', fontSize: '16px', fontWeight: 500, fontFamily: 'inherit', color: T.text, backgroundColor: T.card2, border: `1px solid ${T.border}` }}
+    />
+  )
+  const rowButton = (id, title, detail) => (
+    <button key={id} onClick={() => onOpen(id)} style={{ width: '100%', minHeight: '56px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 12px 0 16px', border: 'none', borderTop: `1px solid ${T.border}`, background: 'none', color: T.text, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
+      <span style={{ flex: 1, fontSize: '15px' }}>{title}</span>
+      {detail && <span style={{ fontSize: '14px', color: T.muted }}>{detail}</span>}
+      <ChevronRightIcon size={18} color={T.muted} strokeWidth={2} />
+    </button>
+  )
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <section>
+        <h3 style={label}>Daily targets</h3>
+        <div style={card}>
+          {metrics.length === 0 && (
+            <div style={{ padding: '16px', fontSize: '14px', color: T.muted }}>No nutrition targets yet. Add some under Nutrients below.</div>
+          )}
+          {metrics.map((m, i) => {
+            const type = m.goalType || 'min'
+            return (
+              <div key={i} style={{ padding: '12px 12px 12px 16px', borderTop: i ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, backgroundColor: T.hues[i % T.hues.length] }} />
+                  <span style={{ flex: 1, fontSize: '15px', color: T.text }}>{m.name || 'Untitled'}</span>
+                  {numberInput(m.goal, (v) => onUpdateMetric(i, 'goal', v), `${m.name} ${type === 'range' ? 'minimum' : 'target'}`)}
+                  {type === 'range' && <span style={{ color: T.muted }}>–</span>}
+                  {type === 'range' && numberInput(m.goalMax, (v) => onUpdateMetric(i, 'goalMax', v), `${m.name} maximum`)}
+                  <span style={{ width: '28px', fontSize: '13px', color: T.muted }}>{m.unit}</span>
+                </div>
+                <div role="group" aria-label={`${m.name} goal type`} style={{ display: 'flex', gap: '4px', paddingLeft: '18px' }}>
+                  {GOAL_TYPES.map(g => (
+                    <button key={g.id} onClick={() => onUpdateMetric(i, 'goalType', g.id)} aria-pressed={type === g.id} style={{
+                      height: '32px', padding: '0 12px', border: 'none', borderRadius: '999px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+                      backgroundColor: type === g.id ? T.text : T.card2, color: type === g.id ? T.bg : T.soft
+                    }}>
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+          <div style={{ minHeight: '56px', padding: '0 12px 0 16px', borderTop: metrics.length ? `1px solid ${T.border}` : 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, backgroundColor: '#2E7BD6' }} />
+            <span style={{ flex: 1, fontSize: '15px', color: T.text }}>Water</span>
+            {numberInput(waterGoal, onWaterGoal, 'Daily water goal in ounces')}
+            <span style={{ width: '28px', fontSize: '13px', color: T.muted }}>oz</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3 style={label}>What you track</h3>
+        <div style={{ ...card, marginTop: 0 }}>
+          <div style={{ marginTop: '-1px' }}>
+            {rowButton('checklist', 'Habits', plural(counts.checklist, 'habit'))}
+            {rowButton('nutrition', 'Nutrients', plural(counts.nutrition, 'nutrient'))}
+            {rowButton('water', 'Water buttons & reminder', plural(counts.water, 'button'))}
+            {rowButton('meals', 'Saved meals', plural(counts.meals, 'meal'))}
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3 style={label}>Start fresh</h3>
+        <div style={card}>
+          <button onClick={onClearToday} style={{ width: '100%', padding: '14px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '15px', color: OVER }}>Clear today</span>
+            <span style={{ fontSize: '13px', color: T.muted }}>Removes today's food, water and habit checks. Your goals stay.</span>
+          </button>
+          <button onClick={onRedoSetup} style={{ width: '100%', padding: '14px 16px', border: 'none', borderTop: `1px solid ${T.border}`, background: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '15px', color: T.text }}>Redo setup</span>
+            <span style={{ fontSize: '13px', color: T.muted }}>Answer a few questions and get new recommended goals.</span>
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <div style={card}>
+          <div style={{ marginTop: '-1px' }}>
+            {rowButton('appSettings', 'App settings')}
+            {rowButton('feedback', 'Send feedback')}
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 // Settings Modal Component (mobile optimized)
 function SettingsModal({
   user,
@@ -3152,6 +3296,7 @@ function SettingsModal({
   onSaveEveningCutoff,
   onSaveMeals,
   onResetDay,
+  onRedoSetup,
   onClose,
   settingsTab,
   setSettingsTab,
@@ -3298,78 +3443,19 @@ function SettingsModal({
         flexDirection: 'column',
         boxShadow: '0 -4px 30px rgba(0,0,0,0.2)'
       }}>
-        {/* Header */}
-        <div style={{
-          padding: '16px 20px',
-          borderBottom: `1px solid ${T.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h2 style={{
-            margin: 0,
-            fontSize: '18px',
-            fontWeight: '600',
-            color: T.text,
-            letterSpacing: '-0.3px'
-          }}>
-            Your Goals
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '6px 14px',
-              backgroundColor: T.card2,
-              border: 'none',
-              borderRadius: '6px',
-              color: T.muted,
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            Close
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div style={{
-          display: 'flex',
-          gap: '2px',
-          padding: '12px 16px 0 16px',
-          borderBottom: `1px solid ${T.border}`,
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch'
-        }}>
-          {[
-            { id: 'checklist', label: 'Habits' },
-            { id: 'nutrition', label: 'Nutrition' },
-            { id: 'water', label: 'Water' },
-            { id: 'meals', label: 'Meals' },
-            { id: 'feedback', label: 'Feedback' },
-            { id: 'appSettings', label: '⚙️ Settings' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setSettingsTab(tab.id)}
-              style={{
-                padding: '8px 14px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderBottom: settingsTab === tab.id ? '2px solid #B8F06A' : '2px solid transparent',
-                color: settingsTab === tab.id ? '#B8F06A' : '#666666',
-                fontSize: '13px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                marginBottom: '-1px',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-            >
-              {tab.label}
+        {/* Header — overview, or a section with a way back */}
+        <div style={{ padding: '12px 12px 12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {settingsTab !== 'home' && (
+            <button onClick={() => setSettingsTab('home')} aria-label="Back to goals" style={{ ...iconButton, width: '36px', color: T.muted }}>
+              <ChevronLeftIcon size={20} strokeWidth={2} />
             </button>
-          ))}
+          )}
+          <h2 style={{ margin: 0, flex: 1, fontSize: '20px', fontWeight: 500, color: T.text }}>
+            {SETTINGS_TITLES[settingsTab] || 'Goals'}
+          </h2>
+          <button onClick={onClose} aria-label="Close" style={{ ...iconButton, color: T.muted }}>
+            <CloseIcon size={18} strokeWidth={2} />
+          </button>
         </div>
 
         {/* Content */}
@@ -3380,6 +3466,24 @@ function SettingsModal({
           backgroundColor: T.bg
         }}>
           <div>
+          {settingsTab === 'home' && (
+            <GoalsOverview
+              metrics={tempMetrics}
+              onUpdateMetric={updateNutritionMetric}
+              waterGoal={tempWaterGoal}
+              onWaterGoal={setTempWaterGoal}
+              counts={{
+                checklist: tempChecklist.filter(i => i.name?.trim()).length,
+                nutrition: tempMetrics.length,
+                water: tempWater.filter(a => a > 0).length,
+                meals: tempMeals.filter(Boolean).length
+              }}
+              onOpen={setSettingsTab}
+              onClearToday={() => { if (onResetDay()) onClose() }}
+              onRedoSetup={onRedoSetup}
+            />
+          )}
+
           {settingsTab === 'checklist' && (
             <ChecklistSettings
               items={tempChecklist}
@@ -3535,25 +3639,6 @@ function SettingsModal({
           gap: '8px',
           paddingBottom: '24px'
         }}>
-          <button
-            onClick={() => {
-              onResetDay()
-              onClose()
-            }}
-            style={{
-              padding: '10px 14px',
-              backgroundColor: 'transparent',
-              border: '1px solid #FF6B3D',
-              borderRadius: '8px',
-              color: '#FF6B3D',
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Reset
-          </button>
           <button
             onClick={onClose}
             style={{
