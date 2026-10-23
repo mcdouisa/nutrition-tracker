@@ -88,7 +88,7 @@ async function lookupBarcode(barcode, metrics) {
 }
 
 // ── Live barcode scanner overlay ─────────────────────────────────────────────
-function BarcodeScanner({ metrics, onResult, onClose }) {
+export function BarcodeScanner({ metrics, onResult, onClose }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const rafRef = useRef(null)

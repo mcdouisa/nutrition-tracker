@@ -32,10 +32,12 @@ import { syncWeightToGroups } from '../lib/groupSync'
 import {
   BarChartIcon, DumbbellIcon, TargetIcon, InboxIcon, CalendarIcon,
   SparklesIcon, InfoIcon, CheckCircleIcon, CloseIcon, PersonIcon, PlusIcon,
-  FlameIcon, UtensilsIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon
+  FlameIcon, UtensilsIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon,
+  BarcodeIcon, CameraIcon
 } from '../lib/icons'
 import { DARK, LIGHT, DONE, OVER } from '../lib/theme'
 import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
+import FoodLogSheet, { SearchIcon } from './components/FoodLogSheet'
 
 // ─── THEME TOKENS (shared across screens) ─────────────────────────────────────
 
@@ -91,6 +93,19 @@ export default function NutritionTracker() {
   const [customValues, setCustomValues] = useState({})
   const [customEntryName, setCustomEntryName] = useState('')
   const [showCustomEntry, setShowCustomEntry] = useState(false)
+
+  // One-step food logging
+  const [foodSheet, setFoodSheet] = useState(null) // null | 'search' | 'scan'
+  const [loggedToast, setLoggedToast] = useState(null) // name of the food just logged
+  const [recentFoods, setRecentFoods] = useState([]) // [{ name, serving, values }] newest first, this device only
+  useEffect(() => {
+    try { setRecentFoods(JSON.parse(localStorage.getItem('lytz-recent-foods') || '[]')) } catch {}
+  }, [])
+  useEffect(() => {
+    if (!loggedToast) return
+    const t = setTimeout(() => setLoggedToast(null), 5000)
+    return () => clearTimeout(t)
+  }, [loggedToast])
 
   // History for undo
   const [nutritionHistory, setNutritionHistory] = useState([])
@@ -1661,10 +1676,10 @@ Reason: 5-7 words max — the single most important factor.`
     ])
   }
 
-  const addEstimatedNutrition = async (estimates, messageIndex) => {
+  const addEstimatedNutrition = async (estimates, messageIndex, name) => {
     const timestamp = Date.now()
     const msgScore = messageIndex !== undefined ? chatMessages[messageIndex]?.score : null
-    const newEntry = { estimates, score: msgScore || undefined, timestamp }
+    const newEntry = { estimates, score: msgScore || undefined, timestamp, ...(name ? { name } : {}) }
 
     if (viewDate !== null && pastDayData) {
       // Viewing past day - update pastDayData and save to Firestore
@@ -1708,6 +1723,18 @@ Reason: 5-7 words max — the single most important factor.`
         idx === messageIndex ? { ...msg, added: true } : msg
       ))
     }
+  }
+
+  // Log a whole food in one step: every metric updates together, and it joins "Eaten before"
+  const logFood = ({ name, estimates, base }) => {
+    addEstimatedNutrition(estimates, undefined, name)
+    if (base) {
+      const next = [{ name: base.name, serving: base.serving, values: base.values }, ...recentFoods.filter(f => f.name !== base.name)].slice(0, 8)
+      setRecentFoods(next)
+      try { localStorage.setItem('lytz-recent-foods', JSON.stringify(next)) } catch {}
+    }
+    setFoodSheet(null)
+    setLoggedToast(name)
   }
 
   // Show loading state (with minimum 1s splash)
@@ -1831,7 +1858,7 @@ Reason: 5-7 words max — the single most important factor.`
     <div style={{
       minHeight: '100vh',
       backgroundColor: T.bg,
-      padding: `0 0 ${TAB_BAR_SPACE} 0`,
+      padding: `0 0 calc(${TAB_BAR_SPACE} + ${nutritionMetrics.length > 0 ? 72 : 0}px) 0`,
       fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, sans-serif",
       fontVariantNumeric: 'tabular-nums',
       WebkitFontSmoothing: 'antialiased',
@@ -1861,7 +1888,6 @@ Reason: 5-7 words max — the single most important factor.`
             maxWidth: '600px',
             padding: '28px 24px 40px'
           }}>
-            <div style={{ fontSize: '36px', textAlign: 'center', marginBottom: '12px' }}>🌙</div>
             <h3 style={{
               margin: '0 0 8px 0',
               fontSize: '17px',
@@ -2444,8 +2470,8 @@ Reason: 5-7 words max — the single most important factor.`
                   let description = ''
                   let entryType = 'Manual'
                   if (entry.estimates) {
-                    // AI batch entry (new format)
-                    entryType = 'AI Estimate'
+                    // Food search / AI batch entry
+                    entryType = entry.name || 'AI Estimate'
                     const parts = displayNutritionMetrics
                       .filter(m => entry.estimates[m.key])
                       .map(m => `${m.name}: ${entry.estimates[m.key]}${m.unit ? ` ${m.unit}` : ''}`)
@@ -2670,15 +2696,15 @@ Reason: 5-7 words max — the single most important factor.`
           />
         </div>
 
-        {/* Quick Add — meal buttons when configured; custom entry behind its own chip */}
+        {/* Eaten before — saved meals and recent foods, one tap each; custom entry behind its own chip */}
         {(meals.some(m => m) || nutritionMetrics.length > 0) && (
           <div style={{ marginBottom: '24px' }}>
-            <div style={{ fontSize: '13px', color: T.muted, marginBottom: '10px' }}>Quick add</div>
+            <div style={{ fontSize: '13px', color: T.muted, marginBottom: '10px' }}>Eaten before</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {meals.map((meal, i) => meal ? (
                 <button
-                  key={i}
-                  onClick={() => addMeal(meal)}
+                  key={`meal-${i}`}
+                  onClick={() => { addMeal(meal); setLoggedToast(meal.name) }}
                   title={nutritionMetrics.map(metric =>
                     meal[metric.key] ? `${meal[metric.key]}${metric.unit || ''} ${metric.name}` : ''
                   ).filter(Boolean).join(' · ')}
@@ -2688,13 +2714,29 @@ Reason: 5-7 words max — the single most important factor.`
                   {meal.name}
                 </button>
               ) : null)}
+              {recentFoods
+                .filter(f => !meals.some(m => m && m.name.toLowerCase() === f.name.toLowerCase()))
+                .slice(0, 6)
+                .map(food => (
+                  <button
+                    key={`recent-${food.name}`}
+                    onClick={() => logFood({ name: food.name, estimates: food.values, base: food })}
+                    title={`${food.serving} · ` + nutritionMetrics.map(metric =>
+                      food.values[metric.key] ? `${food.values[metric.key]}${metric.unit || ''} ${metric.name}` : ''
+                    ).filter(Boolean).join(' · ')}
+                    style={chipButton(T)}
+                  >
+                    <PlusIcon size={14} color={T.muted} strokeWidth={2} />
+                    {food.name}
+                  </button>
+                ))}
               {nutritionMetrics.length > 0 && (
                 <button
                   onClick={() => setShowCustomEntry(v => !v)}
                   aria-expanded={showCustomEntry}
                   style={{ ...chipButton(T), borderStyle: 'dashed', color: T.muted }}
                 >
-                  {showCustomEntry ? 'Close custom' : 'Custom…'}
+                  {showCustomEntry ? 'Close manual entry' : 'Enter numbers…'}
                 </button>
               )}
             </div>
@@ -2746,6 +2788,45 @@ Reason: 5-7 words max — the single most important factor.`
           </div>
         )}
       </div>
+
+      {/* "What did you eat?" bar — one step to log a whole food */}
+      {nutritionMetrics.length > 0 && !foodSheet && (
+        <div style={{ position: 'fixed', left: 0, right: 0, bottom: `calc(76px + env(safe-area-inset-bottom))`, zIndex: 55, pointerEvents: 'none' }}>
+          <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px', pointerEvents: 'auto' }}>
+            {loggedToast && (
+              <div role="status" style={{ height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '0 6px 0 16px', borderRadius: '14px', backgroundColor: T.text, color: T.bg }}>
+                <span style={{ fontSize: '14px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Added {loggedToast}</span>
+                <button onClick={() => { undoNutrition(); setLoggedToast(null) }} style={{ height: '40px', padding: '0 12px', border: 'none', borderRadius: '10px', background: 'none', color: T.bg, fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Undo
+                </button>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setFoodSheet('search')} style={{ flex: 1, height: '56px', display: 'flex', alignItems: 'center', gap: '10px', padding: '0 16px', border: 'none', borderRadius: '18px', backgroundColor: DONE, color: '#0B0C0E', fontSize: '16px', fontWeight: 500, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
+                <SearchIcon size={20} />
+                What did you eat?
+              </button>
+              <button onClick={() => setFoodSheet('scan')} aria-label="Scan a barcode" style={{ ...iconButton, width: '56px', height: '56px', borderRadius: '18px', backgroundColor: T.card, color: T.text, boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
+                <BarcodeIcon size={20} strokeWidth={1.8} />
+              </button>
+              <button onClick={() => setShowChat(true)} aria-label="Photo or describe a meal with AI" style={{ ...iconButton, width: '56px', height: '56px', borderRadius: '18px', backgroundColor: T.card, color: T.text, boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
+                <CameraIcon size={20} strokeWidth={1.8} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {foodSheet && (
+        <FoodLogSheet
+          T={T}
+          metrics={viewDate !== null && pastDayData ? pastDayData.nutritionMetrics : nutritionMetrics}
+          startWith={foodSheet}
+          onLog={logFood}
+          onDescribe={(text) => { setFoodSheet(null); setChatInput(text); setShowChat(true) }}
+          onClose={() => setFoodSheet(null)}
+        />
+      )}
 
       {/* Bottom tab bar */}
       <AppTabBar
