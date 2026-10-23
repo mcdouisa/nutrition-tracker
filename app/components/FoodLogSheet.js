@@ -28,6 +28,8 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', onLog, 
   const [errorMsg, setErrorMsg] = useState('')
   const [food, setFood] = useState(null) // { name, serving, values }
   const [qty, setQty] = useState(1)
+  const [customQty, setCustomQty] = useState('') // typed servings, e.g. "3" or "0.75"
+  const [edits, setEdits] = useState({}) // per-serving values the user typed in, by metric key
   const [scanning, setScanning] = useState(startWith === 'scan')
   const inputRef = useRef(null)
   const requestRef = useRef(0)
@@ -69,15 +71,28 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', onLog, 
     return () => clearTimeout(timer)
   }, [query, metricsKey])
 
-  const pick = (f) => { setFood(f); setQty(1) }
+  const pick = (f) => { setFood(f); setQty(1); setCustomQty(''); setEdits({}) }
+
+  // Per-serving value: what the user typed, else the suggestion
+  const perServing = (key) => {
+    if (edits[key] !== undefined) {
+      const n = parseFloat(edits[key])
+      return Number.isFinite(n) && n > 0 ? n : 0
+    }
+    return food?.values[key] || 0
+  }
+  const edited = Object.keys(edits).length > 0
 
   const confirm = () => {
     const estimates = {}
+    const values = {}
     metrics.forEach(m => {
-      const v = (food.values[m.key] || 0) * qty
+      values[m.key] = perServing(m.key)
+      const v = values[m.key] * qty
       if (v) estimates[m.key] = Math.round(v * 10) / 10
     })
-    onLog({ name: food.name, serving: qty === 1 ? food.serving : `${portionLabel(qty)} × ${food.serving}`, estimates, base: food })
+    // Remember the corrected values, so "Eaten before" logs the label's numbers next time
+    onLog({ name: food.name, serving: qty === 1 ? food.serving : `${fmt(qty)} × ${food.serving}`, estimates, base: { ...food, values } })
   }
 
   const primary = metrics[0]
@@ -164,29 +179,75 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', onLog, 
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <span style={{ fontSize: 13, color: T.muted }}>How much?</span>
-              <div role="group" aria-label="Servings" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
-                {PORTIONS.map(q => (
-                  <button key={q} onClick={() => setQty(q)} aria-pressed={q === qty} style={{
-                    height: 44, border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: FONT,
-                    backgroundColor: q === qty ? T.text : T.card2, color: q === qty ? T.bg : T.soft
-                  }}>
-                    {portionLabel(q)}
-                  </button>
-                ))}
+              <div role="group" aria-label="Servings" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
+                {PORTIONS.map(q => {
+                  const on = q === qty && customQty === ''
+                  return (
+                    <button key={q} onClick={() => { setQty(q); setCustomQty('') }} aria-pressed={on} style={{
+                      height: 44, border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: FONT,
+                      backgroundColor: on ? T.text : T.card2, color: on ? T.bg : T.soft
+                    }}>
+                      {portionLabel(q)}
+                    </button>
+                  )
+                })}
+                <input
+                  value={customQty}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9.]/g, '')
+                    setCustomQty(v)
+                    const n = parseFloat(v)
+                    if (Number.isFinite(n) && n > 0) setQty(n)
+                    else if (v === '') setQty(1)
+                  }}
+                  inputMode="decimal"
+                  placeholder="Other"
+                  aria-label="Number of servings"
+                  style={{
+                    height: 44, minWidth: 0, width: '100%', boxSizing: 'border-box', borderRadius: 12, textAlign: 'center',
+                    fontSize: 15, fontWeight: 500, fontFamily: FONT,
+                    border: customQty !== '' ? `2px solid ${T.text}` : 'none',
+                    backgroundColor: T.card2, color: T.text
+                  }}
+                />
               </div>
             </div>
 
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-              <div style={{ borderRadius: 18, backgroundColor: T.card2, overflow: 'hidden' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ fontSize: 13, color: T.muted }}>Per serving · tap a number to match your label</span>
+                {edited && (
+                  <button onClick={() => setEdits({})} style={{ border: 'none', background: 'none', padding: '6px 0', color: T.soft, fontSize: 13, cursor: 'pointer', fontFamily: FONT, textDecoration: 'underline' }}>
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div style={{ borderRadius: 18, backgroundColor: T.card2, overflow: 'hidden', flexShrink: 0 }}>
                 {metrics.map((m, i) => {
-                  const add = (food.values[m.key] || 0) * qty
+                  const per = perServing(m.key)
+                  const add = per * qty
                   const unit = m.unit ? ` ${m.unit}` : ''
+                  const changed = edits[m.key] !== undefined
                   return (
-                    <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 52, padding: '0 16px', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+                    <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 56, padding: '0 8px 0 16px', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
                       <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, backgroundColor: T.hues[i % T.hues.length] }} />
-                      <span style={{ fontSize: 15, flex: 1 }}>{m.name}</span>
-                      <span style={{ fontSize: 15, fontWeight: 500, color: add ? T.text : T.muted }}>+{fmt(add)}{unit}</span>
-                      <span style={{ fontSize: 13, color: T.muted, minWidth: 84, textAlign: 'right' }}>→ {fmt((m.value || 0) + add)}{unit}</span>
+                      <label htmlFor={`food-${m.key}`} style={{ fontSize: 15, flex: 1, minWidth: 0 }}>{m.name}</label>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <input
+                          id={`food-${m.key}`}
+                          value={changed ? edits[m.key] : fmt(per).replace(/,/g, '')}
+                          onChange={(e) => setEdits({ ...edits, [m.key]: e.target.value.replace(/[^0-9.]/g, '') })}
+                          onFocus={(e) => e.target.select()}
+                          inputMode="decimal"
+                          style={{
+                            width: 76, height: 40, boxSizing: 'border-box', padding: '0 10px', borderRadius: 10, textAlign: 'right',
+                            fontSize: 16, fontWeight: 500, fontFamily: FONT, color: T.text,
+                            backgroundColor: T.card, border: `1px solid ${changed ? T.text : T.border}`
+                          }}
+                        />
+                        <span style={{ width: 22, fontSize: 13, color: T.muted }}>{m.unit}</span>
+                      </span>
+                      <span style={{ fontSize: 13, color: T.muted, minWidth: 74, textAlign: 'right' }}>→ {fmt((m.value || 0) + add)}{unit}</span>
                     </div>
                   )
                 })}
@@ -194,7 +255,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', onLog, 
             </div>
 
             <button onClick={confirm} style={{ height: 56, flexShrink: 0, border: 'none', borderRadius: 16, backgroundColor: DONE, color: DONE_INK, fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
-              Add{primary ? ` · ${fmt((food.values[primary.key] || 0) * qty)}${primary.unit ? ` ${primary.unit}` : ''} ${primary.name.toLowerCase()}` : ''}
+              Add{primary ? ` · ${fmt(perServing(primary.key) * qty)}${primary.unit ? ` ${primary.unit}` : ''} ${primary.name.toLowerCase()}` : ''}
             </button>
           </>
         )}
