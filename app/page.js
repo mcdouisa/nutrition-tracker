@@ -35,7 +35,7 @@ import {
   FlameIcon, UtensilsIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon,
   BarcodeIcon, CameraIcon
 } from '../lib/icons'
-import { DARK, LIGHT, DONE, OVER } from '../lib/theme'
+import { DARK, LIGHT, DONE, OVER, FONT } from '../lib/theme'
 import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
 import FoodLogSheet, { SearchIcon, compressPhoto } from './components/FoodLogSheet'
 
@@ -3178,8 +3178,8 @@ const GOAL_TYPES = [
 // Goals overview: every daily target editable in place, then sections, then clear ways to start fresh
 function GoalsOverview({ metrics, onUpdateMetric, waterGoal, onWaterGoal, counts, onOpen, onClearToday, onRedoSetup }) {
   const T = useContext(ThemeContext)
-  const label = { fontSize: '13px', color: T.muted, margin: '0 0 8px 4px' }
-  const card = { backgroundColor: T.card, borderRadius: '18px', overflow: 'hidden' }
+  const label = sectionLabel(T)
+  const card = groupCard(T)
   const numberInput = (value, onChange, aria) => (
     <input
       value={value || ''}
@@ -3425,26 +3425,25 @@ function SettingsModal({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      backdropFilter: 'blur(4px)',
+      backgroundColor: 'rgba(0, 0, 0, 0.55)',
       display: 'flex',
       alignItems: 'flex-end',
       justifyContent: 'center',
       zIndex: 1000
     }}>
-      <div style={{
-        backgroundColor: T.card,
-        borderRadius: '16px 16px 0 0',
+      <div role="dialog" aria-modal="true" aria-label={SETTINGS_TITLES[settingsTab] || 'Goals'} style={{
+        backgroundColor: T.bg,
+        borderRadius: '24px 24px 0 0',
         width: '100%',
-        maxWidth: '700px',
-        maxHeight: '90vh',
+        maxWidth: '600px',
+        height: 'min(92vh, 860px)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 -4px 30px rgba(0,0,0,0.2)'
+        fontFamily: FONT
       }}>
         {/* Header — overview, or a section with a way back */}
-        <div style={{ padding: '12px 12px 12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ padding: '12px 12px 8px 16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
           {settingsTab !== 'home' && (
             <button onClick={() => setSettingsTab('home')} aria-label="Back to goals" style={{ ...iconButton, width: '36px', color: T.muted }}>
               <ChevronLeftIcon size={20} strokeWidth={2} />
@@ -3462,7 +3461,7 @@ function SettingsModal({
         <div ref={contentRef} style={{
           flex: 1,
           overflow: 'auto',
-          padding: '20px 16px',
+          padding: '8px 16px 24px',
           backgroundColor: T.bg
         }}>
           <div>
@@ -3515,42 +3514,28 @@ function SettingsModal({
                 onMove={moveWaterButton}
               />
               {/* Evening cutoff reminder setting */}
-              <div style={{
-                marginTop: '20px',
-                padding: '16px',
-                backgroundColor: T.card,
-                borderRadius: '10px',
-                border: `1px solid ${T.border}`
-              }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: T.text, marginBottom: '4px' }}>
-                  Evening reminder cutoff
-                </div>
-                <div style={{ fontSize: '12px', color: T.faint, marginBottom: '10px' }}>
-                  If no entries are logged after this time, you'll be reminded the next morning.
-                </div>
-                <select
-                  value={eveningCutoff}
-                  onChange={e => onSaveEveningCutoff(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: `1px solid ${T.border}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    color: T.text,
-                    backgroundColor: T.card,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="18:00">6:00 PM</option>
-                  <option value="18:30">6:30 PM</option>
-                  <option value="19:00">7:00 PM</option>
-                  <option value="19:30">7:30 PM (default)</option>
-                  <option value="20:00">8:00 PM</option>
-                  <option value="20:30">8:30 PM</option>
-                  <option value="21:00">9:00 PM</option>
-                </select>
-              </div>
+              <section style={{ marginTop: '24px' }}>
+                <h3 style={sectionLabel(T)}>Missed-day reminder</h3>
+                <label style={{ ...groupCard(T), minHeight: '56px', padding: '8px 12px 8px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '15px', color: T.text }}>Remind me if nothing's logged after</span>
+                    <span style={{ fontSize: '13px', color: T.muted }}>You'll get a nudge the next morning</span>
+                  </span>
+                  <select
+                    value={eveningCutoff}
+                    onChange={e => onSaveEveningCutoff(e.target.value)}
+                    style={{ height: '40px', padding: '0 10px', borderRadius: '10px', border: `1px solid ${T.border}`, backgroundColor: T.card2, color: T.text, fontSize: '15px', fontFamily: 'inherit', cursor: 'pointer' }}
+                  >
+                    <option value="18:00">6:00 PM</option>
+                    <option value="18:30">6:30 PM</option>
+                    <option value="19:00">7:00 PM</option>
+                    <option value="19:30">7:30 PM</option>
+                    <option value="20:00">8:00 PM</option>
+                    <option value="20:30">8:30 PM</option>
+                    <option value="21:00">9:00 PM</option>
+                  </select>
+                </label>
+              </section>
             </>
           )}
 
@@ -3568,62 +3553,36 @@ function SettingsModal({
           )}
 
           {settingsTab === 'appSettings' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Appearance */}
-              <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: 0 }}>Appearance</div>
-                </div>
-                <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>
-                      {darkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
-                    </div>
-                    <div style={{ fontSize: '12px', color: T.muted, marginTop: '2px' }}>
-                      {darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
-                    </div>
-                  </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <section>
+                <h3 style={sectionLabel(T)}>Appearance</h3>
+                <div style={{ ...groupCard(T), minHeight: '56px', padding: '0 12px 0 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ flex: 1, fontSize: '15px', color: T.text }}>Dark mode</span>
                   <button
                     onClick={onToggleTheme}
-                    style={{
-                      width: '52px', height: '30px', borderRadius: '15px', border: 'none', cursor: 'pointer',
-                      backgroundColor: darkMode ? '#B8F06A' : T.card2,
-                      position: 'relative', transition: 'background-color 0.2s',
-                      boxShadow: darkMode ? '0 0 10px rgba(184,240,106,0.4)' : 'none',
-                    }}
+                    role="switch"
+                    aria-checked={darkMode}
+                    aria-label="Dark mode"
+                    style={{ width: '52px', height: '32px', borderRadius: '16px', border: 'none', cursor: 'pointer', position: 'relative', backgroundColor: darkMode ? DONE : T.card2, transition: 'background-color 0.2s' }}
                   >
-                    <div style={{
-                      position: 'absolute', top: '3px',
-                      left: darkMode ? '25px' : '3px',
-                      width: '24px', height: '24px', borderRadius: '50%',
-                      backgroundColor: '#fff', transition: 'left 0.2s',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                    }} />
+                    <span aria-hidden="true" style={{ position: 'absolute', top: '3px', left: darkMode ? '23px' : '3px', width: '26px', height: '26px', borderRadius: '50%', backgroundColor: darkMode ? '#0B0C0E' : T.text, transition: 'left 0.2s' }} />
                   </button>
                 </div>
-              </div>
+              </section>
 
-              {/* Account */}
               {user && (
-                <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: T.muted, letterSpacing: 0 }}>Account</div>
+                <section>
+                  <h3 style={sectionLabel(T)}>Account</h3>
+                  <div style={groupCard(T)}>
+                    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontSize: '13px', color: T.muted }}>Signed in as</span>
+                      <span style={{ fontSize: '15px', color: T.text, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</span>
+                    </div>
+                    <button onClick={onSignOut} style={{ width: '100%', minHeight: '52px', padding: '0 16px', border: 'none', borderTop: `1px solid ${T.border}`, background: 'none', color: OVER, fontSize: '15px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Sign out
+                    </button>
                   </div>
-                  <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: '11px', color: T.muted, marginBottom: '2px' }}>Signed in as</div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: T.text }}>{user.email}</div>
-                  </div>
-                  <button
-                    onClick={onSignOut}
-                    style={{
-                      width: '100%', padding: '14px 16px', backgroundColor: 'transparent',
-                      border: 'none', color: '#FF6B3D', fontSize: '14px', fontWeight: '600',
-                      cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px'
-                    }}
-                  >
-                    <span>🚪</span> Sign Out
-                  </button>
-                </div>
+                </section>
               )}
             </div>
           )}
@@ -3631,44 +3590,11 @@ function SettingsModal({
         </div>
 
         {/* Footer */}
-        <div style={{
-          padding: '16px 20px',
-          borderTop: `1px solid ${T.border}`,
-          backgroundColor: T.card,
-          display: 'flex',
-          gap: '8px',
-          paddingBottom: '24px'
-        }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              backgroundColor: T.card2,
-              border: 'none',
-              borderRadius: '8px',
-              color: T.muted,
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
+        <div style={{ padding: '12px 16px calc(16px + env(safe-area-inset-bottom))', borderTop: `1px solid ${T.border}`, backgroundColor: T.bg, display: 'flex', gap: '8px' }}>
+          <button onClick={onClose} style={{ flex: 1, height: '52px', border: 'none', borderRadius: '14px', backgroundColor: T.card, color: T.soft, fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel
           </button>
-          <button
-            onClick={handleSave}
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              backgroundColor: '#B8F06A',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#15171A',
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={handleSave} style={{ ...primaryButton, flex: 2, height: '52px', borderRadius: '14px' }}>
             Save
           </button>
         </div>
@@ -3702,106 +3628,36 @@ function FeedbackForm({ user }) {
 
   if (!user) {
     return (
-      <div style={{ textAlign: 'center', padding: '32px 16px', color: T.faint }}>
-        <div style={{ fontSize: '32px', marginBottom: '12px' }}>💬</div>
-        <div style={{ fontSize: '14px', fontWeight: '500', color: T.muted }}>Sign in to send feedback</div>
-        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-          Create an account to report bugs or request features.
-        </div>
+      <div style={{ ...groupCard(T), padding: '20px 16px' }}>
+        <div style={{ fontSize: '15px', color: T.text, marginBottom: '4px' }}>Sign in to send feedback</div>
+        <div style={{ fontSize: '13px', color: T.muted }}>Create an account to report bugs or request features.</div>
       </div>
     )
   }
 
+  const ready = message.trim() && !sending
   return (
-    <div>
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: T.muted, marginBottom: '8px' }}>
-          Type
-        </label>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[
-            { id: 'bug', label: 'Bug Report' },
-            { id: 'feature', label: 'Feature Request' },
-            { id: 'other', label: 'Other' }
-          ].map(t => (
-            <button
-              key={t.id}
-              onClick={() => setType(t.id)}
-              style={{
-                flex: 1,
-                padding: '10px 12px',
-                backgroundColor: type === t.id ? '#B8F06A' : '#15171A',
-                border: '1px solid',
-                borderColor: type === t.id ? '#B8F06A' : '#25282D',
-                borderRadius: '8px',
-                color: type === t.id ? '#0B0C0E' : '#8B9098',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: T.muted, marginBottom: '6px' }}>
-          Message
-        </label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <section>
+        <h3 style={sectionLabel(T)}>What kind?</h3>
+        <Pills T={T} label="Feedback type" value={type} onChange={setType} options={[
+          { id: 'bug', label: 'Something broke' },
+          { id: 'feature', label: 'Idea' },
+          { id: 'other', label: 'Other' }
+        ]} />
+      </section>
+      <label>
+        <span style={{ ...sectionLabel(T), display: 'block' }}>Message</span>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder={type === 'bug' ? 'Describe the bug and steps to reproduce it...' : type === 'feature' ? 'Describe the feature you\'d like to see...' : 'Tell us what\'s on your mind...'}
-          style={{
-            width: '100%',
-            minHeight: '120px',
-            padding: '12px 14px',
-            backgroundColor: T.card,
-            border: `1px solid ${T.border}`,
-            borderRadius: '8px',
-            color: T.text,
-            fontSize: '14px',
-            fontFamily: 'inherit',
-            resize: 'vertical',
-            boxSizing: 'border-box',
-            outline: 'none'
-          }}
+          placeholder={type === 'bug' ? 'What happened, and what did you expect?' : type === 'feature' ? 'What would make Lytz better?' : "What's on your mind?"}
+          style={{ width: '100%', minHeight: '140px', padding: '14px 16px', boxSizing: 'border-box', borderRadius: '18px', border: 'none', backgroundColor: T.card, color: T.text, fontSize: '16px', fontFamily: 'inherit', resize: 'vertical' }}
         />
-      </div>
-
-      {sent && (
-        <div style={{
-          backgroundColor: 'rgba(184,240,106,0.1)',
-          border: '1px solid #bbf7d0',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          marginBottom: '16px',
-          color: '#B8F06A',
-          fontSize: '13px',
-          fontWeight: '500'
-        }}>
-          Thanks for your feedback! We'll review it soon.
-        </div>
-      )}
-
-      <button
-        onClick={handleSubmit}
-        disabled={!message.trim() || sending}
-        style={{
-          width: '100%',
-          padding: '14px',
-          backgroundColor: message.trim() && !sending ? '#B8F06A' : '#25282D',
-          border: 'none',
-          borderRadius: '8px',
-          color: message.trim() && !sending ? '#0B0C0E' : '#666666',
-          fontSize: '14px',
-          fontWeight: '600',
-          cursor: message.trim() && !sending ? 'pointer' : 'not-allowed'
-        }}
-      >
-        {sending ? 'Sending...' : 'Submit Feedback'}
+      </label>
+      {sent && <div role="status" style={{ fontSize: '14px', color: DONE }}>Thanks! We'll take a look.</div>}
+      <button onClick={handleSubmit} disabled={!ready} style={{ ...primaryButton, width: '100%', height: '52px', opacity: ready ? 1 : 0.4, cursor: ready ? 'pointer' : 'default' }}>
+        {sending ? 'Sending…' : 'Send feedback'}
       </button>
     </div>
   )
@@ -3929,148 +3785,113 @@ function NotificationBanner({ notification, onDismiss }) {
 }
 
 // Checklist Settings Component
+// ─── Goals section editors (shared look) ──────────────────────────────────────
+
+const sectionLabel = (T) => ({ fontSize: '13px', color: T.muted, margin: '0 0 8px 4px', fontWeight: 400 })
+const groupCard = (T) => ({ backgroundColor: T.card, borderRadius: '18px', overflow: 'hidden' })
+const plainInput = (T) => ({
+  flex: 1, minWidth: 0, height: '44px', padding: '0 4px', border: 'none', outline: 'none',
+  background: 'none', color: T.text, fontSize: '16px', fontFamily: 'inherit'
+})
+const smallField = (T, width = '76px') => ({
+  width, height: '40px', boxSizing: 'border-box', padding: '0 10px', borderRadius: '10px', textAlign: 'right',
+  fontSize: '16px', fontWeight: 500, fontFamily: 'inherit', color: T.text, backgroundColor: T.card2, border: `1px solid ${T.border}`
+})
+const addRowButton = (T) => ({
+  width: '100%', height: '48px', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+  border: `1px dashed ${T.border}`, borderRadius: '14px', background: 'none', color: T.soft, fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit'
+})
+const numberValue = (v) => parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0
+
+function Pills({ T, options, value, onChange, label }) {
+  return (
+    <div role="group" aria-label={label} style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+      {options.map(o => (
+        <button key={o.id} type="button" onClick={() => onChange(o.id)} aria-pressed={value === o.id} style={{
+          height: '32px', padding: '0 12px', border: 'none', borderRadius: '999px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+          backgroundColor: value === o.id ? T.text : T.card2, color: value === o.id ? T.bg : T.soft
+        }}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// Small up / down / remove controls at the end of a list row
+function RowControls({ T, name, index, count, onMove, onRemove }) {
+  const small = { ...iconButton, width: '32px', color: T.muted }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+      {onMove && (
+        <>
+          <button onClick={() => onMove(index, -1)} disabled={index === 0} aria-label={`Move ${name} up`} style={{ ...small, opacity: index === 0 ? 0.3 : 1 }}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 15l6-6 6 6" /></svg>
+          </button>
+          <button onClick={() => onMove(index, 1)} disabled={index === count - 1} aria-label={`Move ${name} down`} style={{ ...small, opacity: index === count - 1 ? 0.3 : 1 }}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+        </>
+      )}
+      <button onClick={() => onRemove(index)} aria-label={`Remove ${name}`} style={{ ...iconButton, width: '40px', color: T.muted }}>
+        <CloseIcon size={16} strokeWidth={2} />
+      </button>
+    </div>
+  )
+}
+
+const FREQUENCIES = [
+  { id: 'daily', label: 'Daily' },
+  { id: 'multiple', label: 'Several a day' },
+  { id: 'weekly', label: 'Weekly' }
+]
+
 function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
   const T = useContext(ThemeContext)
   return (
     <div>
-      <div style={{ fontSize: '13px', color: T.muted, marginBottom: '16px' }}>
-        Add daily habits to track
-      </div>
-
-      {items.map((item, i) => (
-        <div key={i} style={{ marginBottom: '10px' }}>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {/* Up/down reorder buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <button
-                onClick={() => onMove(i, -1)}
-                disabled={i === 0}
-                style={{
-                  padding: '2px 8px',
-                  backgroundColor: i === 0 ? '#1D2024' : '#15171A',
-                  border: `1px solid ${T.border}`,
-                  borderRadius: '4px',
-                  color: i === 0 ? '#ccc' : '#8B9098',
-                  fontSize: '10px',
-                  cursor: i === 0 ? 'default' : 'pointer',
-                  lineHeight: '1'
-                }}
-              >▲</button>
-              <button
-                onClick={() => onMove(i, 1)}
-                disabled={i === items.length - 1}
-                style={{
-                  padding: '2px 8px',
-                  backgroundColor: i === items.length - 1 ? '#1D2024' : '#15171A',
-                  border: `1px solid ${T.border}`,
-                  borderRadius: '4px',
-                  color: i === items.length - 1 ? '#ccc' : '#8B9098',
-                  fontSize: '10px',
-                  cursor: i === items.length - 1 ? 'default' : 'pointer',
-                  lineHeight: '1'
-                }}
-              >▼</button>
-            </div>
-            <input
-              type="text"
-              value={item.name}
-              onChange={(e) => onUpdate(i, 'name', e.target.value)}
-              placeholder="Habit name"
-              style={{
-                flex: 1,
-                minWidth: 0,
-                padding: '10px 12px',
-                backgroundColor: T.card,
-                border: `1px solid ${T.border}`,
-                borderRadius: '8px',
-                color: T.text,
-                fontSize: '16px',
-                fontWeight: '500',
-                boxSizing: 'border-box'
-              }}
-            />
-            <button
-              onClick={() => onRemove(i)}
-              style={{
-                padding: '10px 12px',
-                backgroundColor: T.card2,
-                border: 'none',
-                borderRadius: '8px',
-                color: T.faint,
-                fontSize: '13px',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-          {/* Frequency row */}
-          <div style={{ display: 'flex', gap: '6px', marginTop: '6px', paddingLeft: '36px', alignItems: 'center' }}>
-            {[
-              { id: 'daily', label: 'Daily' },
-              { id: 'multiple', label: 'Multiple/day' },
-              { id: 'weekly', label: 'Weekly' }
-            ].map(opt => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => onUpdate(i, 'frequency', opt.id)}
-                style={{
-                  padding: '4px 8px',
-                  backgroundColor: (item.frequency || 'daily') === opt.id ? '#B8F06A' : '#1D2024',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: (item.frequency || 'daily') === opt.id ? '#0B0C0E' : '#8B9098',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-            {(item.frequency || 'daily') === 'multiple' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
-                <span style={{ fontSize: '11px', color: T.faint }}>×</span>
+      <h3 style={sectionLabel(T)}>Habits you check off</h3>
+      <div style={groupCard(T)}>
+        {items.length === 0 && (
+          <div style={{ padding: '16px', fontSize: '14px', color: T.muted }}>No habits yet. Add one below.</div>
+        )}
+        {items.map((item, i) => {
+          const freq = item.frequency || 'daily'
+          return (
+            <div key={i} style={{ padding: '6px 4px 12px 16px', borderTop: i ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <input
-                  type="number"
-                  min="2"
-                  max="20"
-                  value={item.targetCount || 2}
-                  onChange={(e) => onUpdate(i, 'targetCount', Math.max(2, parseInt(e.target.value) || 2))}
-                  style={{
-                    width: '44px',
-                    padding: '4px 6px',
-                    border: `1px solid ${T.border}`,
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    textAlign: 'center'
-                  }}
+                  type="text"
+                  value={item.name}
+                  onChange={(e) => onUpdate(i, 'name', e.target.value)}
+                  placeholder="Habit name, e.g. Take vitamins"
+                  aria-label={`Habit ${i + 1} name`}
+                  style={plainInput(T)}
                 />
-                <span style={{ fontSize: '11px', color: T.faint }}>times</span>
+                <RowControls T={T} name={item.name || 'habit'} index={i} count={items.length} onMove={onMove} onRemove={onRemove} />
               </div>
-            )}
-          </div>
-        </div>
-      ))}
-
-      <button
-        onClick={onAdd}
-        style={{
-          width: '100%',
-          padding: '10px',
-          marginTop: '8px',
-          backgroundColor: T.card,
-          border: '1px dashed #d0d0d0',
-          borderRadius: '8px',
-          color: T.muted,
-          fontSize: '13px',
-          fontWeight: '500',
-          cursor: 'pointer'
-        }}
-      >
-        + Add Habit
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+                <Pills T={T} label={`How often for ${item.name || 'this habit'}`} options={FREQUENCIES} value={freq} onChange={(v) => onUpdate(i, 'frequency', v)} />
+                {freq === 'multiple' && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: T.muted }}>
+                    <input
+                      value={item.targetCount || 2}
+                      onChange={(e) => onUpdate(i, 'targetCount', Math.max(2, Math.min(20, parseInt(e.target.value) || 2)))}
+                      onFocus={(e) => e.target.select()}
+                      inputMode="numeric"
+                      aria-label="Times per day"
+                      style={{ ...smallField(T, '52px'), height: '32px', textAlign: 'center' }}
+                    />
+                    times a day
+                  </label>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <button onClick={onAdd} style={addRowButton(T)}>
+        <PlusIcon size={16} strokeWidth={2} /> Add a habit
       </button>
     </div>
   )
@@ -4079,582 +3900,228 @@ function ChecklistSettings({ items, onAdd, onUpdate, onRemove, onMove }) {
 // ── Micronutrient preset definitions ──────────────────────────────────────────
 const MICRONUTRIENT_PRESETS = {
   vitamins: [
-    { key: 'vitaminA',   name: 'Vitamin A',   unit: 'mcg', goal: 700,  goalType: 'min', goalMax: 0, color: '#B9A3FF', icon: '💊' },
-    { key: 'vitaminC',   name: 'Vitamin C',   unit: 'mg',  goal: 90,   goalType: 'min', goalMax: 0, color: '#F2C94C', icon: '💊' },
-    { key: 'vitaminD',   name: 'Vitamin D',   unit: 'mcg', goal: 20,   goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '💊' },
-    { key: 'vitaminE',   name: 'Vitamin E',   unit: 'mg',  goal: 15,   goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
-    { key: 'vitaminK',   name: 'Vitamin K',   unit: 'mcg', goal: 120,  goalType: 'min', goalMax: 0, color: '#32D74B', icon: '💊' },
-    { key: 'vitaminB1',  name: 'Thiamine (B1)',  unit: 'mg',  goal: 1.2,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '💊' },
-    { key: 'vitaminB2',  name: 'Riboflavin (B2)', unit: 'mg', goal: 1.3, goalType: 'min', goalMax: 0, color: '#5E5CE6', icon: '💊' },
-    { key: 'vitaminB3',  name: 'Niacin (B3)', unit: 'mg',  goal: 16,   goalType: 'min', goalMax: 0, color: '#FF6B6B', icon: '💊' },
-    { key: 'vitaminB5',  name: 'Pantothenic Acid (B5)', unit: 'mg', goal: 5, goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
-    { key: 'vitaminB6',  name: 'Vitamin B6',  unit: 'mg',  goal: 1.7,  goalType: 'min', goalMax: 0, color: '#30B0C7', icon: '💊' },
-    { key: 'biotin',     name: 'Biotin (B7)', unit: 'mcg', goal: 30,   goalType: 'min', goalMax: 0, color: '#B9A3FF', icon: '💊' },
-    { key: 'folate',     name: 'Folate (B9)', unit: 'mcg', goal: 400,  goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
-    { key: 'vitaminB12', name: 'Vitamin B12', unit: 'mcg', goal: 2.4,  goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '💊' },
+    { key: 'vitaminA',   name: 'Vitamin A',   unit: 'mcg', goal: 700,  goalType: 'min', goalMax: 0 },
+    { key: 'vitaminC',   name: 'Vitamin C',   unit: 'mg',  goal: 90,   goalType: 'min', goalMax: 0 },
+    { key: 'vitaminD',   name: 'Vitamin D',   unit: 'mcg', goal: 20,   goalType: 'min', goalMax: 0 },
+    { key: 'vitaminE',   name: 'Vitamin E',   unit: 'mg',  goal: 15,   goalType: 'min', goalMax: 0 },
+    { key: 'vitaminK',   name: 'Vitamin K',   unit: 'mcg', goal: 120,  goalType: 'min', goalMax: 0 },
+    { key: 'vitaminB1',  name: 'Thiamine (B1)',  unit: 'mg',  goal: 1.2,  goalType: 'min', goalMax: 0 },
+    { key: 'vitaminB2',  name: 'Riboflavin (B2)', unit: 'mg', goal: 1.3, goalType: 'min', goalMax: 0 },
+    { key: 'vitaminB3',  name: 'Niacin (B3)', unit: 'mg',  goal: 16,   goalType: 'min', goalMax: 0 },
+    { key: 'vitaminB5',  name: 'Pantothenic Acid (B5)', unit: 'mg', goal: 5, goalType: 'min', goalMax: 0 },
+    { key: 'vitaminB6',  name: 'Vitamin B6',  unit: 'mg',  goal: 1.7,  goalType: 'min', goalMax: 0 },
+    { key: 'biotin',     name: 'Biotin (B7)', unit: 'mcg', goal: 30,   goalType: 'min', goalMax: 0 },
+    { key: 'folate',     name: 'Folate (B9)', unit: 'mcg', goal: 400,  goalType: 'min', goalMax: 0 },
+    { key: 'vitaminB12', name: 'Vitamin B12', unit: 'mcg', goal: 2.4,  goalType: 'min', goalMax: 0 },
   ],
   minerals: [
-    { key: 'calcium',    name: 'Calcium',    unit: 'mg',  goal: 1000, goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '⚗️' },
-    { key: 'iron',       name: 'Iron',       unit: 'mg',  goal: 18,   goalType: 'min', goalMax: 0, color: '#FF6B3D', icon: '⚗️' },
-    { key: 'magnesium',  name: 'Magnesium',  unit: 'mg',  goal: 420,  goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '⚗️' },
-    { key: 'phosphorus', name: 'Phosphorus', unit: 'mg',  goal: 700,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '⚗️' },
-    { key: 'potassium',  name: 'Potassium',  unit: 'mg',  goal: 3500, goalType: 'min', goalMax: 0, color: '#F2C94C', icon: '⚗️' },
-    { key: 'sodium',     name: 'Sodium',     unit: 'mg',  goal: 2300, goalType: 'max', goalMax: 0, color: '#FF6B3D', icon: '⚗️' },
-    { key: 'zinc',       name: 'Zinc',       unit: 'mg',  goal: 11,   goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '⚗️' },
-    { key: 'copper',     name: 'Copper',     unit: 'mg',  goal: 0.9,  goalType: 'min', goalMax: 0, color: '#F2C94C', icon: '⚗️' },
-    { key: 'manganese',  name: 'Manganese',  unit: 'mg',  goal: 2.3,  goalType: 'min', goalMax: 0, color: '#64D2FF', icon: '⚗️' },
-    { key: 'selenium',   name: 'Selenium',   unit: 'mcg', goal: 55,   goalType: 'min', goalMax: 0, color: '#B9A3FF', icon: '⚗️' },
-    { key: 'iodine',     name: 'Iodine',     unit: 'mcg', goal: 150,  goalType: 'min', goalMax: 0, color: '#FFD60A', icon: '⚗️' },
-    { key: 'chromium',   name: 'Chromium',   unit: 'mcg', goal: 35,   goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '⚗️' },
+    { key: 'calcium',    name: 'Calcium',    unit: 'mg',  goal: 1000, goalType: 'min', goalMax: 0 },
+    { key: 'iron',       name: 'Iron',       unit: 'mg',  goal: 18,   goalType: 'min', goalMax: 0 },
+    { key: 'magnesium',  name: 'Magnesium',  unit: 'mg',  goal: 420,  goalType: 'min', goalMax: 0 },
+    { key: 'phosphorus', name: 'Phosphorus', unit: 'mg',  goal: 700,  goalType: 'min', goalMax: 0 },
+    { key: 'potassium',  name: 'Potassium',  unit: 'mg',  goal: 3500, goalType: 'min', goalMax: 0 },
+    { key: 'sodium',     name: 'Sodium',     unit: 'mg',  goal: 2300, goalType: 'max', goalMax: 0 },
+    { key: 'zinc',       name: 'Zinc',       unit: 'mg',  goal: 11,   goalType: 'min', goalMax: 0 },
+    { key: 'copper',     name: 'Copper',     unit: 'mg',  goal: 0.9,  goalType: 'min', goalMax: 0 },
+    { key: 'manganese',  name: 'Manganese',  unit: 'mg',  goal: 2.3,  goalType: 'min', goalMax: 0 },
+    { key: 'selenium',   name: 'Selenium',   unit: 'mcg', goal: 55,   goalType: 'min', goalMax: 0 },
+    { key: 'iodine',     name: 'Iodine',     unit: 'mcg', goal: 150,  goalType: 'min', goalMax: 0 },
+    { key: 'chromium',   name: 'Chromium',   unit: 'mcg', goal: 35,   goalType: 'min', goalMax: 0 },
   ],
   other: [
-    { key: 'saturatedFat',  name: 'Saturated Fat', unit: 'g',  goal: 20,  goalType: 'max', goalMax: 0, color: '#FF6B3D', icon: '📊' },
-    { key: 'transFat',      name: 'Trans Fat',     unit: 'g',  goal: 2,   goalType: 'max', goalMax: 0, color: '#FF6B3D', icon: '📊' },
-    { key: 'cholesterol',   name: 'Cholesterol',   unit: 'mg', goal: 300, goalType: 'max', goalMax: 0, color: '#F2C94C', icon: '📊' },
-    { key: 'sugar',         name: 'Sugar',         unit: 'g',  goal: 50,  goalType: 'max', goalMax: 0, color: '#FFD60A', icon: '📊' },
-    { key: 'omega3',        name: 'Omega-3',        unit: 'g',  goal: 1.6, goalType: 'min', goalMax: 0, color: '#B8F06A', icon: '📊' },
+    { key: 'saturatedFat',  name: 'Saturated Fat', unit: 'g',  goal: 20,  goalType: 'max', goalMax: 0 },
+    { key: 'transFat',      name: 'Trans Fat',     unit: 'g',  goal: 2,   goalType: 'max', goalMax: 0 },
+    { key: 'cholesterol',   name: 'Cholesterol',   unit: 'mg', goal: 300, goalType: 'max', goalMax: 0 },
+    { key: 'sugar',         name: 'Sugar',         unit: 'g',  goal: 50,  goalType: 'max', goalMax: 0 },
+    { key: 'omega3',        name: 'Omega-3',       unit: 'g',  goal: 1.6, goalType: 'min', goalMax: 0 },
   ],
 }
 
-// Nutrition Settings Component
 function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
   const T = useContext(ThemeContext)
   const [showMicroPicker, setShowMicroPicker] = useState(false)
   const [microTab, setMicroTab] = useState('vitamins')
-  // Common food/nutrition emojis to choose from
-  const iconOptions = ['📊', '🔥', '💪', '🥩', '🥚', '🥛', '🍗', '🥤', '🧈', '🥜', '🌾']
 
   const isAdded = (key) => metrics.some(m => m.key === key)
   const togglePreset = (preset) => {
-    if (isAdded(preset.key)) {
-      const idx = metrics.findIndex(m => m.key === preset.key)
-      onRemove(idx)
-    } else {
-      onAdd(preset)
-    }
+    if (isAdded(preset.key)) onRemove(metrics.findIndex(m => m.key === preset.key))
+    else onAdd(preset)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <section>
+        <h3 style={sectionLabel(T)}>Nutrients on your Today screen</h3>
+        <div style={groupCard(T)}>
+          {metrics.length === 0 && (
+            <div style={{ padding: '16px', fontSize: '14px', color: T.muted }}>Nothing tracked yet. Add calories, protein or anything else below.</div>
+          )}
+          {metrics.map((metric, i) => {
+            const type = metric.goalType || 'min'
+            return (
+              <div key={i} style={{ padding: '6px 4px 14px 16px', borderTop: i ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, backgroundColor: T.hues[i % T.hues.length] }} />
+                  <input
+                    type="text"
+                    value={metric.name}
+                    onChange={(e) => onUpdate(i, 'name', e.target.value)}
+                    placeholder="Name, e.g. Fiber"
+                    aria-label={`Nutrient ${i + 1} name`}
+                    style={plainInput(T)}
+                  />
+                  <RowControls T={T} name={metric.name || 'nutrient'} index={i} count={metrics.length} onRemove={onRemove} />
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', paddingLeft: '16px', paddingRight: '12px' }}>
+                  <Pills T={T} label={`${metric.name || 'Nutrient'} goal type`} options={GOAL_TYPES} value={type} onChange={(v) => onUpdate(i, 'goalType', v)} />
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', paddingLeft: '16px', paddingRight: '12px' }}>
+                  <input value={metric.goal || ''} onChange={(e) => onUpdate(i, 'goal', numberValue(e.target.value))} onFocus={(e) => e.target.select()}
+                    inputMode="decimal" placeholder="Goal" aria-label={`${metric.name} ${type === 'range' ? 'minimum' : 'goal'}`} style={smallField(T)} />
+                  {type === 'range' && <span style={{ color: T.muted }}>–</span>}
+                  {type === 'range' && (
+                    <input value={metric.goalMax || ''} onChange={(e) => onUpdate(i, 'goalMax', numberValue(e.target.value))} onFocus={(e) => e.target.select()}
+                      inputMode="decimal" placeholder="Max" aria-label={`${metric.name} maximum`} style={smallField(T)} />
+                  )}
+                  <input value={metric.unit} onChange={(e) => onUpdate(i, 'unit', e.target.value)}
+                    placeholder="unit" aria-label={`${metric.name} unit`} style={{ ...smallField(T, '64px'), textAlign: 'left' }} />
+                  <span style={{ fontSize: '13px', color: T.muted }}>per day</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <button onClick={() => onAdd()} style={addRowButton(T)}>
+          <PlusIcon size={16} strokeWidth={2} /> Add a nutrient
+        </button>
+      </section>
+
+      <section>
+        <div style={groupCard(T)}>
+          <button
+            onClick={() => setShowMicroPicker(v => !v)}
+            aria-expanded={showMicroPicker}
+            style={{ width: '100%', minHeight: '60px', padding: '10px 12px 10px 16px', border: 'none', background: 'none', color: T.text, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '15px' }}>Add vitamins & minerals</span>
+              <span style={{ fontSize: '13px', color: T.muted }}>Goals start at standard daily values</span>
+            </span>
+            <ChevronDownIcon size={18} color={T.muted} strokeWidth={2} />
+          </button>
+          {showMicroPicker && (
+            <div style={{ padding: '4px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Pills T={T} label="Category" value={microTab} onChange={setMicroTab} options={[
+                { id: 'vitamins', label: 'Vitamins' },
+                { id: 'minerals', label: 'Minerals' },
+                { id: 'other', label: 'Other' }
+              ]} />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {MICRONUTRIENT_PRESETS[microTab].map(preset => {
+                  const active = isAdded(preset.key)
+                  return (
+                    <button key={preset.key} onClick={() => togglePreset(preset)} aria-pressed={active} style={{
+                      height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '999px', cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit',
+                      border: `1px solid ${active ? DONE : T.border}`, backgroundColor: active ? 'rgba(184,240,106,0.12)' : 'transparent', color: active ? T.text : T.soft
+                    }}>
+                      {active && <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={DONE} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
+                      {preset.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove, onMove }) {
+  const T = useContext(ThemeContext)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <section>
+        <h3 style={sectionLabel(T)}>Daily goal</h3>
+        <div style={{ ...groupCard(T), minHeight: '56px', padding: '0 12px 0 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, backgroundColor: '#2E7BD6' }} />
+          <span style={{ flex: 1, fontSize: '15px', color: T.text }}>Water</span>
+          <input value={goal || ''} onChange={(e) => onGoalChange(numberValue(e.target.value))} onFocus={(e) => e.target.select()}
+            inputMode="decimal" placeholder="0" aria-label="Daily water goal in ounces" style={smallField(T)} />
+          <span style={{ width: '24px', fontSize: '13px', color: T.muted }}>oz</span>
+        </div>
+      </section>
+
+      <section>
+        <h3 style={sectionLabel(T)}>Quick-add buttons on the water card</h3>
+        <div style={groupCard(T)}>
+          {buttons.length === 0 && (
+            <div style={{ padding: '16px', fontSize: '14px', color: T.muted }}>No buttons yet. Add the bottle or glass sizes you use.</div>
+          )}
+          {buttons.map((amount, i) => (
+            <div key={i} style={{ minHeight: '56px', padding: '0 4px 0 16px', borderTop: i ? `1px solid ${T.border}` : 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '15px', color: T.soft }}>+</span>
+              <input value={amount === 0 ? '' : amount} onChange={(e) => onUpdate(i, e.target.value.replace(/[^0-9]/g, ''))} onFocus={(e) => e.target.select()}
+                inputMode="numeric" placeholder="0" aria-label={`Button ${i + 1} ounces`} style={{ ...smallField(T, '72px'), textAlign: 'left' }} />
+              <span style={{ flex: 1, fontSize: '13px', color: T.muted }}>oz</span>
+              <RowControls T={T} name={`${amount || ''} oz button`} index={i} count={buttons.length} onMove={onMove} onRemove={onRemove} />
+            </div>
+          ))}
+        </div>
+        <button onClick={onAdd} style={addRowButton(T)}>
+          <PlusIcon size={16} strokeWidth={2} /> Add a button
+        </button>
+      </section>
+    </div>
+  )
+}
+
+function MealSettings({ meals, metrics, onUpdate, onRemove }) {
+  const T = useContext(ThemeContext)
+  const saved = meals.map((meal, i) => ({ meal, i })).filter(({ meal }) => meal)
+  const nextFree = meals.findIndex(m => !m)
+
+  if (metrics.length === 0) {
+    return (
+      <div style={{ ...groupCard(T), padding: '16px', fontSize: '14px', color: T.muted }}>
+        Add a nutrient first, then you can save meals with their numbers.
+      </div>
+    )
   }
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: T.muted, marginBottom: '16px' }}>
-        Add nutrition metrics with optional goals
-      </div>
-
-      {metrics.map((metric, i) => (
-        <div key={i} style={{
-          paddingBottom: '12px',
-          marginBottom: '12px',
-          borderBottom: i < metrics.length - 1 ? '1px solid #f0f0f0' : 'none'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {/* Icon + Name + Remove */}
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <select
-                value={metric.icon || '📊'}
-                onChange={(e) => onUpdate(i, 'icon', e.target.value)}
-                style={{
-                  padding: '8px',
-                  backgroundColor: T.bg,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  width: '50px'
-                }}
-              >
-                {iconOptions.map(icon => (
-                  <option key={icon} value={icon}>{icon}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={metric.name}
-                onChange={(e) => onUpdate(i, 'name', e.target.value)}
-                placeholder="Name (e.g., Calories)"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  padding: '10px 12px',
-                  backgroundColor: T.bg,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: '8px',
-                  color: T.text,
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <button
-                onClick={() => onRemove(i)}
-                style={{
-                  padding: '10px 12px',
-                  backgroundColor: T.card2,
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: T.faint,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            {/* Unit */}
-            <div>
-              <label style={{ fontSize: '11px', color: T.faint, marginBottom: '4px', display: 'block' }}>
-                Unit
-              </label>
-              <input
-                type="text"
-                value={metric.unit}
-                onChange={(e) => onUpdate(i, 'unit', e.target.value)}
-                placeholder="g, cal, etc"
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  backgroundColor: T.bg,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: '8px',
-                  color: T.text,
-                  fontSize: '16px',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-            {/* Goal Type */}
-            <div>
-              <label style={{ fontSize: '11px', color: T.faint, marginBottom: '4px', display: 'block' }}>
-                Goal Type
-              </label>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {[
-                  { id: 'min', label: 'At Least' },
-                  { id: 'max', label: 'Under' },
-                  { id: 'range', label: 'Range' }
-                ].map(gt => (
-                  <button
-                    key={gt.id}
-                    type="button"
-                    onClick={() => onUpdate(i, 'goalType', gt.id)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 6px',
-                      backgroundColor: (metric.goalType || 'min') === gt.id ? '#B8F06A' : '#15171A',
-                      border: '1px solid',
-                      borderColor: (metric.goalType || 'min') === gt.id ? '#B8F06A' : '#25282D',
-                      borderRadius: '6px',
-                      color: (metric.goalType || 'min') === gt.id ? '#0B0C0E' : '#8B9098',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {gt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Goal value(s) */}
-            <div style={{ display: 'grid', gridTemplateColumns: (metric.goalType || 'min') === 'range' ? '1fr 1fr' : '1fr', gap: '10px' }}>
-              <div>
-                <label style={{ fontSize: '11px', color: T.faint, marginBottom: '4px', display: 'block' }}>
-                  {(metric.goalType || 'min') === 'range' ? 'Min Goal' : (metric.goalType || 'min') === 'max' ? 'Max Limit' : 'Daily Goal'}
-                </label>
-                <input
-                  type="number"
-                  value={metric.goal || ''}
-                  onChange={(e) => onUpdate(i, 'goal', parseInt(e.target.value) || 0)}
-                  placeholder="Optional"
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    backgroundColor: T.bg,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: '8px',
-                    color: T.text,
-                    fontSize: '16px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              {(metric.goalType || 'min') === 'range' && (
-                <div>
-                  <label style={{ fontSize: '11px', color: T.faint, marginBottom: '4px', display: 'block' }}>
-                    Max Goal
-                  </label>
-                  <input
-                    type="number"
-                    value={metric.goalMax || ''}
-                    onChange={(e) => onUpdate(i, 'goalMax', parseInt(e.target.value) || 0)}
-                    placeholder="Upper limit"
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      backgroundColor: T.bg,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: '8px',
-                      color: T.text,
-                      fontSize: '16px',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
-
-      {/* ── Micronutrient quick-add picker ── */}
-      <div style={{
-        marginTop: metrics.length > 0 ? '16px' : '0',
-        border: `1px solid ${T.border}`,
-        borderRadius: '12px',
-        overflow: 'hidden',
-      }}>
-        <button
-          onClick={() => setShowMicroPicker(v => !v)}
-          style={{
-            width: '100%', padding: '12px 14px',
-            backgroundColor: T.card2,
-            border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: T.text }}>
-              Quick Add Micronutrients
-            </div>
-            <div style={{ fontSize: '11px', color: T.muted, marginTop: '2px' }}>
-              Vitamins, minerals & more — tap to toggle
-            </div>
-          </div>
-          <span style={{ color: T.muted, fontSize: '18px', lineHeight: 1, transform: showMicroPicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-            ›
-          </span>
-        </button>
-
-        {showMicroPicker && (
-          <div style={{ padding: '12px 14px', backgroundColor: T.card }}>
-            {/* Category tabs */}
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-              {[
-                { id: 'vitamins', label: 'Vitamins' },
-                { id: 'minerals', label: 'Minerals' },
-                { id: 'other',    label: 'Other' },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setMicroTab(tab.id)}
-                  style={{
-                    padding: '5px 12px', borderRadius: '20px', border: 'none',
-                    fontSize: '12px', fontWeight: '500', cursor: 'pointer',
-                    backgroundColor: microTab === tab.id ? '#B8F06A' : T.card2,
-                    color: microTab === tab.id ? '#0B0C0E' : T.muted,
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Nutrient pill grid */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {MICRONUTRIENT_PRESETS[microTab].map(preset => {
-                const active = isAdded(preset.key)
-                return (
-                  <button
-                    key={preset.key}
-                    onClick={() => togglePreset(preset)}
-                    style={{
-                      padding: '6px 10px', borderRadius: '20px', cursor: 'pointer',
-                      fontSize: '12px', fontWeight: '500',
-                      backgroundColor: active ? preset.color + '22' : T.card2,
-                      border: `1px solid ${active ? preset.color : T.border}`,
-                      color: active ? preset.color : T.muted,
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {active ? '✓ ' : ''}{preset.name}
-                    <span style={{ opacity: 0.6, marginLeft: 3 }}>·{preset.unit}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            <div style={{ marginTop: '10px', fontSize: '11px', color: T.muted }}>
-              Daily goals are pre-filled with standard RDA values — you can edit them above.
-            </div>
-          </div>
+      <h3 style={sectionLabel(T)}>One tap logs a saved meal from "Eaten before"</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {saved.length === 0 && (
+          <div style={{ ...groupCard(T), padding: '16px', fontSize: '14px', color: T.muted }}>No saved meals yet.</div>
         )}
-      </div>
-
-      <button
-        onClick={() => onAdd()}
-        style={{
-          width: '100%',
-          padding: '10px',
-          marginTop: '8px',
-          backgroundColor: T.card,
-          border: '1px dashed #d0d0d0',
-          borderRadius: '8px',
-          color: T.muted,
-          fontSize: '13px',
-          fontWeight: '500',
-          cursor: 'pointer'
-        }}
-      >
-        + Add Custom Metric
-      </button>
-    </div>
-  )
-}
-
-// Water Settings Component
-function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove, onMove }) {
-  const T = useContext(ThemeContext)
-  return (
-    <div>
-      <div style={{ fontSize: '11px', color: T.muted, marginBottom: '6px', fontWeight: '500' }}>
-        Daily Water Goal
-      </div>
-      <input
-        type="number"
-        value={goal || ''}
-        onChange={(e) => onGoalChange(Number(e.target.value))}
-        placeholder="Enter daily goal in ounces"
-        style={{
-          width: '100%',
-          padding: '10px 12px',
-          backgroundColor: T.card,
-          border: `1px solid ${T.border}`,
-          borderRadius: '8px',
-          color: T.text,
-          fontSize: '16px',
-          marginBottom: '20px',
-          boxSizing: 'border-box'
-        }}
-      />
-
-      <div style={{ fontSize: '11px', color: T.muted, marginBottom: '12px', fontWeight: '500' }}>
-        Bottle Sizes (ounces) — drag to reorder
-      </div>
-
-      {buttons.map((amount, i) => (
-        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <button
-              onClick={() => onMove(i, -1)}
-              disabled={i === 0}
-              style={{
-                padding: '2px 8px',
-                backgroundColor: i === 0 ? '#1D2024' : '#15171A',
-                border: `1px solid ${T.border}`,
-                borderRadius: '4px',
-                color: i === 0 ? '#ccc' : '#8B9098',
-                fontSize: '10px',
-                cursor: i === 0 ? 'default' : 'pointer',
-                lineHeight: '1'
-              }}
-            >
-              ▲
-            </button>
-            <button
-              onClick={() => onMove(i, 1)}
-              disabled={i === buttons.length - 1}
-              style={{
-                padding: '2px 8px',
-                backgroundColor: i === buttons.length - 1 ? '#1D2024' : '#15171A',
-                border: `1px solid ${T.border}`,
-                borderRadius: '4px',
-                color: i === buttons.length - 1 ? '#ccc' : '#8B9098',
-                fontSize: '10px',
-                cursor: i === buttons.length - 1 ? 'default' : 'pointer',
-                lineHeight: '1'
-              }}
-            >
-              ▼
-            </button>
-          </div>
-          <input
-            type="number"
-            value={amount === 0 ? '' : amount}
-            onChange={(e) => onUpdate(i, e.target.value)}
-            placeholder="Ounces"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              padding: '10px 12px',
-              backgroundColor: T.card,
-              border: `1px solid ${T.border}`,
-              borderRadius: '8px',
-              color: T.text,
-              fontSize: '16px',
-              boxSizing: 'border-box'
-            }}
-          />
-          <button
-            onClick={() => onRemove(i)}
-            style={{
-              padding: '10px 14px',
-              backgroundColor: T.card,
-              border: `1px solid ${T.border}`,
-              borderRadius: '8px',
-              color: '#ff3333',
-              fontSize: '13px',
-              cursor: 'pointer'
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-
-      <button
-        onClick={onAdd}
-        style={{
-          width: '100%',
-          padding: '10px',
-          marginTop: '8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.05)',
-          border: '1px dashed rgba(0, 217, 255, 0.3)',
-          borderRadius: '6px',
-          color: '#00D9FF',
-          fontSize: '12px',
-          fontWeight: '600',
-          cursor: 'pointer',
-          letterSpacing: 0
-        }}
-      >
-        + ADD SIZE
-      </button>
-    </div>
-  )
-}
-
-// Meal Settings Component
-function MealSettings({ meals, metrics, onUpdate, onRemove }) {
-  const T = useContext(ThemeContext)
-  const mealIcons = ['🍽️', '🍕', '🍔', '🥗', '🍜', '🍱', '🥪', '🌮', '🌯', '🥙', '🍳', '🥞', '🍞', '🥐', '🥓']
-
-  return (
-    <div>
-      <div style={{ fontSize: '13px', color: T.muted, marginBottom: '16px' }}>
-        Configure quick-add meal presets
-      </div>
-
-      {metrics.length === 0 && (
-        <div style={{
-          padding: '30px 16px',
-          textAlign: 'center',
-          color: T.faint,
-          fontSize: '13px',
-          backgroundColor: T.card,
-          borderRadius: '10px',
-          border: `1px solid ${T.border}`
-        }}>
-          Add nutrition metrics first
-        </div>
-      )}
-
-      {metrics.length > 0 && meals.map((meal, i) => (
-        <div key={i} style={{
-          paddingBottom: '12px',
-          marginBottom: '12px',
-          borderBottom: i < meals.length - 1 ? '1px solid #f0f0f0' : 'none'
-        }}>
-          <div style={{ display: 'flex', gap: '6px', marginBottom: meal ? '12px' : '0' }}>
-            {meal && (
-              <select
-                value={meal?.icon || '🍽️'}
-                onChange={(e) => onUpdate(i, 'icon', e.target.value)}
-                style={{
-                  padding: '8px',
-                  backgroundColor: T.bg,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  width: '50px'
-                }}
-              >
-                {mealIcons.map(icon => (
-                  <option key={icon} value={icon}>{icon}</option>
-                ))}
-              </select>
-            )}
-            <input
-              type="text"
-              value={meal?.name || ''}
-              onChange={(e) => onUpdate(i, 'name', e.target.value)}
-              placeholder={`Meal ${i + 1}`}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                padding: '10px 12px',
-                backgroundColor: T.bg,
-                border: `1px solid ${T.border}`,
-                borderRadius: '8px',
-                color: T.text,
-                fontSize: '16px',
-                fontWeight: '500',
-                boxSizing: 'border-box'
-              }}
-            />
-            {meal && (
-              <button
-                onClick={() => onRemove(i)}
-                style={{
-                  padding: '10px 12px',
-                  backgroundColor: T.card2,
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: T.faint,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {meal && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-              {metrics.map((metric) => (
-                <div key={metric.key}>
-                  <label style={{
-                    fontSize: '10px',
-                    color: T.faint,
-                    marginBottom: '2px',
-                    display: 'block'
-                  }}>
-                    {metric.name}
-                  </label>
-                  <input
-                    type="number"
-                    value={meal[metric.key] || ''}
-                    onChange={(e) => onUpdate(i, metric.key, parseInt(e.target.value) || 0)}
-                    placeholder="0"
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      backgroundColor: T.bg,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: '8px',
-                      color: T.text,
-                      fontSize: '16px',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
+        {saved.map(({ meal, i }) => (
+          <div key={i} style={{ ...groupCard(T), padding: '6px 4px 14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="text" value={meal.name || ''} onChange={(e) => onUpdate(i, 'name', e.target.value)}
+                placeholder="Meal name, e.g. Protein shake" aria-label="Meal name" style={{ ...plainInput(T), fontWeight: 500 }} />
+              <RowControls T={T} name={meal.name || 'meal'} index={i} count={meals.length} onRemove={onRemove} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px 12px', paddingRight: '12px' }}>
+              {metrics.map((metric, k) => (
+                <label key={metric.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: T.soft, minWidth: 0 }}>
+                  <span aria-hidden="true" style={{ width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0, backgroundColor: T.hues[k % T.hues.length] }} />
+                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{metric.name}</span>
+                  <input value={meal[metric.key] || ''} onChange={(e) => onUpdate(i, metric.key, numberValue(e.target.value))} onFocus={(e) => e.target.select()}
+                    inputMode="decimal" placeholder="0" aria-label={`${meal.name || 'Meal'} ${metric.name}`} style={smallField(T, '64px')} />
+                </label>
               ))}
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+        ))}
+      </div>
+      {nextFree >= 0 && (
+        <button onClick={() => onUpdate(nextFree, 'name', '')} style={addRowButton(T)}>
+          <PlusIcon size={16} strokeWidth={2} /> Save a meal
+        </button>
+      )}
     </div>
   )
 }
