@@ -24,7 +24,7 @@ _Last updated: 2026-10-25 (security & legal hardening)_
 - **D. Rep ranges:** "6-8" is no longer turned into 68 reps (which was also written back into the program and could trigger false "add weight" suggestions). Ranges show as the hint; only typed reps are logged.
 
 ## Ready to ship (branch `security-hardening`, waiting for the owner)
-**Blockers before shipping:** set `LEGAL.contactEmail` in `lib/legal.js`; deploy `firestore.rules` in Firebase (before or together with the app).
+**Blocker before shipping:** deploy `firestore.rules` in Firebase (before or together with the app). Support email is set to the owner's Gmail for now (`LEGAL.contactEmail` in `lib/legal.js`); swap it for a dedicated address later.
 - Firestore rules: nobody can make themselves admin; group codes create-once; membership changes only by yourself; join flow fixed; feedback readable/deletable by its author.
 - Sign-out waits for offline changes, then wipes all Lytz data and the on-device database copy; leftover device data is only copied into an account after asking.
 - AI routes require a signed-in (non-anonymous) account (jose), 60/hour and 300/day per person per server instance, server-built prompts, size caps, generic errors.
