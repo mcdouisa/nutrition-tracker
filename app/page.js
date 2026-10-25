@@ -36,6 +36,7 @@ import {
   BarcodeIcon, CameraIcon
 } from '../lib/icons'
 import { DARK, LIGHT, DONE, OVER, FONT } from '../lib/theme'
+import { signOutAndClearDevice } from '../lib/deviceData'
 import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
 import FoodLogSheet, { SearchIcon, compressPhoto, SOURCE_LABEL } from './components/FoodLogSheet'
 
@@ -228,10 +229,17 @@ export default function NutritionTracker() {
       if (user && isConfigured) {
         // Check if we need to migrate localStorage data
         if (needsMigration()) {
-          setMigrating(true)
-          await migrateLocalStorageToFirestore(user.uid)
-          if (cancelled) return
-          setMigrating(false)
+          const addIt = user.isAnonymous || window.confirm(
+            'This device has Lytz data from before you signed in. Add it to this account? Choose Cancel if it isn\'t yours.'
+          )
+          if (addIt) {
+            setMigrating(true)
+            await migrateLocalStorageToFirestore(user.uid)
+            if (cancelled) return
+            setMigrating(false)
+          } else {
+            localStorage.setItem('firebase-migrated', 'true')
+          }
         }
 
         // Track real (non-anonymous) user profiles for admin dashboard
@@ -2230,13 +2238,9 @@ Reason: 5-7 words max — the single most important factor.`
                       } catch (e) {
                         console.error('Error saving before logout:', e)
                       }
-                      // Clear localStorage to prevent data bleed to next user
-                      localStorage.removeItem('nutrition-data')
-                      localStorage.removeItem('nutrition-history')
-                      localStorage.removeItem('firebase-migrated')
-                      await signOut()
-                      setSigningOut(false)
-                      setShowUserMenu(false)
+                      // Wipe this device so the next person can't see or inherit this account's data
+                      const done = await signOutAndClearDevice(signOut)
+                      if (!done) { setSigningOut(false); setShowUserMenu(false) }
                     }}
                     disabled={signingOut}
                     style={{
@@ -2942,13 +2946,10 @@ Reason: 5-7 words max — the single most important factor.`
             setSigningOut(true)
             try {
               await saveTodayData(user.uid, { date: new Date().toDateString(), checklistItems, nutritionMetrics, water, waterHistory, nutritionHistory })
-              await signOut()
             } catch(e) { console.error(e) }
-            localStorage.removeItem('nutrition-data')
-            localStorage.removeItem('nutrition-history')
-            localStorage.removeItem('firebase-migrated')
-            setSigningOut(false)
-            setShowSettings(false)
+            // Wipe this device so the next person can't see or inherit this account's data
+            const done = await signOutAndClearDevice(signOut)
+            if (!done) { setSigningOut(false); setShowSettings(false) }
           }}
         />
       )}

@@ -1,83 +1,117 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
     // Each user can only read/write their own data
     match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if signedIn() && request.auth.uid == userId;
     }
 
-    // User profiles - users can read/write their own profile
-    // Admins can read all profiles (for admin dashboard)
+    // User profiles. People manage their own profile, but can never grant
+    // themselves admin. Admin is set in the Firebase console (or by an admin).
     match /userProfiles/{profileId} {
-      allow read, write: if request.auth != null && request.auth.uid == profileId;
-      allow read: if request.auth != null &&
-        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
+      allow read: if signedIn() && (request.auth.uid == profileId || isAdmin());
+      allow create: if signedIn() && request.auth.uid == profileId &&
+        !('isAdmin' in request.resource.data);
+      allow update: if signedIn() && (
+        (request.auth.uid == profileId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin'])) ||
+        isAdmin()
+      );
+      allow delete: if signedIn() && request.auth.uid == profileId;
     }
 
-    // Feedback - any logged-in user can submit, admins can read/update all
+    // Feedback: people submit as themselves; admins read and manage it;
+    // people can delete their own (account deletion)
     match /feedback/{feedbackId} {
-      allow create: if request.auth != null;
-      allow read, update: if request.auth != null &&
-        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update: if isAdmin();
+      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Notifications - users can read/write their own notifications
+    // Notifications: users manage their own; admins can create them
     match /users/{userId}/notifications/{notificationId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null &&
-        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
+      allow read, write: if signedIn() && request.auth.uid == userId;
+      allow create: if isAdmin();
     }
 
-    // Admin can read all users' dailyData for engagement analytics
+    // Admins can read all users' dailyData for engagement analytics
     match /{path=**}/dailyData/{docId} {
-      allow read: if request.auth != null &&
-        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
+      allow read: if isAdmin();
     }
 
-    // Public workout programs — any logged-in user can read; only the author can write/delete
+    // Public workout programs: any signed-in user can read; only the author can write/delete
     match /publicWorkouts/{programId} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null && request.auth.uid == request.resource.data.authorId;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == request.resource.data.authorId;
+      allow delete: if signedIn() && request.auth.uid == resource.data.authorId;
     }
 
-    // Group codes — any logged-in user can read (needed to look up group by code to join)
+    // Group invite codes: readable to join; created once, only for a group you
+    // created; never overwritten or deleted (so codes can't be hijacked)
     match /groupCodes/{code} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if signedIn();
+      allow create: if signedIn() &&
+        get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.createdBy == request.auth.uid;
+      allow update, delete: if false;
     }
 
-    // Groups — members can read/update; anyone authenticated can create
     match /groups/{groupId} {
-      allow read: if request.auth != null &&
-        request.auth.uid in resource.data.memberIds;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null &&
-        request.auth.uid in resource.data.memberIds;
+      // Membership can only change by someone adding or removing themselves
+      function membersChangedOnlyBySelf() {
+        let before = resource.data.memberIds.toSet();
+        let after = request.resource.data.memberIds.toSet();
+        return after == before ||
+          after == before.union([request.auth.uid].toSet()) ||
+          after == before.difference([request.auth.uid].toSet());
+      }
 
-      // Member details — members can read all, each user writes their own
+      allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
+      allow create: if signedIn() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.memberIds == [request.auth.uid];
+      allow update: if signedIn() &&
+        membersChangedOnlyBySelf() &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdBy', 'code', 'id']) &&
+        (
+          // members can edit the group (challenges, name) and leave
+          request.auth.uid in resource.data.memberIds ||
+          // someone with the code can join, changing nothing but adding themselves
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+        );
+
+      // Member details: members can read all; each user writes their own
       match /members/{userId} {
-        allow read: if request.auth != null &&
+        allow read: if signedIn() &&
           request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow write: if signedIn() && request.auth.uid == userId;
       }
 
-      // Progress (check-ins) — members can read all, each user writes their own
+      // Progress (check-ins): members can read all; each user writes their own
       match /progress/{userId} {
-        allow read: if request.auth != null &&
+        allow read: if signedIn() &&
           request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow write: if signedIn() && request.auth.uid == userId;
       }
 
-      // Shared data (opt-in metrics like body weight) — members read all, user writes own
+      // Shared data (opt-in metrics like body weight): members read all; user writes own
       match /sharedData/{userId} {
-        allow read: if request.auth != null &&
+        allow read: if signedIn() &&
           request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow write: if signedIn() && request.auth.uid == userId;
       }
     }
 
-    // Deny all other access
+    // Deny everything else
     match /{document=**} {
       allow read, write: if false;
     }
