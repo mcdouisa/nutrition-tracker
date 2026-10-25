@@ -3156,6 +3156,48 @@ const GOAL_TYPES = [
   { id: 'range', label: 'Between' }
 ]
 
+// ── Goal guardrails ─────────────────────────────────────────────────────────
+// 'block' stops Save (unsafe or impossible); 'warn' is shown but allowed.
+const isCalorieMetric = (m) => m.key === 'calories' || /calor/i.test(m.name || '')
+const isProteinMetric = (m) => m.key === 'protein' || /protein/i.test(m.name || '')
+
+function checkMetricGoal(m) {
+  const type = m.goalType || 'min'
+  const goal = Number(m.goal) || 0
+  const max = Number(m.goalMax) || 0
+  if (type === 'range' && goal > 0 && max > 0 && max < goal) {
+    return { level: 'block', text: 'The top of the range is below the bottom.' }
+  }
+  if (isCalorieMetric(m) && goal > 0) {
+    const top = type === 'range' ? Math.max(goal, max) : goal
+    if (goal < 500) return { level: 'block', text: 'Under 500 calories a day is too low to be safe. Use 500 or more.' }
+    if (goal < 1200) return { level: 'warn', text: 'Under 1,200 calories is very low for most adults. Check with a doctor before eating this little.' }
+    if (top > 5000) return { level: 'warn', text: 'Over 5,000 calories is unusually high. Double-check the number.' }
+  }
+  if (isProteinMetric(m) && goal > 400) {
+    return { level: 'warn', text: 'Over 400 g of protein a day is unusually high. Double-check the number.' }
+  }
+  return null
+}
+
+function checkWaterGoal(oz) {
+  const v = Number(oz) || 0
+  if (v > 0 && v < 16) return { level: 'warn', text: 'Under 16 oz of water is very low. Most adults need 64 oz or more.' }
+  if (v > 300) return { level: 'warn', text: 'Over 300 oz of water a day is unusually high. Double-check the number.' }
+  return null
+}
+
+function GoalNote({ check }) {
+  const T = useContext(ThemeContext)
+  if (!check) return null
+  return (
+    <div role={check.level === 'block' ? 'alert' : 'status'} style={{ fontSize: '13px', lineHeight: 1.4, color: check.level === 'block' ? OVER : T.soft, display: 'flex', gap: '6px' }}>
+      <span aria-hidden="true" style={{ flexShrink: 0 }}>{check.level === 'block' ? '!' : '·'}</span>
+      <span>{check.text}</span>
+    </div>
+  )
+}
+
 // Goals overview: every daily target editable in place, then sections, then clear ways to start fresh
 function GoalsOverview({ metrics, onUpdateMetric, waterGoal, onWaterGoal, counts, onOpen, onClearToday, onRedoSetup }) {
   const T = useContext(ThemeContext)
@@ -3201,6 +3243,7 @@ function GoalsOverview({ metrics, onUpdateMetric, waterGoal, onWaterGoal, counts
                   {type === 'range' && numberInput(m.goalMax, (v) => onUpdateMetric(i, 'goalMax', v), `${m.name} maximum`)}
                   <span style={{ width: '28px', fontSize: '13px', color: T.muted }}>{m.unit}</span>
                 </div>
+                <div style={{ paddingLeft: '18px' }}><GoalNote check={checkMetricGoal(m)} /></div>
                 <div role="group" aria-label={`${m.name} goal type`} style={{ display: 'flex', gap: '4px', paddingLeft: '18px' }}>
                   {GOAL_TYPES.map(g => (
                     <button key={g.id} onClick={() => onUpdateMetric(i, 'goalType', g.id)} aria-pressed={type === g.id} style={{
@@ -3220,6 +3263,9 @@ function GoalsOverview({ metrics, onUpdateMetric, waterGoal, onWaterGoal, counts
             {numberInput(waterGoal, onWaterGoal, 'Daily water goal in ounces')}
             <span style={{ width: '28px', fontSize: '13px', color: T.muted }}>oz</span>
           </div>
+          {checkWaterGoal(waterGoal) && (
+            <div style={{ padding: '0 16px 12px 34px' }}><GoalNote check={checkWaterGoal(waterGoal)} /></div>
+          )}
         </div>
       </section>
 
@@ -3375,7 +3421,10 @@ function SettingsModal({
     setTempMeals(updated)
   }
 
+  const blockingGoal = tempMetrics.find(m => m.name?.trim() && checkMetricGoal(m)?.level === 'block')
+
   const handleSave = () => {
+    if (blockingGoal) { setSettingsTab('home'); return }
     // Clean up checklist items
     const cleanChecklist = tempChecklist.filter(item => item.name.trim() !== '')
 
@@ -3575,8 +3624,8 @@ function SettingsModal({
           <button onClick={onClose} style={{ flex: 1, height: '52px', border: 'none', borderRadius: '14px', backgroundColor: T.card, color: T.soft, fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel
           </button>
-          <button onClick={handleSave} style={{ ...primaryButton, flex: 2, height: '52px', borderRadius: '14px' }}>
-            Save
+          <button onClick={handleSave} aria-disabled={!!blockingGoal} style={{ ...primaryButton, flex: 2, height: '52px', borderRadius: '14px', opacity: blockingGoal ? 0.45 : 1 }}>
+            {blockingGoal ? `Fix ${blockingGoal.name} goal to save` : 'Save'}
           </button>
         </div>
       </div>
@@ -3968,6 +4017,7 @@ function NutritionSettings({ metrics, onAdd, onUpdate, onRemove }) {
                     placeholder="unit" aria-label={`${metric.name} unit`} style={{ ...smallField(T, '64px'), textAlign: 'left' }} />
                   <span style={{ fontSize: '13px', color: T.muted }}>per day</span>
                 </div>
+                <div style={{ paddingLeft: '16px', paddingRight: '12px' }}><GoalNote check={checkMetricGoal(metric)} /></div>
               </div>
             )
           })}
@@ -4032,6 +4082,7 @@ function WaterSettings({ buttons, goal, onGoalChange, onAdd, onUpdate, onRemove,
             inputMode="decimal" placeholder="0" aria-label="Daily water goal in ounces" style={smallField(T)} />
           <span style={{ width: '24px', fontSize: '13px', color: T.muted }}>oz</span>
         </div>
+        {checkWaterGoal(goal) && <div style={{ padding: '8px 4px 0' }}><GoalNote check={checkWaterGoal(goal)} /></div>}
       </section>
 
       <section>
