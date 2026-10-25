@@ -34,7 +34,8 @@ service cloud.firestore {
     // people can delete their own (account deletion)
     match /feedback/{feedbackId} {
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow read, update: if isAdmin();
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin();
       allow delete: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 

@@ -37,6 +37,7 @@ import {
 } from '../lib/icons'
 import { DARK, LIGHT, DONE, OVER, FONT } from '../lib/theme'
 import { signOutAndClearDevice } from '../lib/deviceData'
+import { confirmIdentity, deleteAccountAndData, deleteDeviceOnlyData } from '../lib/accountDeletion'
 import { aiFetch, AI_SIGN_IN_MESSAGE } from '../lib/aiFetch'
 import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
 import FoodLogSheet, { SearchIcon, compressPhoto, SOURCE_LABEL } from './components/FoodLogSheet'
@@ -3171,7 +3172,8 @@ const SETTINGS_TITLES = {
   water: 'Water',
   meals: 'Saved meals',
   feedback: 'Send feedback',
-  appSettings: 'App settings'
+  appSettings: 'App settings',
+  deleteAccount: 'Delete account'
 }
 
 const GOAL_TYPES = [
@@ -3606,6 +3608,10 @@ function SettingsModal({
             <FeedbackForm user={user} />
           )}
 
+          {settingsTab === 'deleteAccount' && (
+            <DeleteAccount user={user} onCancel={() => setSettingsTab('appSettings')} />
+          )}
+
           {settingsTab === 'appSettings' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <section>
@@ -3632,10 +3638,21 @@ function SettingsModal({
                       <span style={{ fontSize: '13px', color: T.muted }}>Signed in as</span>
                       <span style={{ fontSize: '15px', color: T.text, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</span>
                     </div>
-                    <button onClick={onSignOut} style={{ width: '100%', minHeight: '52px', padding: '0 16px', border: 'none', borderTop: `1px solid ${T.border}`, background: 'none', color: OVER, fontSize: '15px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <button onClick={onSignOut} style={{ width: '100%', minHeight: '52px', padding: '0 16px', border: 'none', borderTop: `1px solid ${T.border}`, background: 'none', color: T.text, fontSize: '15px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
                       Sign out
                     </button>
+                    <button onClick={() => setSettingsTab('deleteAccount')} style={{ width: '100%', minHeight: '52px', padding: '0 16px', border: 'none', borderTop: `1px solid ${T.border}`, background: 'none', color: OVER, fontSize: '15px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Delete account and data…
+                    </button>
                   </div>
+                </section>
+              )}
+              {!user && (
+                <section>
+                  <h3 style={sectionLabel(T)}>Your data</h3>
+                  <button onClick={() => setSettingsTab('deleteAccount')} style={{ ...groupCard(T), width: '100%', minHeight: '52px', padding: '0 16px', border: 'none', color: OVER, fontSize: '15px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Delete my data on this device…
+                  </button>
                 </section>
               )}
             </div>
@@ -3643,16 +3660,82 @@ function SettingsModal({
           </div>
         </div>
 
-        {/* Footer */}
-        <div style={{ padding: '12px 16px calc(16px + env(safe-area-inset-bottom))', borderTop: `1px solid ${T.border}`, backgroundColor: T.bg, display: 'flex', gap: '8px' }}>
+        {/* Footer (not on the delete screen, which has its own buttons) */}
+        {settingsTab !== 'deleteAccount' && (<div style={{ padding: '12px 16px calc(16px + env(safe-area-inset-bottom))', borderTop: `1px solid ${T.border}`, backgroundColor: T.bg, display: 'flex', gap: '8px' }}>
           <button onClick={onClose} style={{ flex: 1, height: '52px', border: 'none', borderRadius: '14px', backgroundColor: T.card, color: T.soft, fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel
           </button>
           <button onClick={handleSave} aria-disabled={!!blockingGoal} style={{ ...primaryButton, flex: 2, height: '52px', borderRadius: '14px', opacity: blockingGoal ? 0.45 : 1 }}>
             {blockingGoal ? `Fix ${blockingGoal.name} goal to save` : 'Save'}
           </button>
-        </div>
+        </div>)}
       </div>
+    </div>
+  )
+}
+
+// Delete account: say exactly what goes, confirm identity, then delete everything
+function DeleteAccount({ user, onCancel }) {
+  const T = useContext(ThemeContext)
+  const [password, setPassword] = useState('')
+  const [typed, setTyped] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState('')
+  const [error, setError] = useState('')
+  const needsPassword = !!user?.email
+  const ready = typed.trim().toUpperCase() === 'DELETE' && (!needsPassword || password) && !busy
+
+  const run = async () => {
+    setError('')
+    setBusy(true)
+    try {
+      if (user) {
+        if (needsPassword) await confirmIdentity(password)
+        await deleteAccountAndData(setProgress)
+      } else {
+        await deleteDeviceOnlyData()
+      }
+      window.location.replace('/')
+    } catch (e) {
+      setError(e?.message || 'Something went wrong. Please try again.')
+      setBusy(false)
+      setProgress('')
+    }
+  }
+
+  const field = { ...fieldStyle(T), backgroundColor: T.card }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ ...groupCard(T), padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '15px', lineHeight: 1.5, color: T.text }}>
+        <span>{user ? 'This permanently deletes your Lytz account and everything in it:' : 'This permanently deletes everything Lytz stored on this device:'}</span>
+        <span style={{ color: T.soft }}>
+          {user
+            ? 'every day you logged, foods, water, habits, weight, goals, saved meals, workouts and programs, feedback you sent, and your group memberships. Programs you shared publicly are removed too.'
+            : 'your logs, goals, saved meals and workouts on this phone or browser.'}
+        </span>
+        <span style={{ color: OVER }}>This can't be undone. Export your data first (Reports → Export) if you want a copy.</span>
+      </div>
+
+      {needsPassword && (
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={sectionLabel(T)}>Your password</span>
+          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} style={field} />
+        </label>
+      )}
+      <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <span style={sectionLabel(T)}>Type DELETE to confirm</span>
+        <input value={typed} onChange={(e) => setTyped(e.target.value)} autoCapitalize="characters" autoComplete="off" style={field} />
+      </label>
+
+      {progress && <div role="status" style={{ fontSize: '14px', color: T.soft }}>{progress}</div>}
+      {error && <div role="alert" style={{ fontSize: '14px', color: OVER }}>{error}</div>}
+
+      <button onClick={run} disabled={!ready} style={{ height: '52px', border: 'none', borderRadius: '14px', backgroundColor: OVER, color: '#0B0C0E', fontSize: '15px', fontWeight: 600, cursor: ready ? 'pointer' : 'default', opacity: ready ? 1 : 0.4, fontFamily: 'inherit' }}>
+        {busy ? 'Deleting…' : user ? 'Delete my account and data' : 'Delete my data on this device'}
+      </button>
+      <button onClick={onCancel} disabled={busy} style={{ height: '48px', border: 'none', borderRadius: '14px', backgroundColor: T.card, color: T.soft, fontSize: '15px', cursor: 'pointer', fontFamily: 'inherit' }}>
+        Keep my account
+      </button>
     </div>
   )
 }
