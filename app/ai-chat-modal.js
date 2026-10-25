@@ -1,6 +1,7 @@
 // AI Chat Modal Component (mobile optimized)
 import { useRef, useState, useEffect } from 'react'
 import { CameraIcon, BarcodeIcon, MicIcon } from '../lib/icons'
+import { aiFetch } from '../lib/aiFetch'
 
 // ── Barcode lookup via Open Food Facts (free, no API key) ────────────────────
 async function lookupBarcode(barcode, metrics) {
@@ -133,24 +134,10 @@ export function BarcodeScanner({ metrics, onResult, onClose }) {
   const readBarcodeFromPhoto = async (dataUrl) => {
     setStatus('reading-photo')
     try {
-      const response = await fetch('/api/chat', {
+      const response = await aiFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a barcode reader. When shown an image, find the barcode and return ONLY its numeric digits — nothing else. No spaces, no explanation. If no barcode is visible, return NONE.',
-            },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: 'Read the barcode number from this image. Return ONLY the digits.' },
-                { type: 'image_url', image_url: { url: dataUrl } },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify({ task: 'barcode', image: dataUrl }),
       })
       const data = await response.json()
       const raw = (data.content || '').trim()
@@ -161,9 +148,9 @@ export function BarcodeScanner({ metrics, onResult, onClose }) {
         return
       }
       await handleBarcode(digits)
-    } catch {
+    } catch (e) {
       setStatus('photo-error')
-      setErrorMsg('Network error. Please try again.')
+      setErrorMsg(e?.message === 'Sign in to use AI features.' ? e.message : 'Network error. Please try again.')
     }
   }
 
@@ -474,15 +461,15 @@ export function AIChatModal({ messages, input, pendingImage, isThinking, metrics
                : 'webm'
       const formData = new FormData()
       formData.append('audio', blob, `recording.${ext}`)
-      const res = await fetch('/api/transcribe', { method: 'POST', body: formData })
+      const res = await aiFetch('/api/transcribe', { method: 'POST', body: formData })
       const data = await res.json()
       if (data.text) {
         onInputChange(data.text)
       } else {
         setVoiceError(data.error || 'Could not transcribe audio. Please try again.')
       }
-    } catch {
-      setVoiceError('Network error. Please try again.')
+    } catch (e) {
+      setVoiceError(e?.message === 'Sign in to use AI features.' ? e.message : 'Network error. Please try again.')
     } finally {
       setIsTranscribing(false)
     }

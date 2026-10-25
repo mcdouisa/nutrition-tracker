@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { BarcodeScanner } from '../ai-chat-modal'
+import { aiFetch } from '../../lib/aiFetch'
 import { DONE, DONE_INK, FONT } from '../../lib/theme'
 import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../../lib/icons'
 
@@ -129,7 +130,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
     setStatus('loading')
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch('/api/food-search', {
+        const res = await aiFetch('/api/food-search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: q, metrics: metricDefs() })
@@ -156,7 +157,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/food-search', {
+        const res = await aiFetch('/api/food-search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: photo, metrics: metricDefs() })

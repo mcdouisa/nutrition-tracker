@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../../lib/AuthContext';
 import { DumbbellIcon, RunIcon, YogaIcon, PersonIcon, GlobeIcon, SparklesIcon } from '../../lib/icons';
 import { AppTabBar, PageHeader, TAB_BAR_SPACE } from '../components/AppChrome';
+import { aiFetch } from '../../lib/aiFetch';
 import { C, font } from '../../lib/theme'
 
 // Maps workout type keys → SVG icon component
@@ -152,7 +153,7 @@ export default function WorkoutHome() {
     setAiError('');
     setAiPreview(null);
     try {
-      const res = await fetch('/api/workout-ai', {
+      const res = await aiFetch('/api/workout-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: aiPrompt }),
@@ -161,7 +162,7 @@ export default function WorkoutHome() {
       if (data.error) { setAiError(data.error); return; }
       setAiPreview(data.program);
     } catch (e) {
-      setAiError('Network error. Please try again.');
+      setAiError(e?.message === 'Sign in to use AI features.' ? e.message : 'Network error. Please try again.');
     } finally {
       setAiLoading(false);
     }

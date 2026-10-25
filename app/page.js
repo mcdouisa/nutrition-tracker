@@ -37,6 +37,7 @@ import {
 } from '../lib/icons'
 import { DARK, LIGHT, DONE, OVER, FONT } from '../lib/theme'
 import { signOutAndClearDevice } from '../lib/deviceData'
+import { aiFetch, AI_SIGN_IN_MESSAGE } from '../lib/aiFetch'
 import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
 import FoodLogSheet, { SearchIcon, compressPhoto, SOURCE_LABEL } from './components/FoodLogSheet'
 
@@ -1537,70 +1538,19 @@ export default function NutritionTracker() {
     setIsThinking(true)
 
     try {
-      const metricsInfo = nutritionMetrics.length > 0
-        ? nutritionMetrics.map(m => `${m.name} (${m.unit})`).join(', ')
-        : 'calories, protein, carbs, fat'
-
-      const metricsKeys = nutritionMetrics.length > 0
-        ? Object.fromEntries(nutritionMetrics.map(m => [m.key, 0]))
-        : { calories: 0, protein: 0, carbs: 0, fat: 0 }
-
-      const basePrompt = `You are a precise nutrition database assistant. The user is tracking these metrics: ${metricsInfo}.
-
-ACCURACY IS YOUR TOP PRIORITY. Use real nutritional data from official sources (USDA, restaurant websites, food labels). Do not guess or extrapolate wildly.
-
-Rules:
-- For branded/restaurant foods (McDonald's, Chick-fil-A, Starbucks, etc.), use their OFFICIAL published nutrition data. Example: Chick-fil-A 12-ct nuggets = 380 cal, so 10 = ~317 cal.
-- For generic foods, use USDA database values as your reference.
-- Scale linearly from known serving sizes. If a 12-count is X calories, a 10-count is (10/12 * X) calories.
-- NEVER inflate calorie estimates. When uncertain, estimate conservatively (lower end).
-- Calculate for the EXACT quantity described, not a default serving size.`
-
-      const imagePrompt = chatImage ? `
-
-When analyzing a food photo:
-- If it's a nutrition facts label, read the exact values directly from the label. Use the serving size shown unless the user specifies otherwise.
-- If it's a photo of food, identify what you see and estimate a typical portion. If the user specified a quantity or amount in their message, use that instead.
-- Describe briefly what you identified so the user can confirm it's correct.` : ''
-
-      const systemPrompt = `${basePrompt}${imagePrompt}
-
-When the user describes or shows a meal or food, provide:
-1. A brief response with your source or reasoning (e.g. "Based on Chick-fil-A's official data..." or "I can see this is a nutrition label showing...")
-2. Your accurate estimates for the EXACT amount described or shown
-
-Always end your response with these two lines:
-NUTRITION_DATA: ${JSON.stringify(metricsKeys)}
-FOOD_SCORE: {"score": 0, "grade": "?", "label": "?", "reason": "?"}
-
-For NUTRITION_DATA, replace 0s with accurate values for the EXACT amount described.
-For FOOD_SCORE: score 0-100 based on nutrient density, processing level, fiber, sugar, sodium, protein quality, and fat quality.
-Grades: A (85-100), B (70-84), C (55-69), D (40-54), F (0-39)
-Labels: "Excellent" (A), "Good" (B), "Fair" (C), "Poor" (D), "Avoid" (F)
-Reason: 5-7 words max — the single most important factor.`
-
-      // Format current user message — use content array when image is present
-      const currentUserContent = chatImage
-        ? [
-            ...(chatInput.trim() ? [{ type: 'text', text: chatInput }] : [{ type: 'text', text: 'Analyze this food and estimate its nutrition.' }]),
-            { type: 'image_url', image_url: { url: chatImage } }
-          ]
-        : chatInput
-
-      // Build messages array — exclude images from history to keep payload small
-      const messages = [
-        { role: 'system', content: systemPrompt },
-        ...chatMessages.slice(-6).map(msg => ({
-          role: msg.role,
-          content: typeof msg.content === 'string' ? msg.content : msg.content
-        })),
-        { role: 'user', content: currentUserContent }
-      ]
-
-      const response = await fetch('/api/chat', {
+      // The AI's instructions live on the server; send only what this request needs
+      const response = await aiFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
+        body: JSON.stringify({
+          task: 'nutrition',
+          text: chatInput,
+          image: chatImage || undefined,
+          metrics: nutritionMetrics.map(({ key, name, unit }) => ({ key, name, unit })),
+          history: chatMessages.slice(-6)
+            .filter(msg => typeof msg.content === 'string')
+            .map(msg => ({ role: msg.role, content: msg.content }))
+        })
       })
 
       const data = await response.json()
@@ -1646,8 +1596,8 @@ Reason: 5-7 words max — the single most important factor.`
       setChatMessages([
         ...chatMessages,
         userMessage,
-        { role: 'assistant', content: error.message.includes('API key')
-          ? 'AI Assistant not configured. Add GROQ_API_KEY to your environment variables. Get a free key at groq.com'
+        { role: 'assistant', content: error.message === AI_SIGN_IN_MESSAGE || /limit|too large|too long/i.test(error.message)
+          ? error.message
           : 'Sorry, I encountered an error. Please try again in a moment!' }
       ])
     } finally {

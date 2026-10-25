@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { guardAiRequest, tooLarge, tooLargeResponse, aiErrorResponse, validImage } from '../../../lib/serverGuard'
 
 export const runtime = 'edge'
 
@@ -10,18 +11,22 @@ const VISION_MODEL = 'qwen/qwen3.8-27b'
 // Text: a single food → a few likely matches; a whole meal → its separate items.
 // Photo (food or nutrition label) → its items.
 export async function POST(request) {
+  if (tooLarge(request, 7_000_000)) return tooLargeResponse()
+  const guard = await guardAiRequest(request)
+  if (guard.response) return guard.response
   try {
     const { query, image, metrics } = await request.json()
     const q = String(query || '').trim().slice(0, 300)
-    const hasImage = typeof image === 'string' && image.startsWith('data:image/')
+    if (image && !validImage(image)) return tooLargeResponse()
+    const hasImage = !!image
     if (!hasImage && q.length < 2) return NextResponse.json({ results: [], meal: null })
 
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
+      return aiErrorResponse(500)
     }
 
-    const metricList = (Array.isArray(metrics) && metrics.length > 0 ? metrics : [
+    const metricList = (Array.isArray(metrics) && metrics.length > 0 ? metrics.map(m => ({ key: String(m?.key || '').slice(0, 40), name: String(m?.name || '').slice(0, 40), unit: String(m?.unit || '').slice(0, 10) })).filter(m => m.key) : [
       { key: 'calories', name: 'Calories', unit: '' },
       { key: 'protein', name: 'Protein', unit: 'g' },
     ]).slice(0, 20)
@@ -69,8 +74,8 @@ Format: {"results":[${item}],"meal":null} or {"results":[],"meal":{"items":[${it
       clearTimeout(timeoutId)
       const data = await response.json()
       if (!response.ok) {
-        console.error('Groq food search error:', data)
-        return NextResponse.json({ error: data.error?.message || 'Search failed' }, { status: response.status })
+        console.error('Groq food search error:', data?.error?.message || response.status)
+        return aiErrorResponse(response.status === 429 ? 429 : 502)
       }
 
       // Some models think out loud first; keep only the JSON object
@@ -101,7 +106,7 @@ Format: {"results":[${item}],"meal":null} or {"results":[],"meal":{"items":[${it
       throw err
     }
   } catch (error) {
-    console.error('Food search error:', error)
+    console.error('Food search error:', error?.message)
     return NextResponse.json({ error: 'Could not search right now.' }, { status: 500 })
   }
 }
