@@ -55,7 +55,9 @@ if [ -n "$path" ]; then
       [ "$tool" != "Read" ] && decide ask "L1.4: changing Firestore security rules needs the owner's OK." ;;
     package.json|package-lock.json)
       [ "$tool" != "Read" ] && decide ask "L6.1: changing dependencies needs the owner's OK." ;;
-    CLAUDE.md|docs/*|.claude/settings.json|.claude/hooks/*)
+    docs/status.md|docs/decisions.md)
+      ;; # the running log: assistants keep these current
+    AGENTS.md|CLAUDE.md|GEMINI.md|docs/*|.cursor/rules/*|.github/copilot-instructions.md|.claude/settings.json|.claude/hooks/*)
       [ "$tool" != "Read" ] && decide ask "These are the locked rules. Only the owner changes them." ;;
   esac
 fi
