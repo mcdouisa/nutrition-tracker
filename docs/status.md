@@ -2,7 +2,7 @@
 
 Where Lytz stands right now, so any assistant can pick up the work. Update this at the end of every piece of work: move finished items to "Live", add anything new to "Open".
 
-_Last updated: 2026-10-24_
+_Last updated: 2026-10-25_
 
 ## Live (on `main`, deployed to production)
 - **Redesign across the whole app:** shared theme and tab bar; Today screen with tracker rows that fill like progress bars, animated water card, "Eaten before" chips.
@@ -11,11 +11,19 @@ _Last updated: 2026-10-24_
 - **Goals:** one overview with every target editable in place; Habits, Nutrients, Water, Saved meals, Feedback and App settings restyled; "Start fresh" offers Clear today and Redo setup.
 - **Project rules:** `AGENTS.md` (locked rules), `docs/`, Claude Code guards in `.claude/`.
 
+## Ready to ship (branch `trust-and-safety`, waiting for the owner)
+- **Trustworthy numbers:** decimals kept in totals and manual entries; setting a total is logged as the difference, so log, Undo and totals agree; Firestore keeps an on-device copy so offline edits survive.
+- **Goal guardrails:** calories under 500 block Save; under 1,200 / over 5,000 calories, over 400 g protein, and water under 16 oz / over 300 oz warn.
+- **Forgiving streaks:** only days with real logging count; one missed day in any 7 is forgiven.
+- **CSV export:** Reports → Export → "Download all days (CSV)", built on the device.
+
 ## Needs checking by the owner on a real phone
 - Real AI food search and whole-meal splitting (only tested with stand-in results locally; the Groq key exists only on Vercel).
 - Real photo reading of food and nutrition labels with the new vision model.
 
 ## Open
+- **From the review-research plan, not started:** (4) meals logged as separate foods that can be removed one by one, "Eaten before" synced across devices (new Firestore field, L1.4), subtract-an-ingredient; (5) label AI vs label/barcode numbers, remember AI answers so the same search gives the same numbers, "Fix this" on logged foods. Later: "What should I eat for the rest of today?" (AI cost, L6.1) and a 3-question setup.
+- **Offline caveat:** editing a past day you haven't opened before needs a connection the first time (the day isn't cached yet).
 - **App Store (plan agreed, not started):** wrap the web app with Capacitor. First: in-app account deletion (required by Apple) and a privacy policy page. Then native camera/barcode, push reminders, optionally Apple Health. Needs an Apple Developer account ($99/yr).
 - **Bug:** on the workout logging screen a rep range like "6-8" shows as "68". Existing bug, not caused by the redesign.
 - **"Eaten before"** is stored per device (`lytz-recent-foods` in localStorage), so phone and computer keep separate lists. Syncing it would need a new Firestore field (ask first, rule L1.4).

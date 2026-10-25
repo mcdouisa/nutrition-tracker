@@ -655,8 +655,45 @@ function BarChart({ bars, goal, scrollable = false }) {
   )
 }
 
+// ── CSV export ────────────────────────────────────────────────────────────────
+// One row per day, built on the device and downloaded directly; nothing is uploaded.
+function buildCsv(history, metrics, bodyWeightHistory) {
+  const normDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : toLocalDateStr(new Date(d || 0))
+  const cell = (v) => {
+    const t = v === null || v === undefined ? '' : String(v)
+    return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t
+  }
+  const weightByDate = {}
+  ;(bodyWeightHistory || []).forEach(e => { weightByDate[e.date] = `${e.weight} ${e.unit || ''}`.trim() })
+  const header = ['Date', ...metrics.map(m => m.unit ? `${m.name} (${m.unit})` : m.name), 'Water (oz)', 'Habits done', 'Habits total', 'Weight']
+  const days = [...history].sort((a, b) => normDate(a.date).localeCompare(normDate(b.date)))
+  const rows = days.map(d => {
+    const key = normDate(d.date)
+    const values = metrics.map(m => {
+      const found = (d.nutritionMetrics || []).find(x => x.key === m.key)
+      return found ? Math.round((found.value || 0) * 10) / 10 : ''
+    })
+    const habits = d.checklistItems || []
+    const done = habits.filter(i => (i.frequency || 'daily') === 'multiple' ? (i.count || 0) >= (i.targetCount || 1) : i.checked).length
+    return [key, ...values, d.water || 0, done, habits.length, weightByDate[key] || '']
+  })
+  return [header, ...rows].map(r => r.map(cell).join(',')).join('\n')
+}
+
+function downloadCsv(text) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `lytz-export-${toLocalDateStr(new Date())}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 // ── ExportView ────────────────────────────────────────────────────────────────
-function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
+function ExportView({ todayEntry, metrics, waterGoal, onClose, history, bodyWeightHistory }) {
   const T = useContext(ThemeContext)
   const today = new Date()
   const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
@@ -665,13 +702,24 @@ function ExportView({ todayEntry, metrics, waterGoal, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: T.bg, overflowY: 'auto', padding: '32px 24px' }}>
       <style>{`@media print { .no-print { display: none !important; } body { background: #0B0C0E !important; } }`}</style>
-      <div className="no-print" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginBottom: '28px' }}>
+      <div className="no-print" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'flex-end', marginBottom: '28px' }}>
+        <button
+          onClick={() => downloadCsv(buildCsv(history || [], metrics, bodyWeightHistory))}
+          disabled={!history?.length}
+          style={{
+            padding: '10px 20px', backgroundColor: T.card, border: 'none', borderRadius: '10px',
+            color: T.text, fontSize: '14px', fontWeight: '500', cursor: history?.length ? 'pointer' : 'default',
+            opacity: history?.length ? 1 : 0.5, fontFamily: FONT
+          }}
+        >
+          Download all days (CSV)
+        </button>
         <button onClick={() => window.print()} style={{
           padding: '10px 20px', background: '#B8F06A',
           border: 'none', borderRadius: '10px', color: '#0B0C0E', fontSize: '14px', fontWeight: '600',
           cursor: 'pointer', boxShadow: 'none'
         }}>
-          Print / Save as PDF
+          Print today / PDF
         </button>
         <button onClick={onClose} style={{
           padding: '10px 20px', backgroundColor: T.card, border: `1px solid ${T.border}`,
@@ -1048,22 +1096,33 @@ export default function ReportsPage() {
     }
   }
 
+  // A day counts only if something was actually logged (not just opened)
+  const hasActivity = (d) =>
+    (d.nutritionHistory?.length > 0) ||
+    (d.water > 0) ||
+    (d.nutritionMetrics || []).some(m => (m.value || 0) > 0) ||
+    (d.checklistItems || []).some(i => i.checked || (i.count || 0) > 0)
+
+  // Forgiving streak: one missed day in any 7 doesn't break it, and an
+  // unlogged today never does (the day isn't over yet)
   const calculateStreaks = () => {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const dateMap = {}
     history.forEach(d => { dateMap[normDate(d.date)] = d })
-    const countStreak = (checkFn) => {
-      const todayKey = toLocalDateStr(today)
-      const todayQualifies = dateMap[todayKey] && checkFn(dateMap[todayKey])
-      let streak = 0
-      for (let i = todayQualifies ? 0 : 1; i < 365; i++) {
-        const d = new Date(today); d.setDate(today.getDate() - i)
-        const key = toLocalDateStr(d)
-        if (dateMap[key] && checkFn(dateMap[key])) streak++; else break
-      }
-      return streak
+    const loggedOn = (i) => {
+      const d = new Date(today); d.setDate(today.getDate() - i)
+      const day = dateMap[toLocalDateStr(d)]
+      return !!day && hasActivity(day)
     }
-    return { trackingStreak: countStreak(() => true) }
+    let streak = 0
+    const forgiven = []
+    for (let i = loggedOn(0) ? 0 : 1; i < 400; i++) {
+      if (loggedOn(i)) { streak++; continue }
+      const recentlyForgiven = forgiven.some(j => i - j < 7)
+      if (streak > 0 && !recentlyForgiven && loggedOn(i + 1)) { forgiven.push(i); continue }
+      break
+    }
+    return { trackingStreak: streak, forgivenDays: forgiven.length }
   }
 
   const getWeeklyBars = () => {
@@ -1223,6 +1282,7 @@ export default function ReportsPage() {
           <ExportView
             todayEntry={history.find(d => normDate(d.date) === toLocalDateStr(new Date())) || null}
             metrics={metrics} waterGoal={waterGoal}
+            history={history} bodyWeightHistory={bodyWeightHistory}
             onClose={() => setShowExport(false)}
           />
         )}
@@ -1276,7 +1336,7 @@ export default function ReportsPage() {
               height: 36, padding: '0 14px', backgroundColor: T.card, border: 'none', borderRadius: 999,
               color: T.soft, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: FONT
             }}>
-              Export today
+              Export
             </button>
           }
         />
@@ -1493,6 +1553,11 @@ export default function ReportsPage() {
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(242,201,76,0.6)', letterSpacing: 0, fontFamily: FONT, marginTop: 4 }}>
                       Day streak
+                    </div>
+                    <div style={{ fontSize: 12, color: T.muted, fontFamily: FONT, marginTop: 6 }}>
+                      {streaks.forgivenDays > 0
+                        ? `${streaks.forgivenDays} missed ${streaks.forgivenDays === 1 ? 'day' : 'days'} forgiven`
+                        : "Missing one day won't reset it"}
                     </div>
                   </div>
                   <div style={{ opacity: 0.08, display: 'flex' }}><FlameIcon size={80} color={T_WARNING} strokeWidth={1} /></div>
@@ -1858,6 +1923,11 @@ export default function ReportsPage() {
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(242,201,76,0.6)', letterSpacing: 0, fontFamily: FONT, marginTop: 4 }}>
                       Day streak
+                    </div>
+                    <div style={{ fontSize: 12, color: T.muted, fontFamily: FONT, marginTop: 6 }}>
+                      {streaks.forgivenDays > 0
+                        ? `${streaks.forgivenDays} missed ${streaks.forgivenDays === 1 ? 'day' : 'days'} forgiven`
+                        : "Missing one day won't reset it"}
                     </div>
                   </div>
                   <div style={{ opacity: 0.08, display: 'flex' }}><FlameIcon size={80} color={T_WARNING} strokeWidth={1} /></div>
