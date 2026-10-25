@@ -1856,6 +1856,9 @@ export default function NutritionTracker() {
           }}>
             Your data may be lost if the app is removed. Create an account to keep it safe.
           </p>
+          <p style={{ margin: '12px 0 0 0', fontSize: '12px', color: T.muted }}>
+            <a href="/terms" style={{ color: T.muted }}>Terms</a> · <a href="/privacy" style={{ color: T.muted }}>Privacy</a> · <a href="/health-data" style={{ color: T.muted }}>Health data</a>
+          </p>
           </div>{/* end padding wrapper */}
         </div>
       </div>
@@ -3253,6 +3256,9 @@ function GoalsOverview({ metrics, onUpdateMetric, waterGoal, onWaterGoal, counts
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <section>
         <h3 style={label}>Daily targets</h3>
+        <p style={{ margin: '0 0 10px 4px', fontSize: '13px', lineHeight: 1.5, color: T.muted }}>
+          Targets are for general wellness, not medical advice. Check with a doctor or dietitian for your situation.
+        </p>
         <div style={card}>
           {metrics.length === 0 && (
             <div style={{ padding: '16px', fontSize: '14px', color: T.muted }}>No nutrition targets yet. Add some under Nutrients below.</div>
@@ -3647,6 +3653,18 @@ function SettingsModal({
                   </div>
                 </section>
               )}
+              <section>
+                <h3 style={sectionLabel(T)}>Legal</h3>
+                <div style={groupCard(T)}>
+                  {[['/terms', 'Terms of Service'], ['/privacy', 'Privacy Policy'], ['/health-data', 'Consumer Health Data Notice']].map(([href, label], i) => (
+                    <Link key={href} href={href} style={{ minHeight: '52px', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: i ? `1px solid ${T.border}` : 'none', color: T.text, fontSize: '15px', textDecoration: 'none' }}>
+                      {label}
+                      <ChevronRightIcon size={18} color={T.muted} strokeWidth={2} />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
               {!user && (
                 <section>
                   <h3 style={sectionLabel(T)}>Your data</h3>

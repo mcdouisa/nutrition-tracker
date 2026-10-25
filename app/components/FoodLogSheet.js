@@ -282,7 +282,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {status === 'idle' && (
                 <span style={{ fontSize: 14, color: T.muted, lineHeight: 1.5 }}>
-                  Type one food, like "greek yogurt", or your whole meal, like "2 eggs, toast with butter and a coffee". You can change amounts before adding.
+                  Type one food, like "greek yogurt", or your whole meal, like "2 eggs, toast with butter and a coffee". You can change amounts before adding. Numbers are estimates; always check labels for allergens.
                 </span>
               )}
               {status === 'loading' && [0, 1, 2].map(i => (

@@ -1,4 +1,5 @@
 import { AuthProvider } from '../lib/AuthContext'
+import LegalGate from './components/LegalGate'
 import './globals.css'
 
 export const metadata = {
@@ -41,7 +42,7 @@ export default function RootLayout({ children }) {
             </div>
           )}
           <div style={isStaging ? { paddingTop: 25 } : undefined}>
-            {children}
+            <LegalGate>{children}</LegalGate>
           </div>
         </AuthProvider>
       </body>

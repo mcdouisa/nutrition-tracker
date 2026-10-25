@@ -2,7 +2,7 @@
 
 Where Lytz stands right now, so any assistant can pick up the work. Update this at the end of every piece of work: move finished items to "Live", add anything new to "Open".
 
-_Last updated: 2026-10-25 (quick wins A–D)_
+_Last updated: 2026-10-25 (security & legal hardening)_
 
 ## Live (on `main`, deployed to production)
 - **Redesign across the whole app:** shared theme and tab bar; Today screen with tracker rows that fill like progress bars, animated water card, "Eaten before" chips.
@@ -22,6 +22,22 @@ _Last updated: 2026-10-25 (quick wins A–D)_
 - **B. Same search, same numbers:** food-search answers are remembered on the device for 30 days (`lytz-food-search-cache`, max 150), keyed by the search text and tracked metrics. Fewer AI calls too.
 - **C. Meals stay itemized:** a meal logs one entry per food (optional `logId` / `mealId` fields); each can be removed from Entries; the toast's Undo removes the whole meal. Single foods also log this way.
 - **D. Rep ranges:** "6-8" is no longer turned into 68 reps (which was also written back into the program and could trigger false "add weight" suggestions). Ranges show as the hint; only typed reps are logged.
+
+## Ready to ship (branch `security-hardening`, waiting for the owner)
+**Blockers before shipping:** set `LEGAL.contactEmail` in `lib/legal.js`; deploy `firestore.rules` in Firebase (before or together with the app).
+- Firestore rules: nobody can make themselves admin; group codes create-once; membership changes only by yourself; join flow fixed; feedback readable/deletable by its author.
+- Sign-out waits for offline changes, then wipes all Lytz data and the on-device database copy; leftover device data is only copied into an account after asking.
+- AI routes require a signed-in (non-anonymous) account (jose), 60/hour and 300/day per person per server instance, server-built prompts, size caps, generic errors.
+- Security headers (no framing, nosniff, referrer, permissions, HSTS); one sign-in error message; reset doesn't reveal accounts; Open Food Facts credit.
+- Delete account and data (App settings), or delete device data without an account.
+- Terms, Privacy Policy, Consumer Health Data Notice (`/terms`, `/privacy`, `/health-data`); consent screen with 13+ age confirmation for everyone, existing users included (`legalAcceptedVersion` on the profile; bump `LEGAL.version` to ask again); "not medical advice" notes.
+- Dependencies: `npm audit fix` (next 16.4.3). Remaining advisory: server-only gRPC inside firebase (fix would be a downgrade).
+
+## Owner to-do (outside the code)
+- Firebase console → `userProfiles`: check nobody unexpected has `isAdmin: true` (the old rules let anyone set it).
+- Groq console: set a monthly spend cap.
+- Firebase Auth settings: turn on email enumeration protection; set a password policy (8+ characters).
+- Have a lawyer review the legal pages, especially the Washington health-data notice.
 
 ## Needs checking by the owner on a real phone
 - Real AI food search and whole-meal splitting (only tested with stand-in results locally; the Groq key exists only on Vercel).

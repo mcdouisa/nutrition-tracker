@@ -538,6 +538,9 @@ export default function LoginPage() {
           >
             {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
           </button>
+          <p style={{ margin: '12px 0 0', fontSize: '12px', lineHeight: 1.5, color: T.muted, textAlign: 'center' }}>
+            By continuing you agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color: T.text }}>Terms</a> and <a href="/privacy" target="_blank" rel="noopener" style={{ color: T.text }}>Privacy Policy</a>. You must be at least 13.
+          </p>
         </form>
 
         {/* Toggle sign up/sign in */}
