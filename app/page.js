@@ -41,6 +41,9 @@ import FoodLogSheet, { SearchIcon, compressPhoto } from './components/FoodLogShe
 
 // ─── THEME TOKENS (shared across screens) ─────────────────────────────────────
 
+// Typed amounts keep one decimal (12.5 g stays 12.5)
+const parseAmount = (v) => Math.round((parseFloat(String(v ?? '').replace(',', '.')) || 0) * 10) / 10
+
 // Theme context — makes T available to all sub-components without prop drilling
 const ThemeContext = createContext(DARK)
 
@@ -1265,39 +1268,17 @@ export default function NutritionTracker() {
   }
 
   // Save directly edited metric value
+  // Setting a total is logged as an adjustment (the difference), so the log,
+  // Undo and the total always agree, and decimals are kept
   const saveMetricEdit = async (metricIndex) => {
-    const newValue = parseInt(editMetricValue) || 0
-
-    if (viewDate !== null && pastDayData) {
-      // Viewing past day - update pastDayData and save immediately
-      const updated = [...pastDayData.nutritionMetrics]
-      updated[metricIndex] = { ...updated[metricIndex], value: Math.max(0, newValue) }
-
-      const updatedPastDay = {
-        ...pastDayData,
-        nutritionMetrics: updated
-      }
-      setPastDayData(updatedPastDay)
-
-      // Save to Firestore immediately
-      if (user && isConfigured) {
-        const dayData = await loadDayData(user.uid, viewDate)
-        const saveData = {
-          ...(dayData || {}),
-          nutritionMetrics: updated,
-          date: viewDate
-        }
-        await saveHistoryEntry(user.uid, viewDate, saveData)
-      }
-    } else {
-      // Viewing today - update current state
-      const updated = [...nutritionMetrics]
-      updated[metricIndex] = { ...updated[metricIndex], value: Math.max(0, newValue) }
-      setNutritionMetrics(updated)
-    }
+    const metrics = viewDate !== null && pastDayData ? pastDayData.nutritionMetrics : nutritionMetrics
+    const current = metrics[metricIndex]?.value || 0
+    const newValue = Math.max(0, parseAmount(editMetricValue))
+    const delta = Math.round((newValue - current) * 10) / 10
 
     setEditingMetric(null)
     setEditMetricValue('')
+    if (delta !== 0) await addToMetric(metricIndex, delta)
   }
 
   // Add meal
@@ -1360,7 +1341,7 @@ export default function NutritionTracker() {
       // Viewing past day - update pastDayData and save immediately
       const values = {}
       const updatedMetrics = pastDayData.nutritionMetrics.map((metric) => {
-        const value = parseInt(customValues[metric.key]) || 0
+        const value = parseAmount(customValues[metric.key])
         if (value > 0) {
           values[metric.key] = value
           return { ...metric, value: (metric.value || 0) + value }
@@ -1411,7 +1392,7 @@ export default function NutritionTracker() {
       // Viewing today - update current state
       const values = {}
       const updatedMetrics = nutritionMetrics.map((metric) => {
-        const value = parseInt(customValues[metric.key]) || 0
+        const value = parseAmount(customValues[metric.key])
         if (value > 0) {
           values[metric.key] = value
           return { ...metric, value: (metric.value || 0) + value }
