@@ -4,6 +4,8 @@ Settled choices, so they don't get re-litigated. Newest first. Add an entry when
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-10-25 | Security & legal baseline: admin flag only via console/admins; AI routes need a real signed-in account with per-person limits and server-built prompts; sign-out wipes the device; in-app account deletion; Terms/Privacy/Health Data Notice with a consent screen (13+, separate health-data consent) for every user, re-asked when `LEGAL.version` changes. Support email is the owner's Gmail for now. | Security review found self-promotion to admin (could expose everyone's health logs), an open paid AI proxy, and cross-account leaks on shared devices; health-data laws (WA MHMDA, FTC HBNR, CA) and the App Store require these. |
+| 2026-10-25 | Meals log one entry per food; AI search answers are cached on the device for 30 days; every food shows where its numbers came from. | User-review research: people distrust numbers that change and can't fix one item in a meal. |
 | 2026-10-24 | Plan to reach the App Store by wrapping the web app with Capacitor before any native rewrite. Account deletion and a privacy policy come first. | Weeks instead of months; one codebase; Apple requires in-app account deletion. |
 | 2026-10-23 | Goals opens on one overview (every target editable in place); "Start fresh" offers Clear today and Redo setup. No unlabeled Reset. | A first-time user couldn't find how to change or restart goals. |
 | 2026-10-23 | Typed meals split into separate foods, reviewed and added together. Servings are a stepper with no upper limit. | User test: people type whole meals and need more than 2 servings. |
