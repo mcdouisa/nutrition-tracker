@@ -50,7 +50,8 @@ export function compressPhoto(file) {
 export const SOURCE_LABEL = {
   ai: 'AI estimate',
   photo: 'AI estimate from photo',
-  barcode: 'From barcode',
+  // Barcode data comes from Open Food Facts, which requires credit (ODbL license)
+  barcode: 'From barcode · Open Food Facts',
   edited: 'Your numbers',
 }
 

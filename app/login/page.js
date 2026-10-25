@@ -64,14 +64,11 @@ export default function LoginPage() {
         case 'auth/invalid-email':
           setError('Please enter a valid email address.')
           break
+        // One message for all of these, so nobody can probe which emails have accounts
         case 'auth/user-not-found':
-          setError('No account found with this email. Please sign up first.')
-          break
         case 'auth/wrong-password':
-          setError('Incorrect password. Please try again or reset your password.')
-          break
         case 'auth/invalid-credential':
-          setError('Incorrect email or password. Please check your credentials and try again.')
+          setError('Incorrect email or password. Please try again or reset your password.')
           break
         case 'auth/too-many-requests':
           setError('Too many failed attempts. Please wait a few minutes and try again.')
@@ -86,7 +83,7 @@ export default function LoginPage() {
           setError('Network error. Please check your internet connection.')
           break
         default:
-          setError(err.message || 'Something went wrong. Please try again.')
+          setError('Something went wrong. Please try again.')
       }
     } finally {
       setLoading(false)
@@ -107,12 +104,13 @@ export default function LoginPage() {
 
     try {
       await resetPassword(email)
-      setSuccess('Password reset email sent! Check your inbox.')
+      setSuccess('If an account exists for this email, a reset link is on its way.')
     } catch (err) {
       console.error('Reset password error:', err)
       switch (err.code) {
         case 'auth/user-not-found':
-          setError('No account found with this email. Please check the email or sign up.')
+          // Same answer as success, so the reset form can't reveal who has an account
+          setSuccess('If an account exists for this email, a reset link is on its way.')
           break
         case 'auth/invalid-email':
           setError('Please enter a valid email address.')
@@ -124,7 +122,7 @@ export default function LoginPage() {
           setError('Network error. Please check your internet connection.')
           break
         default:
-          setError(err.message || 'Failed to send reset email. Please try again.')
+          setError('Could not send the reset email. Please try again.')
       }
     } finally {
       setLoading(false)
