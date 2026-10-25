@@ -45,7 +45,47 @@ export function compressPhoto(file) {
   })
 }
 
-const toItem = (r) => ({ name: r.name, serving: r.serving, values: { ...r.values }, original: { ...r.values }, qty: r.servings > 0 ? r.servings : 1 })
+// Where a food's numbers came from, shown wherever the numbers are
+export const SOURCE_LABEL = {
+  ai: 'AI estimate',
+  photo: 'AI estimate from photo',
+  barcode: 'From barcode',
+  edited: 'Your numbers',
+}
+
+const toItem = (r, source = 'ai') => ({
+  name: r.name, serving: r.serving, values: { ...r.values }, original: { ...r.values },
+  qty: r.servings > 0 ? r.servings : 1, source: r.source || source
+})
+
+// Numbers the person changed are theirs, whatever the original source
+const sourceOf = (it) => Object.keys(it.values).some(k => (it.values[k] || 0) !== (it.original[k] || 0)) ? 'edited' : it.source
+
+// ── B: same search, same numbers ──
+// Answers are remembered on the device for 30 days, keyed by the search and the tracked metrics
+const CACHE_KEY = 'lytz-food-search-cache'
+const CACHE_DAYS = 30
+const CACHE_MAX = 150
+const cacheKey = (q, metricsKey) => `${q.trim().toLowerCase().replace(/\s+/g, ' ')}|${metricsKey}`
+function readCache(key) {
+  try {
+    const all = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')
+    const hit = all[key]
+    if (hit && Date.now() - hit.at < CACHE_DAYS * 864e5) return hit.data
+  } catch {}
+  return null
+}
+function writeCache(key, data) {
+  try {
+    const all = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')
+    all[key] = { at: Date.now(), data }
+    const keys = Object.keys(all)
+    if (keys.length > CACHE_MAX) {
+      keys.sort((a, b) => all[a].at - all[b].at).slice(0, keys.length - CACHE_MAX).forEach(k => delete all[k])
+    }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(all))
+  } catch {}
+}
 
 // metrics: today's metric list (with value)
 // onLog({ name, estimates, foods }) — foods are the items with their per-serving values, for "Eaten before"
@@ -78,6 +118,14 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
     const q = query.trim()
     if (q.length < 2) { requestRef.current++; setResults([]); setMealMatch(null); setStatus('idle'); return }
     const id = ++requestRef.current
+    const key = cacheKey(q, metricsKey)
+    const cached = readCache(key)
+    if (cached) {
+      setResults(cached.results || [])
+      setMealMatch(cached.meal || null)
+      setStatus('done')
+      return
+    }
     setStatus('loading')
     const timer = setTimeout(async () => {
       try {
@@ -89,6 +137,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
         const data = await res.json()
         if (id !== requestRef.current) return
         if (!res.ok) throw new Error(data.error || 'Search failed')
+        writeCache(key, { results: data.results || [], meal: data.meal || null })
         setResults(data.results || [])
         setMealMatch(data.meal || null)
         setStatus('done')
@@ -117,7 +166,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
         if (!res.ok) throw new Error(data.error || 'Could not read that photo')
         const found = data.meal?.items || data.results || []
         if (!found.length) throw new Error("Couldn't spot any food in that photo. Try again closer, or type what it is.")
-        showPlate(found.map(toItem))
+        showPlate(found.map(r => toItem(r, 'photo')))
       } catch (err) {
         if (cancelled) return
         setErrorMsg(err.message || 'Could not read that photo')
@@ -133,8 +182,8 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
   }
 
   // Picking a match: first food opens it; with a plate started, it joins the meal
-  const pick = (r) => {
-    const next = [...items, toItem(r)]
+  const pick = (r, source = 'ai') => {
+    const next = [...items, toItem(r, source)]
     setQuery('')
     if (next.length === 1) showPlate(next)
     else { setItems(next); setView('meal') }
@@ -155,7 +204,19 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
     const estimates = Object.fromEntries(Object.entries(sum).filter(([, v]) => v > 0))
     const names = items.map(it => it.name)
     const name = names.length <= 2 ? names.join(' + ') : `${names.slice(0, 2).join(', ')} + ${names.length - 2} more`
-    onLog({ name, estimates, foods: items.map(({ name, serving, values }) => ({ name, serving, values })) })
+    onLog({
+      name,
+      estimates,
+      foods: items.map(it => ({
+        name: it.name,
+        serving: it.serving,
+        values: it.values,
+        source: sourceOf(it),
+        estimates: Object.fromEntries(metrics
+          .map(m => [m.key, round1((it.values[m.key] || 0) * it.qty)])
+          .filter(([, v]) => v > 0))
+      }))
+    })
   }
 
   const primary = metrics[0]
@@ -232,16 +293,17 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
               )}
 
               {status === 'done' && mealMatch && (
-                <button onClick={() => showPlate([...items, ...mealMatch.items.map(toItem)])} style={{ ...btn, display: 'flex', flexDirection: 'column', gap: 8, padding: '16px', borderRadius: 16, backgroundColor: T.card2, color: T.text, textAlign: 'left', flexShrink: 0 }}>
+                <button onClick={() => showPlate([...items, ...mealMatch.items.map(r => toItem(r, 'ai'))])} style={{ ...btn, display: 'flex', flexDirection: 'column', gap: 8, padding: '16px', borderRadius: 16, backgroundColor: T.card2, color: T.text, textAlign: 'left', flexShrink: 0 }}>
                   <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 8 }}>
                     <span style={{ fontSize: 15, fontWeight: 600 }}>Your meal · {mealMatch.items.length} {mealMatch.items.length === 1 ? 'food' : 'foods'}</span>
-                    {primary && <span style={{ fontSize: 14, color: T.soft, whiteSpace: 'nowrap' }}>{fmt(totals(mealMatch.items.map(toItem))[primary.key])} {primary.name.toLowerCase()}</span>}
+                    {primary && <span style={{ fontSize: 14, color: T.soft, whiteSpace: 'nowrap' }}>{fmt(totals(mealMatch.items.map(r => toItem(r, 'ai')))[primary.key])} {primary.name.toLowerCase()}</span>}
                   </span>
                   {mealMatch.items.map((it, i) => (
                     <span key={i} style={{ fontSize: 14, color: T.soft }}>
                       {it.servings !== 1 ? `${fmt(it.servings)} × ` : ''}{it.name} <span style={{ color: T.muted }}>· {it.serving}</span>
                     </span>
                   ))}
+                  <span style={{ fontSize: 13, color: T.muted }}>AI estimates · you can change any number</span>
                   <span style={{ fontSize: 13, color: DONE, marginTop: 2 }}>Review and add all</span>
                 </button>
               )}
@@ -257,6 +319,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
                       <span key={m.key}>{fmt(r.values[m.key])}{m.unit ? ` ${m.unit}` : ''} {m.name.toLowerCase()}</span>
                     ))}
                   </span>
+                  <span style={{ fontSize: 12, color: T.muted }}>{SOURCE_LABEL.ai}</span>
                 </button>
               ))}
             </div>
@@ -271,7 +334,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
         {/* ── One food: servings + label values ───────────────────────── */}
         {view === 'item' && item && (
           <>
-            <Header T={T} title={item.name} subtitle={`${item.serving} per serving`} onBack={() => {
+            <Header T={T} title={item.name} subtitle={`${item.serving} per serving · ${SOURCE_LABEL[sourceOf(item)]}`} onBack={() => {
               if (items.length > 1) setView('meal')
               else { setItems([]); setView('search') }
             }} />
@@ -304,7 +367,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
                   <button onClick={() => { setEditIndex(i); setView('item') }} style={{ ...btn, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2, background: 'none', color: T.text, textAlign: 'left', padding: '6px 0' }}>
                     <span style={{ fontSize: 15, fontWeight: 500 }}>{it.name}</span>
                     <span style={{ fontSize: 13, color: T.muted }}>
-                      {it.serving}{primary ? ` · ${fmt((it.values[primary.key] || 0) * it.qty)} ${primary.name.toLowerCase()}` : ''}
+                      {it.serving}{primary ? ` · ${fmt((it.values[primary.key] || 0) * it.qty)} ${primary.name.toLowerCase()}` : ''} · {SOURCE_LABEL[sourceOf(it)]}
                     </span>
                   </button>
                   <Stepper T={T} compact value={it.qty} onChange={(qty) => updateItem(i, { qty })} />
@@ -349,7 +412,7 @@ export default function FoodLogSheet({ T, metrics, startWith = 'search', photo, 
             onClose={() => { setScanning(false); if (startWith === 'scan' && items.length === 0) onClose() }}
             onResult={({ name, brand, servingSize, estimates }) => {
               setScanning(false)
-              pick({ name: brand ? `${brand} ${name}` : name, serving: servingSize || '1 serving', values: estimates, servings: 1 })
+              pick({ name: brand ? `${brand} ${name}` : name, serving: servingSize || '1 serving', values: estimates, servings: 1 }, 'barcode')
             }}
           />
         </div>

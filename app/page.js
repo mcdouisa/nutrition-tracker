@@ -37,7 +37,7 @@ import {
 } from '../lib/icons'
 import { DARK, LIGHT, DONE, OVER, FONT } from '../lib/theme'
 import { AppTabBar, TAB_BAR_SPACE } from './components/AppChrome'
-import FoodLogSheet, { SearchIcon, compressPhoto } from './components/FoodLogSheet'
+import FoodLogSheet, { SearchIcon, compressPhoto, SOURCE_LABEL } from './components/FoodLogSheet'
 
 // ─── THEME TOKENS (shared across screens) ─────────────────────────────────────
 
@@ -102,7 +102,7 @@ export default function NutritionTracker() {
   const [foodSheet, setFoodSheet] = useState(null) // null | 'search' | 'scan' | 'photo'
   const [foodPhoto, setFoodPhoto] = useState(null) // compressed data URL for the photo flow
   const foodPhotoInput = useRef(null)
-  const [loggedToast, setLoggedToast] = useState(null) // name of the food just logged
+  const [loggedToast, setLoggedToast] = useState(null) // { name, logId? } of what was just logged
   const [recentFoods, setRecentFoods] = useState([]) // [{ name, serving, values }] newest first, this device only
   useEffect(() => {
     try { setRecentFoods(JSON.parse(localStorage.getItem('lytz-recent-foods') || '[]')) } catch {}
@@ -1711,17 +1711,89 @@ Reason: 5-7 words max — the single most important factor.`
   }
 
   // Log a whole food in one step: every metric updates together, and it joins "Eaten before"
-  const logFood = ({ name, estimates, foods = [] }) => {
-    addEstimatedNutrition(estimates, undefined, name)
-    if (foods.length) {
-      const names = new Set(foods.map(f => f.name))
-      const next = [...foods.map(({ name, serving, values }) => ({ name, serving, values })), ...recentFoods.filter(f => !names.has(f.name))].slice(0, 10)
-      setRecentFoods(next)
-      try { localStorage.setItem('lytz-recent-foods', JSON.stringify(next)) } catch {}
+  // Food-sheet logs: one entry per food, so a meal stays itemized and each food
+  // can be removed on its own. All entries land in one update (no lost adds).
+  const sumEstimates = (entries, key) => entries.reduce((sum, e) => sum + (e.estimates?.[key] || 0), 0)
+  const round1 = (n) => Math.round(n * 10) / 10
+
+  const addFoodEntries = async (foods) => {
+    const timestamp = Date.now()
+    const logId = `log-${timestamp}`
+    const newEntries = foods.map(f => ({
+      estimates: f.estimates,
+      name: f.name,
+      timestamp,
+      logId,
+      ...(f.source ? { source: f.source } : {}),
+      ...(foods.length > 1 ? { mealId: logId } : {})
+    }))
+    const addAll = (metrics) => metrics.map(metric => ({
+      ...metric,
+      value: round1((metric.value || 0) + sumEstimates(newEntries, metric.key))
+    }))
+
+    if (viewDate !== null && pastDayData) {
+      const updated = addAll(pastDayData.nutritionMetrics)
+      setPastDayData({ ...pastDayData, nutritionMetrics: updated, nutritionHistory: [...(pastDayData.nutritionHistory || []), ...newEntries] })
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        await saveHistoryEntry(user.uid, viewDate, {
+          ...(dayData || {}),
+          nutritionMetrics: updated,
+          nutritionHistory: [...(dayData?.nutritionHistory || []), ...newEntries],
+          date: viewDate
+        })
+      }
+    } else {
+      setNutritionMetrics(prev => addAll(prev))
+      setNutritionHistory(prev => [...prev, ...newEntries])
     }
+    return logId
+  }
+
+  // Undo for a food-sheet log: removes every food that was added together
+  const removeFoodLog = async (logId) => {
+    const subtract = (metrics, removed) => metrics.map(metric => ({
+      ...metric,
+      value: Math.max(0, round1((metric.value || 0) - sumEstimates(removed, metric.key)))
+    }))
+
+    if (viewDate !== null && pastDayData) {
+      const removed = (pastDayData.nutritionHistory || []).filter(e => e.logId === logId)
+      if (!removed.length) return
+      const updated = subtract(pastDayData.nutritionMetrics, removed)
+      setPastDayData({ ...pastDayData, nutritionMetrics: updated, nutritionHistory: pastDayData.nutritionHistory.filter(e => e.logId !== logId) })
+      if (user && isConfigured) {
+        const dayData = await loadDayData(user.uid, viewDate)
+        await saveHistoryEntry(user.uid, viewDate, {
+          ...(dayData || {}),
+          nutritionMetrics: updated,
+          nutritionHistory: (dayData?.nutritionHistory || []).filter(e => e.logId !== logId),
+          date: viewDate
+        })
+      }
+    } else {
+      const removed = nutritionHistory.filter(e => e.logId === logId)
+      if (!removed.length) return
+      setNutritionMetrics(prev => subtract(prev, removed))
+      setNutritionHistory(prev => prev.filter(e => e.logId !== logId))
+    }
+  }
+
+  // Log from the food sheet or an "Eaten before" chip; logged foods join "Eaten before"
+  const logFood = async ({ name, foods = [] }) => {
+    if (!foods.length) return
     setFoodSheet(null)
     setFoodPhoto(null)
-    setLoggedToast(name)
+    const names = new Set(foods.map(f => f.name))
+    const next = [
+      ...foods.map(({ name, serving, values, source }) => ({ name, serving, values, ...(source ? { source } : {}) })),
+      ...recentFoods.filter(f => !names.has(f.name))
+    ].slice(0, 10)
+    setRecentFoods(next)
+    try { localStorage.setItem('lytz-recent-foods', JSON.stringify(next)) } catch {}
+    const logId = await addFoodEntries(foods)
+    setLoggedToast({ name, logId })
   }
 
   // Camera button: take or pick a photo, then read it straight into the food sheet
@@ -2476,7 +2548,8 @@ Reason: 5-7 words max — the single most important factor.`
                     const parts = displayNutritionMetrics
                       .filter(m => entry.estimates[m.key])
                       .map(m => `${m.name}: ${entry.estimates[m.key]}${m.unit ? ` ${m.unit}` : ''}`)
-                    description = parts.join(', ')
+                    const origin = [entry.mealId ? 'Part of a meal' : null, SOURCE_LABEL[entry.source]].filter(Boolean).join(' · ')
+                    description = [origin, parts.join(', ')].filter(Boolean).join(' — ')
                   } else if (entry.metricIndex !== undefined) {
                     // Single metric entry
                     const metric = displayNutritionMetrics[entry.metricIndex]
@@ -2705,7 +2778,7 @@ Reason: 5-7 words max — the single most important factor.`
               {meals.map((meal, i) => meal ? (
                 <button
                   key={`meal-${i}`}
-                  onClick={() => { addMeal(meal); setLoggedToast(meal.name) }}
+                  onClick={() => { addMeal(meal); setLoggedToast({ name: meal.name }) }}
                   title={nutritionMetrics.map(metric =>
                     meal[metric.key] ? `${meal[metric.key]}${metric.unit || ''} ${metric.name}` : ''
                   ).filter(Boolean).join(' · ')}
@@ -2721,7 +2794,7 @@ Reason: 5-7 words max — the single most important factor.`
                 .map(food => (
                   <button
                     key={`recent-${food.name}`}
-                    onClick={() => logFood({ name: food.name, estimates: food.values, foods: [food] })}
+                    onClick={() => logFood({ name: food.name, foods: [{ ...food, estimates: food.values }] })}
                     title={`${food.serving} · ` + nutritionMetrics.map(metric =>
                       food.values[metric.key] ? `${food.values[metric.key]}${metric.unit || ''} ${metric.name}` : ''
                     ).filter(Boolean).join(' · ')}
@@ -2796,8 +2869,8 @@ Reason: 5-7 words max — the single most important factor.`
           <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px', pointerEvents: 'auto' }}>
             {loggedToast && (
               <div role="status" style={{ height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '0 6px 0 16px', borderRadius: '14px', backgroundColor: T.text, color: T.bg }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Added {loggedToast}</span>
-                <button onClick={() => { undoNutrition(); setLoggedToast(null) }} style={{ height: '40px', padding: '0 12px', border: 'none', borderRadius: '10px', background: 'none', color: T.bg, fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <span style={{ fontSize: '14px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Added {loggedToast.name}</span>
+                <button onClick={() => { if (loggedToast.logId) removeFoodLog(loggedToast.logId); else undoNutrition(); setLoggedToast(null) }} style={{ height: '40px', padding: '0 12px', border: 'none', borderRadius: '10px', background: 'none', color: T.bg, fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Undo
                 </button>
               </div>

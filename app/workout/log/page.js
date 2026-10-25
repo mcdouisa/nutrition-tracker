@@ -146,7 +146,9 @@ export default function WorkoutLog() {
         id: i, type: s.type || 'working',
         targetReps: s.reps || '', targetWeight: s.weight || '',
         rest: parseInt(s.rest) || 90,
-        actualReps: s.reps?.replace(/[^0-9∞]/g, '') || '',
+        // Prefill a single target ("8"); leave ranges ("6-8") empty so the target shows as the hint.
+        // Stripping a range to digits turned "6-8" into 68 reps and wrote that back to the program.
+        actualReps: /^\s*(\d+|∞)\s*$/.test(s.reps || '') ? String(s.reps).trim() : '',
         actualWeight: s.weight === 'BW' ? 'BW' : (s.weight || ''),
         targetDistance: s.distance || '', targetPace: s.pace || '',
         actualDistance: s.distance || '', actualTime: '',

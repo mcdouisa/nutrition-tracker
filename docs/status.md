@@ -2,7 +2,7 @@
 
 Where Lytz stands right now, so any assistant can pick up the work. Update this at the end of every piece of work: move finished items to "Live", add anything new to "Open".
 
-_Last updated: 2026-10-25_
+_Last updated: 2026-10-25 (quick wins A–D)_
 
 ## Live (on `main`, deployed to production)
 - **Redesign across the whole app:** shared theme and tab bar; Today screen with tracker rows that fill like progress bars, animated water card, "Eaten before" chips.
@@ -17,15 +17,21 @@ _Last updated: 2026-10-25_
 - **Forgiving streaks:** only days with real logging count; one missed day in any 7 is forgiven.
 - **CSV export:** Reports → Export → "Download all days (CSV)", built on the device.
 
+## Ready to ship (branch `quick-wins`, waiting for the owner)
+- **A. Where numbers come from:** search results, the food sheet, meal rows and logged entries say "AI estimate", "AI estimate from photo", "From barcode" or "Your numbers" (after edits). Entries store an optional `source` field.
+- **B. Same search, same numbers:** food-search answers are remembered on the device for 30 days (`lytz-food-search-cache`, max 150), keyed by the search text and tracked metrics. Fewer AI calls too.
+- **C. Meals stay itemized:** a meal logs one entry per food (optional `logId` / `mealId` fields); each can be removed from Entries; the toast's Undo removes the whole meal. Single foods also log this way.
+- **D. Rep ranges:** "6-8" is no longer turned into 68 reps (which was also written back into the program and could trigger false "add weight" suggestions). Ranges show as the hint; only typed reps are logged.
+
 ## Needs checking by the owner on a real phone
 - Real AI food search and whole-meal splitting (only tested with stand-in results locally; the Groq key exists only on Vercel).
 - Real photo reading of food and nutrition labels with the new vision model.
 
 ## Open
-- **From the review-research plan, not started:** (4) meals logged as separate foods that can be removed one by one, "Eaten before" synced across devices (new Firestore field, L1.4), subtract-an-ingredient; (5) label AI vs label/barcode numbers, remember AI answers so the same search gives the same numbers, "Fix this" on logged foods. Later: "What should I eat for the rest of today?" (AI cost, L6.1) and a 3-question setup.
+- **From the review-research plan, not started:** (4) "Eaten before" synced across devices (new Firestore field, L1.4), subtract-an-ingredient; (5) "Fix this" on logged foods (L1.1). Later: "What should I eat for the rest of today?" (AI cost, L6.1) and a 3-question setup.
 - **Offline caveat:** editing a past day you haven't opened before needs a connection the first time (the day isn't cached yet).
 - **App Store (plan agreed, not started):** wrap the web app with Capacitor. First: in-app account deletion (required by Apple) and a privacy policy page. Then native camera/barcode, push reminders, optionally Apple Health. Needs an Apple Developer account ($99/yr).
-- **Bug:** on the workout logging screen a rep range like "6-8" shows as "68". Existing bug, not caused by the redesign.
+- **Old "68" reps:** programs logged before fix D may already have "68" saved where "6-8" was. Can't be told apart from a real 68 automatically; the owner can fix those in the program editor.
 - **"Eaten before"** is stored per device (`lytz-recent-foods` in localStorage), so phone and computer keep separate lists. Syncing it would need a new Firestore field (ask first, rule L1.4).
 - **Vercel previews** are behind Vercel login (Deployment Protection). The owner chose to leave it on for now.
 - **Admin page** (`app/admin`) still uses its own old light theme. Internal only.
